@@ -1,0 +1,250 @@
+// ============================================
+// Workflow Orchestrator - Main Processing Pipeline
+// ============================================
+
+import { config } from 'dotenv';
+import type {
+    CandidateProfile,
+    JDSpec,
+    ProcessingResult,
+} from '../types/index.js';
+
+// Agents
+import { createJDRealityAgent } from '../agents/jd-reality-agent.js';
+import { createResumeStructuringAgent } from '../agents/resume-structuring-agent.js';
+import { createTechnicalCheckingAgent } from '../agents/technical-checking-agent.js';
+import { createFounderConfidenceAgent } from '../agents/founder-confidence-agent.js';
+import { createAssignmentGenerationAgent } from '../agents/assignment-generation-agent.js';
+import { createCandidateFeedbackAgent } from '../agents/candidate-feedback-agent.js';
+
+// Synthesizers
+import { createRelevanceSynthesizer } from '../synthesis/relevance-synthesizer.js';
+import { createVerdictSynthesizer } from '../synthesis/verdict-synthesizer.js';
+
+// Integrations
+import { extractTextFromPDF } from '../integrations/pdf-extractor.js';
+import { createSheetsWriter } from '../integrations/google-sheets.js';
+import { createEmailNotifier } from '../integrations/email-notifier.js';
+
+config();
+
+interface ResumeInput {
+    buffer: Buffer;
+    fileId: string;
+    fileName: string;
+    fileLink: string;
+    hash: string;
+}
+
+interface JDInput {
+    buffer: Buffer;
+    fileName: string;
+}
+
+export class WorkflowOrchestrator {
+    // Agents
+    private jdRealityAgent = createJDRealityAgent();
+    private resumeStructuringAgent = createResumeStructuringAgent();
+    private technicalCheckingAgent = createTechnicalCheckingAgent();
+    private founderConfidenceAgent = createFounderConfidenceAgent();
+    private assignmentGenerationAgent = createAssignmentGenerationAgent();
+    private candidateFeedbackAgent = createCandidateFeedbackAgent();
+
+    // Synthesizers
+    private relevanceSynthesizer = createRelevanceSynthesizer();
+    private verdictSynthesizer = createVerdictSynthesizer();
+
+    // Integrations
+    private sheetsWriter = createSheetsWriter();
+    private emailNotifier = createEmailNotifier();
+
+    // Cached JD spec
+    private cachedJDSpec: JDSpec | null = null;
+    private cachedJDHash: string = '';
+
+    async processJD(jdInput: JDInput): Promise<JDSpec> {
+        console.log(`\n📋 Processing JD: ${jdInput.fileName}`);
+
+        // Extract text from JD PDF
+        const jdText = await extractTextFromPDF(jdInput.buffer);
+
+        // Check if we have cached results for this JD
+        const jdHash = this.simpleHash(jdText);
+        if (this.cachedJDSpec && this.cachedJDHash === jdHash) {
+            console.log('Using cached JD analysis');
+            return this.cachedJDSpec;
+        }
+
+        // Analyze JD with agent
+        const jdResult = await this.jdRealityAgent.execute({ jdText });
+        const jdSpec: JDSpec = {
+            ...jdResult.data,
+            rawText: jdText,
+        };
+
+        // Cache the result
+        this.cachedJDSpec = jdSpec;
+        this.cachedJDHash = jdHash;
+
+        console.log(`  Role Context: ${jdSpec.roleContext}`);
+        console.log(`  Criticality Factor: ${jdSpec.criticalityFactor}`);
+        console.log(`  Non-negotiables: ${jdSpec.nonNegotiableSkills.join(', ')}`);
+
+        return jdSpec;
+    }
+
+    async processResume(
+        resumeInput: ResumeInput,
+        jdSpec: JDSpec
+    ): Promise<ProcessingResult> {
+        console.log(`\n📄 Processing Resume: ${resumeInput.fileName}`);
+
+        // Step 1: Extract resume text
+        console.log('  [1/7] Extracting text...');
+        const resumeText = await extractTextFromPDF(resumeInput.buffer);
+
+        // Step 2: Structure the resume
+        console.log('  [2/7] Structuring resume...');
+        const resumeResult = await this.resumeStructuringAgent.execute({
+            resumeText,
+            resumeFileLink: resumeInput.fileLink,
+            resumeHash: resumeInput.hash,
+        });
+        const candidate = resumeResult.data;
+        console.log(`    Name: ${candidate.name}`);
+        console.log(`    Email: ${candidate.email || 'Not found'}`);
+
+        // Step 3: Technical evaluation
+        console.log('  [3/7] Evaluating technical fit...');
+        const technicalResult = await this.technicalCheckingAgent.execute({
+            candidate,
+            jdSpec,
+        });
+        const executionFit = technicalResult.data;
+        console.log(`    Execution Fit: ${executionFit.score.toFixed(1)}/100`);
+
+        // Step 4: Founder confidence evaluation
+        console.log('  [4/7] Evaluating founder confidence...');
+        const founderResult = await this.founderConfidenceAgent.execute({
+            candidate,
+            jdSpec,
+        });
+        const founderConfidence = founderResult.data;
+        console.log(`    Founder Confidence: ${founderConfidence.score.toFixed(1)}/100`);
+
+        // Step 5: Synthesize relevance score
+        console.log('  [5/7] Synthesizing relevance...');
+        const relevance = this.relevanceSynthesizer.synthesize(
+            executionFit,
+            founderConfidence,
+            jdSpec.criticalityFactor,
+            jdSpec.roleContext
+        );
+        console.log(`    Relevance Score: ${relevance.score.toFixed(1)}/100`);
+        console.log(`    Passed Threshold: ${relevance.passedThreshold ? 'Yes ✓' : 'No ✗'}`);
+
+        // Step 6: Generate resume-stage feedback
+        console.log('  [6/7] Generating feedback...');
+        const feedbackInput = {
+            candidate,
+            jdSpec,
+            executionFit,
+            founderConfidence,
+            stage: 'resume' as const,
+            passedThreshold: relevance.passedThreshold,
+        };
+        const feedbackResult = await this.candidateFeedbackAgent.execute(feedbackInput);
+        const resumeFeedback = feedbackResult.data;
+
+        // Step 7: Generate assignment if passed threshold
+        let assignment = undefined;
+        if (relevance.passedThreshold) {
+            console.log('  [7/7] Generating assignment...');
+            const assignmentResult = await this.assignmentGenerationAgent.execute({
+                candidate,
+                jdSpec,
+                executionFitScore: executionFit.score,
+            });
+            assignment = assignmentResult.data;
+            console.log(`    Assignment: ${assignment.title}`);
+        } else {
+            console.log('  [7/7] Skipping assignment (below threshold)');
+        }
+
+        // Generate verdicts
+        const internalVerdict = this.verdictSynthesizer.generateInternalVerdict(
+            candidate,
+            jdSpec,
+            executionFit,
+            founderConfidence,
+            relevance,
+            assignment
+        );
+
+        const externalVerdict = this.verdictSynthesizer.generateExternalVerdict(
+            resumeFeedback,
+            relevance
+        );
+
+        const result: ProcessingResult = {
+            candidateProfile: candidate,
+            jdSpec,
+            executionFit,
+            founderConfidence,
+            relevance,
+            resumeFeedback,
+            assignment,
+            internalVerdict,
+            externalVerdict,
+        };
+
+        // Save to Google Sheets
+        console.log('  💾 Saving to Google Sheets...');
+        try {
+            await this.sheetsWriter.appendCandidate(internalVerdict, resumeFeedback);
+        } catch (error) {
+            console.error('  ⚠️ Failed to save to sheets:', error);
+        }
+
+        // Send notifications
+        console.log('  📧 Sending notifications...');
+        try {
+            // Notify founder
+            await this.emailNotifier.notifyFounder(internalVerdict);
+
+            // Send candidate feedback
+            if (candidate.email) {
+                await this.emailNotifier.sendCandidateFeedback(
+                    candidate.email,
+                    candidate.name,
+                    resumeFeedback,
+                    externalVerdict.nextSteps
+                );
+            }
+        } catch (error) {
+            console.error('  ⚠️ Email notification failed:', error);
+        }
+
+        console.log(`✅ Completed processing: ${candidate.name} - ${internalVerdict.recommendation}`);
+
+        return result;
+    }
+
+    private simpleHash(text: string): string {
+        let hash = 0;
+        for (let i = 0; i < text.length; i++) {
+            const char = text.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return hash.toString(16);
+    }
+
+    getRelevanceThreshold(): number {
+        return this.relevanceSynthesizer.getThreshold();
+    }
+}
+
+export function createWorkflowOrchestrator(): WorkflowOrchestrator {
+    return new WorkflowOrchestrator();
+}
