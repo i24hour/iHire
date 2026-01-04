@@ -43,10 +43,28 @@ export class DriveMonitor {
     }
 
     private getAuth() {
-        const credentialsPath = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || './credentials.json';
+        let credentials = null;
 
-        if (fs.existsSync(credentialsPath)) {
-            const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+        // Method 1: Base64 encoded credentials (for Railway/serverless)
+        if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64) {
+            const decoded = Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64, 'base64').toString('utf-8');
+            credentials = JSON.parse(decoded);
+        }
+
+        // Method 2: Direct JSON string
+        else if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.GOOGLE_SERVICE_ACCOUNT_JSON.startsWith('{')) {
+            credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+        }
+
+        // Method 3: File path (for local development)
+        else {
+            const credentialsPath = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || './credentials.json';
+            if (fs.existsSync(credentialsPath)) {
+                credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf-8'));
+            }
+        }
+
+        if (credentials) {
             return new google.auth.GoogleAuth({
                 credentials,
                 scopes: [
@@ -57,6 +75,7 @@ export class DriveMonitor {
         }
 
         // Fallback to application default credentials
+        console.warn('No credentials found, using application default');
         return new google.auth.GoogleAuth({
             scopes: [
                 'https://www.googleapis.com/auth/drive.readonly',
