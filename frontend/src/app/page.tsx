@@ -1,9 +1,16 @@
 import { Sidebar } from '@/components/Sidebar';
-import { getCandidates } from '@/lib/sheets-client';
+import { getCandidates, CandidateRecord } from '@/lib/sheets-client';
 import Link from 'next/link';
 
 export default async function Home() {
-  const candidates = await getCandidates();
+  let candidates: CandidateRecord[] = [];
+  try {
+    candidates = await getCandidates();
+  } catch (error) {
+    console.error('Failed to fetch candidates during build/render:', error);
+    // Fallback to empty array so build doesn't fail
+    candidates = [];
+  }
 
   const stats = {
     total: candidates.length,
@@ -81,13 +88,13 @@ export default async function Home() {
                   </div>
                   <div className="text-right">
                     <div className={`text-lg font-bold ${candidate.relevanceScore >= 70 ? 'text-emerald-400' :
-                        candidate.relevanceScore >= 50 ? 'text-amber-400' : 'text-red-400'
+                      candidate.relevanceScore >= 50 ? 'text-amber-400' : 'text-red-400'
                       }`}>
                       {candidate.relevanceScore.toFixed(1)}
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${candidate.recommendation === 'Strong Yes' ? 'bg-emerald-500/20 text-emerald-400' :
-                        candidate.recommendation === 'Yes' ? 'bg-green-500/20 text-green-400' :
-                          'bg-gray-500/20 text-gray-400'
+                      candidate.recommendation === 'Yes' ? 'bg-green-500/20 text-green-400' :
+                        'bg-gray-500/20 text-gray-400'
                       }`}>
                       {candidate.recommendation}
                     </span>
