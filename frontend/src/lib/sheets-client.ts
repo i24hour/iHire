@@ -83,14 +83,16 @@ export async function getCandidates(): Promise<CandidateRecord[]> {
     const sheets = google.sheets({ version: 'v4', auth });
 
     try {
+        console.log('Fetching from sheet:', spreadsheetId, 'range: Candidates!A:O');
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
             range: 'Candidates!A:O',
         });
 
         const rows = response.data.values || [];
+        console.log('Rows fetched:', rows.length);
         if (rows.length <= 1) {
-            console.log('No candidate data in sheet yet');
+            console.log('No candidate data in sheet yet (only header row or empty)');
             return [];
         }
 
@@ -114,8 +116,9 @@ export async function getCandidates(): Promise<CandidateRecord[]> {
             assignmentFeedback: row[13] || '',
             timestamp: row[14] || '',
         }));
-    } catch (error) {
-        console.error('Failed to fetch candidates from sheet:', error);
+    } catch (error: any) {
+        console.error('Failed to fetch candidates from sheet:', error?.message || error);
+        console.error('Error details:', JSON.stringify(error?.response?.data || error, null, 2));
         return [];
     }
 }
