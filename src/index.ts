@@ -3,11 +3,40 @@
 // ============================================
 
 import { config } from 'dotenv';
+import { createServer } from 'http';
 import { createDriveMonitor } from './integrations/google-drive.js';
 import { createWorkflowOrchestrator } from './workflow/orchestrator.js';
 import type { JDSpec } from './types/index.js';
 
 config();
+
+// Health check status
+let systemStatus = {
+    healthy: true,
+    jdLoaded: false,
+    lastPoll: null as Date | null,
+    processedCount: 0,
+};
+
+// Simple HTTP server for Railway health checks
+const PORT = process.env.PORT || 3001;
+const server = createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            status: 'healthy',
+            uptime: process.uptime(),
+            ...systemStatus,
+        }));
+    } else {
+        res.writeHead(404);
+        res.end('Not Found');
+    }
+});
+
+server.listen(PORT, () => {
+    console.log(`🌐 Health check server running on port ${PORT}`);
+});
 
 async function main() {
     console.log('╔════════════════════════════════════════════════════════════╗');
