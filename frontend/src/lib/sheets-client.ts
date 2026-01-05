@@ -119,6 +119,7 @@ export async function getCandidates(): Promise<CandidateRecord[]> {
     } catch (error: any) {
         console.error('Failed to fetch candidates from sheet:', error?.message || error);
         console.error('Error details:', JSON.stringify(error?.response?.data || error, null, 2));
-        return [];
+        // Throw error so API can return it
+        throw new Error(`Sheet Error: ${error?.message || error}`);
     }
 }

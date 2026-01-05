@@ -10,10 +10,14 @@ export async function GET() {
         const candidates = await getCandidates();
         console.log('Candidates fetched:', candidates.length);
         return NextResponse.json({ candidates });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching candidates:', error);
         return NextResponse.json(
-            { error: 'Failed to fetch candidates', candidates: [] },
+            {
+                error: 'Failed to fetch candidates',
+                details: error?.message || String(error),
+                candidates: []
+            },
             { status: 500 }
         );
     }
