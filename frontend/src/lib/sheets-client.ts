@@ -67,9 +67,10 @@ export async function getCandidates(): Promise<CandidateRecord[]> {
         }
 
         if (credentials) {
+            console.log('Service Account Email:', credentials.client_email);
             auth = new google.auth.GoogleAuth({
                 credentials,
-                scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+                scopes: ['https://www.googleapis.com/auth/spreadsheets'],
             });
         } else {
             console.error('No credentials found (file, base64, or JSON string)');
