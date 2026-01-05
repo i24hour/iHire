@@ -111,7 +111,8 @@ export class LiteLLMClient {
         maxTokens?: number;
         jsonMode?: boolean;
     }): Promise<LLMResponse> {
-        const maxRetries = 8;
+        // FAIL FAST: Only 2 retries to save API limits
+        const maxRetries = 2;
         let lastError: Error | null = null;
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -126,6 +127,11 @@ export class LiteLLMClient {
 
                 const choice = response.choices[0];
 
+                // Log token usage for monitoring
+                if (response.usage) {
+                    console.log(`📊 Tokens used: ${response.usage.prompt_tokens} prompt + ${response.usage.completion_tokens} completion = ${response.usage.total_tokens} total`);
+                }
+
                 return {
                     content: choice?.message?.content || '',
                     usage: response.usage ? {
@@ -137,13 +143,19 @@ export class LiteLLMClient {
             } catch (error: any) {
                 lastError = error;
 
-                // Check if it's a rate limit error (429) or timeout
-                if (error?.status === 429 || error?.message?.includes('429') || error?.code === 'ETIMEDOUT') {
-                    // Wait progressively longer: 30s, 45s, 60s, 90s...
-                    const waitTime = 30000 + (attempt * 15000) + Math.random() * 5000;
-                    console.log(`Rate limited/timeout. Waiting ${(waitTime / 1000).toFixed(0)}s before retry (attempt ${attempt + 1}/${maxRetries})...`);
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-                    continue;
+                // Check if it's a rate limit error (429)
+                if (error?.status === 429 || error?.message?.includes('429')) {
+                    if (attempt < maxRetries - 1) {
+                        // Short wait: only 5-10 seconds before retry
+                        const waitTime = 5000 + Math.random() * 5000;
+                        console.log(`⚠️ Rate limited. Quick retry in ${(waitTime / 1000).toFixed(0)}s (attempt ${attempt + 1}/${maxRetries})...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        continue;
+                    } else {
+                        // After 2 attempts, fail immediately to save limits
+                        console.error(`❌ Rate limited ${maxRetries} times. STOPPING to save API limits. Try again later.`);
+                        throw new Error('Rate limit exceeded - stopping to save API quota. Please wait a few minutes and try again.');
+                    }
                 }
 
                 console.error(`LLM Error (${this.provider}/${this.model}):`, error);
