@@ -28,12 +28,14 @@ const HEADERS = [
 ];
 
 function formatReadableDate(date: Date): string {
-    return date.toLocaleString('en-US', {
+    return date.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
         year: 'numeric',
+        hour12: true,
     });
 }
 
