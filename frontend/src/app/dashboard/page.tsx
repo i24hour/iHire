@@ -109,28 +109,28 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+        <div className="flex min-h-screen bg-[#0c0c0c]">
             <Sidebar />
 
             <main className="flex-1 p-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">
+                        <h1 className="text-3xl font-bold text-gray-100 mb-2">
                             Candidate Rankings
                         </h1>
-                        <p className="text-gray-400">
+                        <p className="text-gray-500">
                             Candidates ranked by relevance score for the current JD
                         </p>
                     </div>
 
                     {/* View Toggle */}
-                    <div className="flex items-center gap-2 bg-gray-800/50 rounded-lg p-1">
+                    <div className="flex items-center gap-2 bg-[#161616] rounded-lg p-1 border border-[#262626]">
                         <button
                             onClick={() => setViewMode('table')}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'table'
-                                ? 'bg-purple-500 text-white'
-                                : 'text-gray-400 hover:text-white'
+                                ? 'bg-violet-500 text-white'
+                                : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
                             Table
@@ -138,8 +138,8 @@ export default function DashboardPage() {
                         <button
                             onClick={() => setViewMode('cards')}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'cards'
-                                ? 'bg-purple-500 text-white'
-                                : 'text-gray-400 hover:text-white'
+                                ? 'bg-violet-500 text-white'
+                                : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
                             Cards
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                 {/* Content */}
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
                     </div>
                 ) : viewMode === 'table' ? (
                     <RankingTable

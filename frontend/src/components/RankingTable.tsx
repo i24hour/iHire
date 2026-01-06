@@ -96,7 +96,7 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
     };
 
     return (
-        <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 overflow-hidden">
+        <div className="bg-[#161616] rounded-2xl border border-[#262626] overflow-hidden">
             {/* Filters */}
             <div className="p-4 border-b border-gray-800 flex gap-4 flex-wrap">
                 <div className="flex-1 min-w-[200px]">

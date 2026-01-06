@@ -10,6 +10,7 @@ import type { InternalVerdict, CandidateFeedback } from '../types/index.js';
 config();
 
 const HEADERS = [
+    'Date',
     'Candidate Name',
     'Email',
     'Phone',
@@ -24,8 +25,17 @@ const HEADERS = [
     'Recommendation',
     'Resume Feedback',
     'Assignment Feedback',
-    'Timestamp',
 ];
+
+function formatReadableDate(date: Date): string {
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        year: 'numeric',
+    });
+}
 
 export class SheetsWriter {
     private sheets: sheets_v4.Sheets;
@@ -177,6 +187,7 @@ export class SheetsWriter {
         await this.initialize();
 
         const row = [
+            formatReadableDate(verdict.timestamp),
             verdict.candidateName,
             verdict.email || '',
             verdict.phone || '',
@@ -191,7 +202,6 @@ export class SheetsWriter {
             verdict.recommendation,
             this.formatFeedback(resumeFeedback),
             assignmentFeedback ? this.formatFeedback(assignmentFeedback) : '',
-            verdict.timestamp.toISOString(),
         ];
 
         await this.sheets.spreadsheets.values.append({
