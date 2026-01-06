@@ -85,6 +85,16 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
         </span>
     );
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        });
+    };
+
     return (
         <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 overflow-hidden">
             {/* Filters */}
@@ -147,6 +157,9 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                 Recommendation
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                Date
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -191,6 +204,11 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRecommendationColor(candidate.recommendation)}`}>
                                         {candidate.recommendation}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="text-sm text-gray-400">
+                                        {formatDate(candidate.timestamp)}
+                                    </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <button

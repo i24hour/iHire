@@ -10,6 +10,7 @@ interface CandidateCardProps {
     founderConfidenceScore: number;
     recommendation: string;
     roleContext: string;
+    timestamp: string;
     onClick?: () => void;
 }
 
@@ -21,6 +22,7 @@ export function CandidateCard({
     founderConfidenceScore,
     recommendation,
     roleContext,
+    timestamp,
     onClick,
 }: CandidateCardProps) {
     const getRecommendationGradient = (rec: string) => {
@@ -39,12 +41,22 @@ export function CandidateCard({
         return 'text-red-400';
     };
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        });
+    };
+
     return (
         <motion.div
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 cursor-pointer hover:border-purple-500/50 transition-all duration-300"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 cursor-pointer hover:border-purple-500/50 transition-all duration-300 relative overflow-hidden"
         >
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
@@ -82,12 +94,17 @@ export function CandidateCard({
                 </div>
             </div>
 
-            {/* Role Context Badge */}
-            <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Role Context:</span>
-                <span className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
-                    {roleContext.replace(/_/g, ' ')}
-                </span>
+            {/* Footer: Role & Date */}
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-800/50">
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Role:</span>
+                    <span className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
+                        {roleContext.replace(/_/g, ' ')}
+                    </span>
+                </div>
+                <div className="text-xs text-gray-600">
+                    {formatDate(timestamp)}
+                </div>
             </div>
         </motion.div>
     );

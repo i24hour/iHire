@@ -129,8 +129,8 @@ export default function DashboardPage() {
                         <button
                             onClick={() => setViewMode('table')}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'table'
-                                    ? 'bg-purple-500 text-white'
-                                    : 'text-gray-400 hover:text-white'
+                                ? 'bg-purple-500 text-white'
+                                : 'text-gray-400 hover:text-white'
                                 }`}
                         >
                             Table
@@ -138,8 +138,8 @@ export default function DashboardPage() {
                         <button
                             onClick={() => setViewMode('cards')}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'cards'
-                                    ? 'bg-purple-500 text-white'
-                                    : 'text-gray-400 hover:text-white'
+                                ? 'bg-purple-500 text-white'
+                                : 'text-gray-400 hover:text-white'
                                 }`}
                         >
                             Cards
@@ -171,6 +171,7 @@ export default function DashboardPage() {
                                     founderConfidenceScore={candidate.founderConfidenceScore}
                                     recommendation={candidate.recommendation}
                                     roleContext={candidate.roleContext}
+                                    timestamp={candidate.timestamp}
                                     onClick={() => handleSelectCandidate(candidate)}
                                 />
                             ))}
