@@ -1,7 +1,14 @@
-// Email Service using Resend
-import { Resend } from 'resend';
+// Email Service using Gmail SMTP
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create Gmail transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+    },
+});
 
 interface AssignmentEmailData {
     candidateName: string;
@@ -32,14 +39,14 @@ export async function sendAssignmentEmail(data: AssignmentEmailData): Promise<{ 
 <head>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; }
+        .header { background: #000; color: white; padding: 30px; border-radius: 10px 10px 0 0; }
         .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
         .section { background: white; padding: 20px; border-radius: 8px; margin: 15px 0; border: 1px solid #e5e7eb; }
-        .tech-badge { display: inline-block; background: #e0e7ff; color: #4338ca; padding: 4px 12px; border-radius: 20px; margin: 3px; font-size: 14px; }
+        .tech-badge { display: inline-block; background: #e5e5e5; color: #333; padding: 4px 12px; border-radius: 20px; margin: 3px; font-size: 14px; }
         .requirement { padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
-        .footer { background: #374151; color: #9ca3af; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; font-size: 12px; }
+        .footer { background: #000; color: #9ca3af; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; font-size: 12px; }
         h1 { margin: 0; font-size: 24px; }
-        h2 { color: #4338ca; margin-top: 0; }
+        h2 { color: #000; margin-top: 0; }
         .highlight { background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; }
     </style>
 </head>
@@ -87,24 +94,19 @@ export async function sendAssignmentEmail(data: AssignmentEmailData): Promise<{ 
     </div>
     
     <div class="footer">
-        <p>This is an automated email from the Hiring Intelligence System</p>
+        <p>iHire - Multi-Agent Hiring Intelligence System</p>
     </div>
 </body>
 </html>
     `;
 
     try {
-        const result = await resend.emails.send({
-            from: 'Hiring Team <onboarding@resend.dev>',
+        await transporter.sendMail({
+            from: `"iHire" <${process.env.GMAIL_USER}>`,
             to: candidateEmail,
             subject: `Technical Assignment: ${assignmentTitle}`,
             html: htmlContent,
         });
-
-        if (result.error) {
-            console.error('Resend error:', result.error);
-            return { success: false, error: result.error.message };
-        }
 
         console.log(`✅ Assignment email sent to ${candidateEmail}`);
         return { success: true };
