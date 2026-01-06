@@ -15,11 +15,14 @@ export function Sidebar() {
     return (
         <aside className="w-64 bg-black border-r border-zinc-800 min-h-screen p-6">
             {/* Logo */}
-            <div className="mb-8">
-                <h1 className="text-xl font-semibold text-white tracking-tight">
-                    Hiring Intelligence
-                </h1>
-                <p className="text-xs text-zinc-500 mt-1">Multi-Agent Analysis</p>
+            <div className="mb-8 flex items-center gap-3">
+                <div className="animate-spin-slow w-8 h-8 rounded-full border-2 border-white border-t-transparent"></div>
+                <div>
+                    <h1 className="text-xl font-semibold text-white tracking-tight">
+                        iHire
+                    </h1>
+                    <p className="text-xs text-zinc-500">Multi-Agent Analysis</p>
+                </div>
             </div>
 
             {/* Navigation */}
