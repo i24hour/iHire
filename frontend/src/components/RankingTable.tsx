@@ -39,8 +39,8 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
     const [assignmentStatus, setAssignmentStatus] = useState<{ id: number; success: boolean; message: string } | null>(null);
 
     const handleSendAssignment = async (candidate: CandidateRecord) => {
-        if (!['Yes', 'Strong Yes'].includes(candidate.recommendation)) {
-            alert('Assignments can only be sent to Yes or Strong Yes candidates');
+        if (!['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)) {
+            alert('Assignments can only be sent to Maybe, Yes or Strong Yes candidates');
             return;
         }
 
@@ -260,30 +260,32 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                         >
                                             View Resume
                                         </button>
-                                        {['Yes', 'Strong Yes'].includes(candidate.recommendation) && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)) {
                                                     handleSendAssignment(candidate);
-                                                }}
-                                                disabled={sendingAssignment === candidate.id}
-                                                className={`px-3 py-1 rounded text-xs font-medium transition-all ${sendingAssignment === candidate.id
-                                                    ? 'bg-gray-600 text-gray-400 cursor-wait'
+                                                }
+                                            }}
+                                            disabled={sendingAssignment === candidate.id || !['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)}
+                                            className={`px-3 py-1 rounded text-xs font-medium transition-all ${!['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)
+                                                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                                                : sendingAssignment === candidate.id
+                                                    ? 'bg-zinc-700 text-zinc-400 cursor-wait'
                                                     : assignmentStatus?.id === candidate.id
                                                         ? assignmentStatus.success
                                                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                                                             : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                        : 'bg-violet-500/20 text-violet-400 border border-violet-500/30 hover:bg-violet-500/30'
-                                                    }`}
-                                            >
-                                                {sendingAssignment === candidate.id
-                                                    ? 'Sending...'
-                                                    : assignmentStatus?.id === candidate.id
-                                                        ? assignmentStatus.message
-                                                        : '📧 Send Assignment'
-                                                }
-                                            </button>
-                                        )}
+                                                        : 'bg-white/10 text-white border border-zinc-700 hover:bg-white/20'
+                                                }`}
+                                        >
+                                            {sendingAssignment === candidate.id
+                                                ? 'Sending...'
+                                                : assignmentStatus?.id === candidate.id
+                                                    ? assignmentStatus.message
+                                                    : 'Send Assignment'
+                                            }
+                                        </button>
                                     </div>
                                 </td>
                             </motion.tr>

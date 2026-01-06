@@ -60,10 +60,10 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { candidateId, candidateEmail, candidateName, recommendation, roleContext } = body;
 
-        // Validate: Only send to Yes or Strong Yes candidates
-        if (!['Yes', 'Strong Yes'].includes(recommendation)) {
+        // Validate: Only send to Maybe, Yes or Strong Yes candidates
+        if (!['Maybe', 'Yes', 'Strong Yes'].includes(recommendation)) {
             return NextResponse.json(
-                { error: 'Assignments can only be sent to Yes or Strong Yes candidates' },
+                { error: 'Assignments can only be sent to Maybe, Yes or Strong Yes candidates' },
                 { status: 400 }
             );
         }
