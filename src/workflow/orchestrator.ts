@@ -58,49 +58,47 @@ export class WorkflowOrchestrator {
     private sheetsWriter = createSheetsWriter();
     private emailNotifier = createEmailNotifier();
 
-    // Cached JD spec
-    private cachedJDSpec: JDSpec | null = null;
-    private cachedJDHash: string = '';
+    // Cached JD specs by Campaign ID
+    private cachedJDSpecs: Map<string, JDSpec> = new Map();
+    private cachedJDHashes: Map<string, string> = new Map();
 
-    async processJD(jdInput: JDInput): Promise<JDSpec> {
-        console.log(`\n📋 Processing JD: ${jdInput.fileName}`);
+    async processJD(campaignId: string, jdInput: JDInput): Promise<JDSpec> {
+        // Check if we have cached results for this JD in this campaign
+        const jdTextRaw = await extractTextFromPDF(jdInput.buffer);
+        const jdHash = this.simpleHash(jdTextRaw);
 
-        // Extract text from JD PDF
-        const jdText = await extractTextFromPDF(jdInput.buffer);
-
-        // Check if we have cached results for this JD
-        const jdHash = this.simpleHash(jdText);
-        if (this.cachedJDSpec && this.cachedJDHash === jdHash) {
-            console.log('Using cached JD analysis');
-            return this.cachedJDSpec;
+        if (this.cachedJDSpecs.has(campaignId) && this.cachedJDHashes.get(campaignId) === jdHash) {
+            return this.cachedJDSpecs.get(campaignId)!;
         }
 
+        console.log(`\n📋 Processing JD for Campaign [${campaignId}]: ${jdInput.fileName}`);
+
         // Analyze JD with agent
-        const jdResult = await this.jdRealityAgent.execute({ jdText });
+        const jdResult = await this.jdRealityAgent.execute({ jdText: jdTextRaw });
         const jdSpec: JDSpec = {
             ...jdResult.data,
-            rawText: jdText,
+            rawText: jdTextRaw,
         };
 
         // Cache the result
-        this.cachedJDSpec = jdSpec;
-        this.cachedJDHash = jdHash;
+        this.cachedJDSpecs.set(campaignId, jdSpec);
+        this.cachedJDHashes.set(campaignId, jdHash);
 
         console.log(`  Role Context: ${jdSpec.roleContext}`);
         console.log(`  Criticality Factor: ${jdSpec.criticalityFactor}`);
-        console.log(`  Non-negotiables: ${jdSpec.nonNegotiableSkills.join(', ')}`);
 
         return jdSpec;
     }
 
     async processResume(
+        campaign: { id: string; name: string },
         resumeInput: ResumeInput,
         jdSpec: JDSpec
     ): Promise<ProcessingResult | null> {
-        console.log(`\n📄 Processing Resume: ${resumeInput.fileName}`);
+        console.log(`\n📄 Processing Resume for [${campaign.name}]: ${resumeInput.fileName}`);
 
         // Check for duplicates first
-        const alreadyProcessed = await this.sheetsWriter.isResumeAlreadyProcessed(resumeInput.fileLink);
+        const alreadyProcessed = await this.sheetsWriter.isResumeAlreadyProcessed(resumeInput.fileLink, campaign.name);
         if (alreadyProcessed) {
             console.log(`  ⏭️  Skipping - already processed (found in Sheet)`);
             return null;
@@ -208,7 +206,7 @@ export class WorkflowOrchestrator {
         // Save to Google Sheets
         console.log('  💾 Saving to Google Sheets...');
         try {
-            await this.sheetsWriter.appendCandidate(internalVerdict, resumeFeedback);
+            await this.sheetsWriter.appendCandidate(internalVerdict, resumeFeedback, undefined, campaign.name);
         } catch (error) {
             console.error('  ⚠️ Failed to save to sheets:', error);
         }

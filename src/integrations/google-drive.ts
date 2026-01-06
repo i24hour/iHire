@@ -26,8 +26,7 @@ interface ProcessedFile {
 
 export class DriveMonitor {
     private drive: drive_v3.Drive;
-    private resumesFolderId: string;
-    private jdFolderId: string;
+    private rootFolderId: string;
     private processedHashes: Map<string, ProcessedFile>;
     private hashStorePath: string;
 
@@ -36,8 +35,7 @@ export class DriveMonitor {
         const auth = this.getAuth();
         this.drive = google.drive({ version: 'v3', auth });
 
-        this.resumesFolderId = process.env.GOOGLE_DRIVE_RESUMES_FOLDER_ID || '';
-        this.jdFolderId = process.env.GOOGLE_DRIVE_JD_FOLDER_ID || '';
+        this.rootFolderId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || '';
         this.hashStorePath = path.join(process.cwd(), '.processed_hashes.json');
         this.processedHashes = this.loadProcessedHashes();
     }
@@ -101,6 +99,18 @@ export class DriveMonitor {
         fs.writeFileSync(this.hashStorePath, JSON.stringify(data, null, 2));
     }
 
+    async listFoldersInRoot(): Promise<DriveFile[]> {
+        if (!this.rootFolderId) return [];
+
+        const response = await this.drive.files.list({
+            q: `'${this.rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            fields: 'files(id, name, mimeType, modifiedTime, webViewLink)',
+            orderBy: 'name',
+        });
+
+        return (response.data.files || []) as DriveFile[];
+    }
+
     async listPDFsInFolder(folderId: string): Promise<DriveFile[]> {
         const response = await this.drive.files.list({
             q: `'${folderId}' in parents and mimeType='application/pdf' and trashed=false`,
@@ -137,11 +147,52 @@ export class DriveMonitor {
         this.saveProcessedHashes();
     }
 
-    async getNewResumes(): Promise<{ file: DriveFile; buffer: Buffer; hash: string }[]> {
-        const files = await this.listPDFsInFolder(this.resumesFolderId);
+    async getCampaigns(): Promise<{ id: string; name: string; jdFile?: DriveFile; jdBuffer?: Buffer }[]> {
+        const folders = await this.listFoldersInRoot();
+        const campaigns = [];
+
+        for (const folder of folders) {
+            // Find JD in this folder
+            const files = await this.listPDFsInFolder(folder.id);
+
+            // Heuristic: JD is either named "JD" or "Job Description" OR it's the oldest PDF if explicitly marked
+            // For now, let's assume the JD has "JD" or "Job Description" in the name (case insensitive)
+            // OR if there's only one file and it's a PDF, treat it as JD? No, that's risky.
+            // Let's look for "JD" in the name.
+            const jdFile = files.find(f =>
+                f.name.toLowerCase().includes('jd') ||
+                f.name.toLowerCase().includes('job description') ||
+                f.name.toLowerCase().includes('job_description')
+            );
+
+            if (jdFile) {
+                try {
+                    const jdBuffer = await this.downloadFile(jdFile.id);
+                    campaigns.push({
+                        id: folder.id,
+                        name: folder.name,
+                        jdFile,
+                        jdBuffer
+                    });
+                } catch (e) {
+                    console.error(`Failed to download JD for ${folder.name}:`, e);
+                }
+            } else {
+                // console.log(`No JD found in folder: ${folder.name}`);
+            }
+        }
+
+        return campaigns;
+    }
+
+    async getNewResumesForCampaign(campaignId: string, jdFileId: string): Promise<{ file: DriveFile; buffer: Buffer; hash: string }[]> {
+        const files = await this.listPDFsInFolder(campaignId);
         const newFiles: { file: DriveFile; buffer: Buffer; hash: string }[] = [];
 
         for (const file of files) {
+            // Skip the JD file itself
+            if (file.id === jdFileId) continue;
+
             try {
                 const buffer = await this.downloadFile(file.id);
                 const hash = this.computeHash(buffer);
@@ -157,23 +208,8 @@ export class DriveMonitor {
         return newFiles;
     }
 
-    async getJobDescription(): Promise<{ file: DriveFile; buffer: Buffer } | null> {
-        const files = await this.listPDFsInFolder(this.jdFolderId);
-
-        if (files.length === 0) {
-            console.warn('No JD PDF found in the JD folder');
-            return null;
-        }
-
-        // Get the most recently modified JD
-        const latestJD = files[0];
-        const buffer = await this.downloadFile(latestJD.id);
-
-        return { file: latestJD, buffer };
-    }
-
     async startPolling(
-        onNewResume: (resume: { file: DriveFile; buffer: Buffer; hash: string }) => Promise<void>,
+        onNewResume: (campaign: { id: string; name: string }, jd: { buffer: Buffer; fileName: string }, resume: { file: DriveFile; buffer: Buffer; hash: string }) => Promise<void>,
         intervalMs?: number
     ): Promise<void> {
         const interval = intervalMs || parseInt(process.env.DRIVE_POLL_INTERVAL || '30000');
@@ -182,12 +218,27 @@ export class DriveMonitor {
 
         const poll = async () => {
             try {
-                const newResumes = await this.getNewResumes();
+                if (!this.rootFolderId) {
+                    console.warn('⚠️ GOOGLE_DRIVE_ROOT_FOLDER_ID is not set. Please set it to watch for campaigns.');
+                    return;
+                }
 
-                for (const resume of newResumes) {
-                    console.log(`Processing new resume: ${resume.file.name}`);
-                    await onNewResume(resume);
-                    this.markAsProcessed(resume.file.id, resume.hash);
+                const campaigns = await this.getCampaigns();
+
+                for (const campaign of campaigns) {
+                    if (!campaign.jdFile || !campaign.jdBuffer) continue;
+
+                    const newResumes = await this.getNewResumesForCampaign(campaign.id, campaign.jdFile.id);
+
+                    for (const resume of newResumes) {
+                        console.log(`Processing new resume in [${campaign.name}]: ${resume.file.name}`);
+                        await onNewResume(
+                            { id: campaign.id, name: campaign.name },
+                            { buffer: campaign.jdBuffer, fileName: campaign.jdFile.name },
+                            resume
+                        );
+                        this.markAsProcessed(resume.file.id, resume.hash);
+                    }
                 }
             } catch (error) {
                 console.error('Polling error:', error);

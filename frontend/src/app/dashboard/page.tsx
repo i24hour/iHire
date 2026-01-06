@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { RankingTable } from '@/components/RankingTable';
 import { CandidateCard } from '@/components/CandidateCard';
@@ -27,14 +27,18 @@ interface CandidateRecord {
 
 export default function DashboardPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const campaign = searchParams.get('campaign') || 'Candidates';
+
     const [candidates, setCandidates] = useState<CandidateRecord[]>([]);
     const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function fetchCandidates() {
+            setLoading(true);
             try {
-                const response = await fetch('/api/candidates');
+                const response = await fetch(`/api/candidates?campaign=${encodeURIComponent(campaign)}`);
                 const data = await response.json();
                 setCandidates(data.candidates || []);
             } catch (error) {
@@ -102,7 +106,7 @@ export default function DashboardPage() {
         }
 
         fetchCandidates();
-    }, []);
+    }, [campaign]);
 
     const handleSelectCandidate = (candidate: CandidateRecord) => {
         router.push(`/candidate/${candidate.id}`);
@@ -117,10 +121,10 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-2xl font-semibold text-white mb-1">
-                            Candidate Rankings
+                            {campaign === 'Candidates' ? 'All Candidates' : campaign}
                         </h1>
                         <p className="text-zinc-500 text-sm">
-                            Candidates ranked by relevance score for the current JD
+                            Candidates ranked by relevance score for {campaign}
                         </p>
                     </div>
 

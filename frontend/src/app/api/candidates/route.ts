@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getCandidates } from '@/lib/sheets-client';
 
-export async function GET() {
-    console.log('API /candidates called');
-    console.log('ENV SHEETS_ID:', process.env.GOOGLE_SHEETS_OUTPUT_ID ? 'SET' : 'NOT SET');
-    console.log('ENV CREDENTIALS:', process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ? 'SET (length: ' + process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64.length + ')' : 'NOT SET');
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const campaign = searchParams.get('campaign') || 'Candidates'; // Default to 'Candidates' tab
+
+    console.log(`API /candidates called for campaign: ${campaign}`);
 
     try {
-        const candidates = await getCandidates();
-        console.log('Candidates fetched:', candidates.length);
+        const candidates = await getCandidates(campaign);
+        console.log(`Candidates fetched for [${campaign}]:`, candidates.length);
         return NextResponse.json({ candidates });
     } catch (error: any) {
         console.error('Error fetching candidates:', error);

@@ -86,8 +86,8 @@ export class SheetsWriter {
         });
     }
 
-    async initialize(): Promise<void> {
-        if (this.initialized) return;
+    async initialize(targetSheetName?: string): Promise<void> {
+        const sheetName = targetSheetName || this.sheetName;
 
         try {
             // First, check if the sheet tab exists
@@ -96,11 +96,11 @@ export class SheetsWriter {
             });
 
             const sheetExists = spreadsheet.data.sheets?.some(
-                (sheet) => sheet.properties?.title === this.sheetName
+                (sheet) => sheet.properties?.title === sheetName
             );
 
-            // Create sheet if it doesn't exist
             if (!sheetExists) {
+                console.log(`Creating new sheet tab: ${sheetName}`);
                 await this.sheets.spreadsheets.batchUpdate({
                     spreadsheetId: this.spreadsheetId,
                     requestBody: {
@@ -108,54 +108,51 @@ export class SheetsWriter {
                             {
                                 addSheet: {
                                     properties: {
-                                        title: this.sheetName,
+                                        title: sheetName,
                                     },
                                 },
                             },
                         ],
                     },
                 });
-                console.log(`Created new sheet tab: ${this.sheetName}`);
-            }
 
-            // Check if headers exist
-            try {
-                const response = await this.sheets.spreadsheets.values.get({
-                    spreadsheetId: this.spreadsheetId,
-                    range: `${this.sheetName}!A1:O1`,
-                });
-
-                const existingHeaders = response.data.values?.[0];
-
-                if (!existingHeaders || existingHeaders.length === 0) {
-                    // Add headers
-                    await this.sheets.spreadsheets.values.update({
-                        spreadsheetId: this.spreadsheetId,
-                        range: `${this.sheetName}!A1`,
-                        valueInputOption: 'RAW',
-                        requestBody: {
-                            values: [HEADERS],
-                        },
-                    });
-                    console.log('Initialized sheet with headers');
-                }
-            } catch {
-                // Sheet newly created, add headers
+                // Add headers
                 await this.sheets.spreadsheets.values.update({
                     spreadsheetId: this.spreadsheetId,
-                    range: `${this.sheetName}!A1`,
+                    range: `${sheetName}!A1`,
                     valueInputOption: 'RAW',
                     requestBody: {
                         values: [HEADERS],
                     },
                 });
-                console.log('Initialized sheet with headers');
-            }
+            } else {
+                // Check if headers exist
+                try {
+                    const response = await this.sheets.spreadsheets.values.get({
+                        spreadsheetId: this.spreadsheetId,
+                        range: `${sheetName}!A1:O1`,
+                    });
 
-            this.initialized = true;
+                    const existingHeaders = response.data.values?.[0];
+
+                    if (!existingHeaders || existingHeaders.length === 0) {
+                        // Add headers
+                        await this.sheets.spreadsheets.values.update({
+                            spreadsheetId: this.spreadsheetId,
+                            range: `${sheetName}!A1`,
+                            valueInputOption: 'RAW',
+                            requestBody: {
+                                values: [HEADERS],
+                            },
+                        });
+                        console.log(`Initialized headers for ${sheetName}`);
+                    }
+                } catch {
+                    // Ignore error
+                }
+            }
         } catch (error) {
-            console.error('Error initializing sheets:', error);
-            throw error;
+            console.error('Error initializing sheet:', error);
         }
     }
 
@@ -184,9 +181,11 @@ export class SheetsWriter {
     async appendCandidate(
         verdict: InternalVerdict,
         resumeFeedback: CandidateFeedback,
-        assignmentFeedback?: CandidateFeedback
+        assignmentFeedback?: CandidateFeedback,
+        campaignName?: string
     ): Promise<void> {
-        await this.initialize();
+        const targetSheet = campaignName || this.sheetName;
+        await this.initialize(targetSheet);
 
         const row = [
             formatReadableDate(verdict.timestamp),
@@ -208,7 +207,7 @@ export class SheetsWriter {
 
         await this.sheets.spreadsheets.values.append({
             spreadsheetId: this.spreadsheetId,
-            range: `${this.sheetName}!A:O`,
+            range: `${targetSheet}!A:O`,
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             requestBody: {
@@ -216,43 +215,54 @@ export class SheetsWriter {
             },
         });
 
-        console.log(`Added candidate ${verdict.candidateName} to sheet`);
+        console.log(`Added candidate ${verdict.candidateName} to sheet [${targetSheet}]`);
     }
 
-    async getAllCandidates(): Promise<Record<string, unknown>[]> {
-        await this.initialize();
+    async getAllCandidates(campaignName?: string): Promise<Record<string, unknown>[]> {
+        const targetSheet = campaignName || this.sheetName;
+        await this.initialize(targetSheet);
 
-        const response = await this.sheets.spreadsheets.values.get({
-            spreadsheetId: this.spreadsheetId,
-            range: `${this.sheetName}!A:O`,
-        });
-
-        const rows = response.data.values || [];
-        if (rows.length <= 1) return []; // Only headers or empty
-
-        const headers = rows[0];
-        const candidates = rows.slice(1).map((row, index) => {
-            const candidate: Record<string, unknown> = { id: index + 1 };
-            headers.forEach((header: string, i: number) => {
-                candidate[header.replace(/ /g, '_').toLowerCase()] = row[i] || '';
+        try {
+            const response = await this.sheets.spreadsheets.values.get({
+                spreadsheetId: this.spreadsheetId,
+                range: `${targetSheet}!A:O`,
             });
-            return candidate;
-        });
 
-        return candidates;
+            const rows = response.data.values || [];
+            if (rows.length <= 1) return []; // Only headers or empty
+
+            const headers = rows[0];
+            const candidates = rows.slice(1).map((row, index) => {
+                const candidate: Record<string, unknown> = { id: index + 1 };
+                headers.forEach((header: string, i: number) => {
+                    candidate[header.replace(/ /g, '_').toLowerCase()] = row[i] || '';
+                });
+                return candidate;
+            });
+
+            return candidates;
+        } catch (error) {
+            console.warn(`Could not fetch candidates from [${targetSheet}]:`, error);
+            return [];
+        }
     }
 
     /**
      * Check if a resume file link already exists in the Sheet
      * Used to prevent duplicate processing
      */
-    async isResumeAlreadyProcessed(resumeFileLink: string): Promise<boolean> {
-        await this.initialize();
+    /**
+     * Check if a resume file link already exists in the Sheet
+     * Used to prevent duplicate processing
+     */
+    async isResumeAlreadyProcessed(resumeFileLink: string, campaignName?: string): Promise<boolean> {
+        const targetSheet = campaignName || this.sheetName;
+        await this.initialize(targetSheet);
 
         try {
             const response = await this.sheets.spreadsheets.values.get({
                 spreadsheetId: this.spreadsheetId,
-                range: `${this.sheetName}!E:E`, // Resume File Link is column E (5th column after Date)
+                range: `${targetSheet}!E:E`, // Resume File Link is column E (5th column after Date)
             });
 
             const rows = response.data.values || [];

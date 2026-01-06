@@ -52,43 +52,18 @@ async function main() {
     console.log(`📊 Relevance Threshold: ${orchestrator.getRelevanceThreshold()}`);
     console.log('🔄 Starting continuous monitoring...\n');
 
-    // Get JD first
-    let jdSpec: JDSpec | null = null;
-
-    try {
-        const jdData = await driveMonitor.getJobDescription();
-        if (jdData) {
-            jdSpec = await orchestrator.processJD({
-                buffer: jdData.buffer,
-                fileName: jdData.file.name,
-            });
-        } else {
-            console.error('❌ No Job Description found. Please upload a JD PDF to the /Job_Description folder.');
-            console.log('   Waiting for JD to be uploaded...\n');
-        }
-    } catch (error) {
-        console.error('❌ Failed to load JD:', error);
-        process.exit(1);
-    }
-
-    // Start polling for new resumes
-    await driveMonitor.startPolling(async (resume) => {
-        // Check for JD if we don't have one
-        if (!jdSpec) {
-            const jdData = await driveMonitor.getJobDescription();
-            if (jdData) {
-                jdSpec = await orchestrator.processJD({
-                    buffer: jdData.buffer,
-                    fileName: jdData.file.name,
-                });
-            } else {
-                console.warn('⚠️ Skipping resume - no JD available');
-                return;
-            }
-        }
-
+    // Start polling for new resumes in campaigns
+    await driveMonitor.startPolling(async (campaign, jd, resume) => {
         try {
+            // Process JD for this campaign (cached internally)
+            const jdSpec = await orchestrator.processJD(campaign.id, {
+                buffer: jd.buffer,
+                fileName: jd.fileName,
+            });
+
+            // Process Resume
             await orchestrator.processResume(
+                campaign,
                 {
                     buffer: resume.buffer,
                     fileId: resume.file.id,
@@ -99,7 +74,7 @@ async function main() {
                 jdSpec
             );
         } catch (error) {
-            console.error(`❌ Failed to process ${resume.file.name}:`, error);
+            console.error(`❌ Failed to process ${resume.file.name} in [${campaign.name}]:`, error);
         }
     });
 }
