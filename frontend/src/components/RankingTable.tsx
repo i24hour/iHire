@@ -214,7 +214,7 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                 onClick={() => onSelectCandidate?.(candidate)}
                             >
                                 <td className="px-6 py-4">
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white font-bold text-sm">
+                                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-zinc-800 text-zinc-300 font-medium text-sm border border-zinc-700">
                                         {index + 1}
                                     </div>
                                 </td>
@@ -256,7 +256,7 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                                 e.stopPropagation();
                                                 window.open(candidate.resumeFileLink, '_blank');
                                             }}
-                                            className="text-violet-400 hover:text-violet-300 transition-colors text-sm"
+                                            className="text-zinc-400 hover:text-white transition-colors text-sm"
                                         >
                                             View Resume
                                         </button>
@@ -268,15 +268,15 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                                 }
                                             }}
                                             disabled={sendingAssignment === candidate.id || !['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)}
-                                            className={`px-3 py-1 rounded text-xs font-medium transition-all ${!['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)
-                                                ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-                                                : sendingAssignment === candidate.id
-                                                    ? 'bg-zinc-700 text-zinc-400 cursor-wait'
-                                                    : assignmentStatus?.id === candidate.id
-                                                        ? assignmentStatus.success
-                                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                        : 'bg-white/10 text-white border border-zinc-700 hover:bg-white/20'
+                                            className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${!['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)
+                                                    ? 'bg-transparent text-zinc-600 border border-zinc-700 cursor-not-allowed'
+                                                    : sendingAssignment === candidate.id
+                                                        ? 'bg-zinc-800 text-zinc-400 border border-zinc-700 cursor-wait'
+                                                        : assignmentStatus?.id === candidate.id
+                                                            ? assignmentStatus.success
+                                                                ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                                                                : 'bg-red-500/20 text-red-400 border border-red-500/40'
+                                                            : 'bg-transparent text-white border border-zinc-600 hover:border-white hover:bg-white/5'
                                                 }`}
                                         >
                                             {sendingAssignment === candidate.id
