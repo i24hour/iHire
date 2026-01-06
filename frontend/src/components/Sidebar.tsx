@@ -48,7 +48,7 @@ export function Sidebar() {
             {/* Main Navigation */}
             <nav className="space-y-1 mb-8">
                 {navItems.map((item) => {
-                    const isActive = pathname === item.href && !window.location.search;
+                    const isActive = pathname === item.href;
                     return (
                         <Link key={item.href} href={item.href}>
                             <motion.div
