@@ -135,22 +135,22 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
     };
 
     return (
-        <div className="bg-[#161616] rounded-2xl border border-[#262626] overflow-hidden">
+        <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
             {/* Filters */}
-            <div className="p-4 border-b border-gray-800 flex gap-4 flex-wrap">
+            <div className="p-4 border-b border-zinc-800 flex gap-4 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                     <input
                         type="text"
                         placeholder="Search candidates..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="w-full px-4 py-2 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600"
                     />
                 </div>
                 <select
                     value={filterRecommendation}
                     onChange={(e) => setFilterRecommendation(e.target.value)}
-                    className="px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="px-4 py-2 bg-black border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-zinc-600"
                 >
                     <option value="all">All Recommendations</option>
                     <option value="Strong Yes">Strong Yes</option>
@@ -163,9 +163,9 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
             {/* Table */}
             <div className="overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-gray-800/50">
+                    <thead className="bg-black/50">
                         <tr>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
                                 Rank
                             </th>
                             <th
@@ -268,12 +268,12 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                                 }}
                                                 disabled={sendingAssignment === candidate.id}
                                                 className={`px-3 py-1 rounded text-xs font-medium transition-all ${sendingAssignment === candidate.id
-                                                        ? 'bg-gray-600 text-gray-400 cursor-wait'
-                                                        : assignmentStatus?.id === candidate.id
-                                                            ? assignmentStatus.success
-                                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                            : 'bg-violet-500/20 text-violet-400 border border-violet-500/30 hover:bg-violet-500/30'
+                                                    ? 'bg-gray-600 text-gray-400 cursor-wait'
+                                                    : assignmentStatus?.id === candidate.id
+                                                        ? assignmentStatus.success
+                                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                        : 'bg-violet-500/20 text-violet-400 border border-violet-500/30 hover:bg-violet-500/30'
                                                     }`}
                                             >
                                                 {sendingAssignment === candidate.id

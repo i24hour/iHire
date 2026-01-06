@@ -109,37 +109,37 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#0c0c0c]">
+        <div className="flex min-h-screen bg-black">
             <Sidebar />
 
             <main className="flex-1 p-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-100 mb-2">
+                        <h1 className="text-2xl font-semibold text-white mb-1">
                             Candidate Rankings
                         </h1>
-                        <p className="text-gray-500">
+                        <p className="text-zinc-500 text-sm">
                             Candidates ranked by relevance score for the current JD
                         </p>
                     </div>
 
                     {/* View Toggle */}
-                    <div className="flex items-center gap-2 bg-[#161616] rounded-lg p-1 border border-[#262626]">
+                    <div className="flex items-center gap-1 bg-zinc-900 rounded-lg p-1 border border-zinc-800">
                         <button
                             onClick={() => setViewMode('table')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'table'
-                                ? 'bg-violet-500 text-white'
-                                : 'text-gray-500 hover:text-gray-300'
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'table'
+                                ? 'bg-white text-black'
+                                : 'text-zinc-400 hover:text-white'
                                 }`}
                         >
                             Table
                         </button>
                         <button
                             onClick={() => setViewMode('cards')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'cards'
-                                ? 'bg-violet-500 text-white'
-                                : 'text-gray-500 hover:text-gray-300'
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'cards'
+                                ? 'bg-white text-black'
+                                : 'text-zinc-400 hover:text-white'
                                 }`}
                         >
                             Cards
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                 {/* Content */}
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-500"></div>
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div>
                     </div>
                 ) : viewMode === 'table' ? (
                     <RankingTable

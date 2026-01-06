@@ -13,30 +13,30 @@ export function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="w-64 bg-[#0c0c0c] border-r border-[#1a1a1a] min-h-screen p-6">
+        <aside className="w-64 bg-black border-r border-zinc-800 min-h-screen p-6">
             {/* Logo */}
             <div className="mb-8">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+                <h1 className="text-xl font-semibold text-white tracking-tight">
                     Hiring Intelligence
                 </h1>
-                <p className="text-xs text-gray-600 mt-1">Multi-Agent Analysis</p>
+                <p className="text-xs text-zinc-500 mt-1">Multi-Agent Analysis</p>
             </div>
 
             {/* Navigation */}
-            <nav className="space-y-2">
+            <nav className="space-y-1">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link key={item.href} href={item.href}>
                             <motion.div
-                                whileHover={{ x: 4 }}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
-                                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                                    : 'text-gray-500 hover:bg-[#161616] hover:text-gray-300'
+                                whileHover={{ x: 2 }}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 ${isActive
+                                    ? 'bg-zinc-900 text-white'
+                                    : 'text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
                                     }`}
                             >
-                                <span className="text-lg">{item.icon}</span>
-                                <span className="font-medium">{item.label}</span>
+                                <span className="text-base">{item.icon}</span>
+                                <span className="font-medium text-sm">{item.label}</span>
                             </motion.div>
                         </Link>
                     );
@@ -44,20 +44,20 @@ export function Sidebar() {
             </nav>
 
             {/* Stats Summary */}
-            <div className="mt-8 p-4 bg-[#161616] rounded-xl border border-[#262626]">
-                <h3 className="text-sm font-medium text-gray-500 mb-3">Quick Stats</h3>
-                <div className="space-y-3">
+            <div className="mt-8 p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide">Quick Stats</h3>
+                <div className="space-y-2.5">
                     <div className="flex justify-between">
-                        <span className="text-gray-600 text-sm">Total Candidates</span>
-                        <span className="text-gray-300 font-medium">--</span>
+                        <span className="text-zinc-500 text-sm">Total Candidates</span>
+                        <span className="text-zinc-300 font-medium text-sm">--</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-gray-600 text-sm">Strong Yes</span>
-                        <span className="text-emerald-400 font-medium">--</span>
+                        <span className="text-zinc-500 text-sm">Strong Yes</span>
+                        <span className="text-emerald-500 font-medium text-sm">--</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-gray-600 text-sm">Pending Review</span>
-                        <span className="text-amber-400 font-medium">--</span>
+                        <span className="text-zinc-500 text-sm">Pending Review</span>
+                        <span className="text-amber-500 font-medium text-sm">--</span>
                     </div>
                 </div>
             </div>
@@ -65,8 +65,8 @@ export function Sidebar() {
             {/* Status Indicator */}
             <div className="mt-auto pt-8">
                 <div className="flex items-center gap-2 text-sm">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-gray-600">System Active</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-zinc-500 text-xs">System Active</span>
                 </div>
             </div>
         </aside>
