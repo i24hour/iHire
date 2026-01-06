@@ -35,6 +35,45 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterRecommendation, setFilterRecommendation] = useState<string>('all');
+    const [sendingAssignment, setSendingAssignment] = useState<number | null>(null);
+    const [assignmentStatus, setAssignmentStatus] = useState<{ id: number; success: boolean; message: string } | null>(null);
+
+    const handleSendAssignment = async (candidate: CandidateRecord) => {
+        if (!['Yes', 'Strong Yes'].includes(candidate.recommendation)) {
+            alert('Assignments can only be sent to Yes or Strong Yes candidates');
+            return;
+        }
+
+        setSendingAssignment(candidate.id);
+        setAssignmentStatus(null);
+
+        try {
+            const response = await fetch('/api/send-assignment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    candidateId: candidate.id,
+                    candidateEmail: candidate.email,
+                    candidateName: candidate.candidateName,
+                    recommendation: candidate.recommendation,
+                    roleContext: candidate.roleContext,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setAssignmentStatus({ id: candidate.id, success: true, message: 'Assignment sent!' });
+            } else {
+                setAssignmentStatus({ id: candidate.id, success: false, message: data.error || 'Failed' });
+            }
+        } catch (error) {
+            setAssignmentStatus({ id: candidate.id, success: false, message: 'Network error' });
+        } finally {
+            setSendingAssignment(null);
+            setTimeout(() => setAssignmentStatus(null), 3000);
+        }
+    };
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -211,15 +250,41 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            window.open(candidate.resumeFileLink, '_blank');
-                                        }}
-                                        className="text-purple-400 hover:text-purple-300 transition-colors text-sm"
-                                    >
-                                        View Resume
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.open(candidate.resumeFileLink, '_blank');
+                                            }}
+                                            className="text-violet-400 hover:text-violet-300 transition-colors text-sm"
+                                        >
+                                            View Resume
+                                        </button>
+                                        {['Yes', 'Strong Yes'].includes(candidate.recommendation) && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSendAssignment(candidate);
+                                                }}
+                                                disabled={sendingAssignment === candidate.id}
+                                                className={`px-3 py-1 rounded text-xs font-medium transition-all ${sendingAssignment === candidate.id
+                                                        ? 'bg-gray-600 text-gray-400 cursor-wait'
+                                                        : assignmentStatus?.id === candidate.id
+                                                            ? assignmentStatus.success
+                                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                            : 'bg-violet-500/20 text-violet-400 border border-violet-500/30 hover:bg-violet-500/30'
+                                                    }`}
+                                            >
+                                                {sendingAssignment === candidate.id
+                                                    ? 'Sending...'
+                                                    : assignmentStatus?.id === candidate.id
+                                                        ? assignmentStatus.message
+                                                        : '📧 Send Assignment'
+                                                }
+                                            </button>
+                                        )}
+                                    </div>
                                 </td>
                             </motion.tr>
                         ))}
