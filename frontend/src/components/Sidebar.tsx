@@ -16,7 +16,15 @@ export function Sidebar() {
         <aside className="w-64 bg-black border-r border-zinc-800 min-h-screen p-6">
             {/* Logo */}
             <div className="mb-8 flex items-center gap-3">
-                <div className="animate-spin-slow w-8 h-8 rounded-full border-2 border-white border-t-transparent"></div>
+                <div className="relative w-8 h-8">
+                    <div className="absolute inset-0 rounded-full animate-spin-slow"
+                        style={{
+                            background: 'conic-gradient(from 0deg, transparent 0%, transparent 60%, rgba(255,255,255,0.8) 90%, white 100%)',
+                            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))',
+                            mask: 'radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 2px))'
+                        }}
+                    ></div>
+                </div>
                 <div>
                     <h1 className="text-xl font-semibold text-white tracking-tight">
                         iHire
