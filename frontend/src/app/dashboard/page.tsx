@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { RankingTable } from '@/components/RankingTable';
@@ -25,7 +25,7 @@ interface CandidateRecord {
     timestamp: string;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const campaign = searchParams.get('campaign') || 'Candidates';
@@ -185,3 +185,19 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen bg-black">
+                <Sidebar />
+                <main className="flex-1 p-8 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div>
+                </main>
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
+    );
+}
+
