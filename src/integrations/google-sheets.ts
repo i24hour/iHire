@@ -241,6 +241,33 @@ export class SheetsWriter {
 
         return candidates;
     }
+
+    /**
+     * Check if a resume file link already exists in the Sheet
+     * Used to prevent duplicate processing
+     */
+    async isResumeAlreadyProcessed(resumeFileLink: string): Promise<boolean> {
+        await this.initialize();
+
+        try {
+            const response = await this.sheets.spreadsheets.values.get({
+                spreadsheetId: this.spreadsheetId,
+                range: `${this.sheetName}!E:E`, // Resume File Link is column E (5th column after Date)
+            });
+
+            const rows = response.data.values || [];
+            // Skip header row, check if any row contains this file link
+            for (let i = 1; i < rows.length; i++) {
+                if (rows[i][0] && rows[i][0].includes(resumeFileLink.split('/d/')[1]?.split('/')[0] || resumeFileLink)) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (error) {
+            console.warn('Could not check for duplicates:', error);
+            return false; // If we can't check, allow processing
+        }
+    }
 }
 
 // Factory function

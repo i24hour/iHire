@@ -120,7 +120,7 @@ export class LiteLLMClient {
                 const response = await this.client.chat.completions.create({
                     model: this.model,
                     messages: messages,
-                    temperature: options?.temperature ?? 0.7,
+                    temperature: options?.temperature ?? 0,
                     max_tokens: options?.maxTokens ?? 4096,
                     response_format: options?.jsonMode ? { type: 'json_object' } : undefined,
                 });

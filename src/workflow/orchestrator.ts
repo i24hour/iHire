@@ -96,8 +96,15 @@ export class WorkflowOrchestrator {
     async processResume(
         resumeInput: ResumeInput,
         jdSpec: JDSpec
-    ): Promise<ProcessingResult> {
+    ): Promise<ProcessingResult | null> {
         console.log(`\n📄 Processing Resume: ${resumeInput.fileName}`);
+
+        // Check for duplicates first
+        const alreadyProcessed = await this.sheetsWriter.isResumeAlreadyProcessed(resumeInput.fileLink);
+        if (alreadyProcessed) {
+            console.log(`  ⏭️  Skipping - already processed (found in Sheet)`);
+            return null;
+        }
 
         // Step 1: Extract resume text
         console.log('  [1/7] Extracting text...');
