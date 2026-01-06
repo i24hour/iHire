@@ -11,7 +11,12 @@ interface AssignmentInput {
     executionFitScore: number;
 }
 
-export class AssignmentGenerationAgent extends BaseAgent<AssignmentInput, Assignment> {
+// New: JD-only input for standard assignments
+interface JDOnlyInput {
+    jdSpec: JDSpec;
+}
+
+export class AssignmentGenerationAgent extends BaseAgent<AssignmentInput | JDOnlyInput, Assignment> {
     constructor() {
         super('Assignment Generation Agent');
     }
@@ -47,8 +52,39 @@ Respond ONLY with valid JSON:
 }`;
     }
 
-    protected buildUserPrompt(input: AssignmentInput): string {
-        const { candidate, jdSpec, executionFitScore } = input;
+    // New: Generate assignment based only on JD (standard for all candidates)
+    public buildJDOnlyPrompt(jdSpec: JDSpec): string {
+        return `Design a job-realistic, role-specific assignment for this position:
+
+---ROLE DETAILS---
+Role Context: ${jdSpec.roleContext.replace(/_/g, ' ')}
+Core Work: ${jdSpec.coreWork}
+Required Skills: ${jdSpec.nonNegotiableSkills.join(', ')}
+Ownership Level: ${jdSpec.ownershipLevel}
+Pressure Level: ${jdSpec.pressureLevel}
+Ambiguity Level: ${jdSpec.ambiguityLevel}
+
+---ASSIGNMENT REQUIREMENTS---
+Create a practical, time-boxed assignment that:
+1. Tests the core skills required for this role: ${jdSpec.nonNegotiableSkills.slice(0, 3).join(', ')}
+2. Simulates real work for ${jdSpec.roleContext.replace(/_/g, ' ')} context
+3. Is completable in 3-6 hours
+4. Has clear deliverables and evaluation criteria
+5. Is challenging but fair for candidates at this level
+
+The assignment should be ROLE-SPECIFIC, NOT GENERIC. Make it directly relevant to "${jdSpec.coreWork}".
+
+Respond with valid JSON only.`;
+    }
+
+    protected buildUserPrompt(input: AssignmentInput | JDOnlyInput): string {
+        // Check if this is JD-only input
+        if (!('candidate' in input)) {
+            return this.buildJDOnlyPrompt(input.jdSpec);
+        }
+
+        // Legacy: candidate-specific prompt (kept for backwards compatibility)
+        const { candidate, jdSpec, executionFitScore } = input as AssignmentInput;
 
         // Identify skill gaps to probe
         const candidateSkills = candidate.skills.map(s => s.name.toLowerCase());
@@ -109,8 +145,16 @@ Respond with valid JSON only.`;
 
         return Math.min(1.0, confidence);
     }
+
+    // New: Generate standard assignment for a JD
+    async generateStandardAssignment(jdSpec: JDSpec): Promise<Assignment> {
+        console.log('  📝 Generating standard assignment for this role...');
+        const result = await this.execute({ jdSpec });
+        return result.data;
+    }
 }
 
 export function createAssignmentGenerationAgent(): AssignmentGenerationAgent {
     return new AssignmentGenerationAgent();
 }
+

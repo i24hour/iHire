@@ -24,6 +24,7 @@ export interface JDSpec {
     roleContext: RoleContext;
     criticalityFactor: number; // C ∈ [0.6, 1.0]
     rawText: string;
+    standardAssignment?: Assignment; // Standard assignment for this JD (same for all candidates)
 }
 
 // ============================================

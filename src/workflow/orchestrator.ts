@@ -80,12 +80,21 @@ export class WorkflowOrchestrator {
             rawText: jdTextRaw,
         };
 
-        // Cache the result
-        this.cachedJDSpecs.set(campaignId, jdSpec);
-        this.cachedJDHashes.set(campaignId, jdHash);
-
         console.log(`  Role Context: ${jdSpec.roleContext}`);
         console.log(`  Criticality Factor: ${jdSpec.criticalityFactor}`);
+
+        // Generate standard assignment for this JD (same for all candidates)
+        try {
+            const standardAssignment = await this.assignmentGenerationAgent.generateStandardAssignment(jdSpec);
+            jdSpec.standardAssignment = standardAssignment;
+            console.log(`  📝 Standard Assignment: ${standardAssignment.title}`);
+        } catch (error) {
+            console.error('  ⚠️ Failed to generate standard assignment:', error);
+        }
+
+        // Cache the result (with assignment)
+        this.cachedJDSpecs.set(campaignId, jdSpec);
+        this.cachedJDHashes.set(campaignId, jdHash);
 
         return jdSpec;
     }
@@ -161,19 +170,12 @@ export class WorkflowOrchestrator {
         const feedbackResult = await this.candidateFeedbackAgent.execute(feedbackInput);
         const resumeFeedback = feedbackResult.data;
 
-        // Step 7: Generate assignment if passed threshold
-        let assignment = undefined;
-        if (relevance.passedThreshold) {
-            console.log('  [7/7] Generating assignment...');
-            const assignmentResult = await this.assignmentGenerationAgent.execute({
-                candidate,
-                jdSpec,
-                executionFitScore: executionFit.score,
-            });
-            assignment = assignmentResult.data;
-            console.log(`    Assignment: ${assignment.title}`);
+        // Step 7: Use standard assignment from JD (same for all candidates)
+        const assignment = jdSpec.standardAssignment;
+        if (assignment) {
+            console.log(`  [7/7] Using standard assignment: ${assignment.title}`);
         } else {
-            console.log('  [7/7] Skipping assignment (below threshold)');
+            console.log('  [7/7] No standard assignment available');
         }
 
         // Generate verdicts
