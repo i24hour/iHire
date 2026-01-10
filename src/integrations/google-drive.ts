@@ -234,6 +234,10 @@ export class DriveMonitor {
 
                     const newResumes = await this.getNewResumesForCampaign(campaign.id, campaign.jdFile.id);
 
+                    if (newResumes.length === 0) {
+                        // console.log(`  [${campaign.name}] No new resumes`);
+                    }
+
                     for (const resume of newResumes) {
                         console.log(`Processing new resume in [${campaign.name}]: ${resume.file.name}`);
                         await onNewResume(
