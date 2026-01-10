@@ -193,16 +193,24 @@ export class DriveMonitor {
         const files = await this.listPDFsInFolder(campaignId);
         const newFiles: { file: DriveFile; buffer: Buffer; hash: string }[] = [];
 
+        console.log(`    🔍 Checking ${files.length} files for new resumes...`);
+
         for (const file of files) {
             // Skip the JD file itself
-            if (file.id === jdFileId) continue;
+            if (file.id === jdFileId) {
+                console.log(`      ⏩ Skipping JD file: ${file.name}`);
+                continue;
+            }
 
             try {
                 const buffer = await this.downloadFile(file.id);
                 const hash = this.computeHash(buffer);
 
                 if (!this.isAlreadyProcessed(hash)) {
+                    console.log(`      ✨ NEW resume: ${file.name} (hash: ${hash.substring(0, 8)}...)`);
                     newFiles.push({ file, buffer, hash });
+                } else {
+                    console.log(`      ⏭️ Already processed: ${file.name} (hash: ${hash.substring(0, 8)}...)`);
                 }
             } catch (error) {
                 console.error(`Error processing file ${file.name}:`, error);
