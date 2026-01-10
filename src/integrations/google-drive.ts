@@ -134,12 +134,20 @@ export class DriveMonitor {
         return createHash('sha256').update(buffer).digest('hex');
     }
 
-    isAlreadyProcessed(hash: string): boolean {
+    // Check if resume is already processed for a specific campaign
+    isAlreadyProcessed(hash: string, campaignId?: string): boolean {
+        if (campaignId) {
+            // Per-campaign check: same resume can be processed for different campaigns
+            const key = `${campaignId}:${hash}`;
+            return this.processedHashes.has(key);
+        }
         return this.processedHashes.has(hash);
     }
 
-    markAsProcessed(fileId: string, hash: string): void {
-        this.processedHashes.set(hash, {
+    // Mark as processed for a specific campaign
+    markAsProcessed(fileId: string, hash: string, campaignId?: string): void {
+        const key = campaignId ? `${campaignId}:${hash}` : hash;
+        this.processedHashes.set(key, {
             fileId,
             hash,
             processedAt: new Date(),
@@ -206,11 +214,11 @@ export class DriveMonitor {
                 const buffer = await this.downloadFile(file.id);
                 const hash = this.computeHash(buffer);
 
-                if (!this.isAlreadyProcessed(hash)) {
-                    console.log(`      ✨ NEW resume: ${file.name} (hash: ${hash.substring(0, 8)}...)`);
+                if (!this.isAlreadyProcessed(hash, campaignId)) {
+                    console.log(`      ✨ NEW resume for campaign: ${file.name} (hash: ${hash.substring(0, 8)}...)`);
                     newFiles.push({ file, buffer, hash });
                 } else {
-                    console.log(`      ⏭️ Already processed: ${file.name} (hash: ${hash.substring(0, 8)}...)`);
+                    console.log(`      ⏭️ Already processed for this campaign: ${file.name} (hash: ${hash.substring(0, 8)}...)`);
                 }
             } catch (error) {
                 console.error(`Error processing file ${file.name}:`, error);
@@ -253,7 +261,7 @@ export class DriveMonitor {
                             { buffer: campaign.jdBuffer, fileName: campaign.jdFile.name },
                             resume
                         );
-                        this.markAsProcessed(resume.file.id, resume.hash);
+                        this.markAsProcessed(resume.file.id, resume.hash, campaign.id);
                     }
                 }
             } catch (error) {
