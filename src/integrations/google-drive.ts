@@ -149,11 +149,13 @@ export class DriveMonitor {
 
     async getCampaigns(): Promise<{ id: string; name: string; jdFile?: DriveFile; jdBuffer?: Buffer }[]> {
         const folders = await this.listFoldersInRoot();
+        console.log(`📁 Found ${folders.length} folders in root:`, folders.map(f => f.name).join(', '));
         const campaigns = [];
 
         for (const folder of folders) {
             // Find JD in this folder
             const files = await this.listPDFsInFolder(folder.id);
+            console.log(`  📂 Folder [${folder.name}]: ${files.length} PDFs found`);
 
             // Heuristic: JD is either named "JD" or "Job Description" OR it's the oldest PDF if explicitly marked
             // For now, let's assume the JD has "JD" or "Job Description" in the name (case insensitive)
