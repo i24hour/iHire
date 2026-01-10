@@ -161,6 +161,7 @@ export class DriveMonitor {
             // For now, let's assume the JD has "JD" or "Job Description" in the name (case insensitive)
             // OR if there's only one file and it's a PDF, treat it as JD? No, that's risky.
             // Let's look for "JD" in the name.
+            console.log(`    📄 PDFs:`, files.map(f => f.name).join(', '));
             const jdFile = files.find(f =>
                 f.name.toLowerCase().includes('jd') ||
                 f.name.toLowerCase().includes('job description') ||
@@ -168,6 +169,7 @@ export class DriveMonitor {
             );
 
             if (jdFile) {
+                console.log(`    ✅ JD Found: ${jdFile.name}`);
                 try {
                     const jdBuffer = await this.downloadFile(jdFile.id);
                     campaigns.push({
