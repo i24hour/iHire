@@ -66,6 +66,11 @@ export default async function Home() {
           </div>
         </div>
 
+        {/* iTime Tracker */}
+        <div className="mb-8">
+          <ITimeTracker />
+        </div>
+
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Top Candidates */}
@@ -169,11 +174,6 @@ export default async function Home() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* iTime Tracker */}
-        <div className="mb-8">
-          <ITimeTracker />
         </div>
 
         {/* System Status */}
