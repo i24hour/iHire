@@ -1,6 +1,7 @@
 import { Sidebar } from '@/components/Sidebar';
 import { getCandidates, CandidateRecord } from '@/lib/sheets-client';
 import Link from 'next/link';
+import { ITimeTracker } from '@/components/ITimeTracker';
 
 export default async function Home() {
   let candidates: CandidateRecord[] = [];
@@ -168,6 +169,11 @@ export default async function Home() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* iTime Tracker */}
+        <div className="mb-8">
+          <ITimeTracker />
         </div>
 
         {/* System Status */}

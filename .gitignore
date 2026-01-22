@@ -14,6 +14,8 @@ dist/
 credentials.json
 *.json.bak
 **/credentials*.json
+credentials_base64.txt
+**/credentials_base64.txt
 
 # Cache and temp files
 .processed_hashes.json
