@@ -110,8 +110,9 @@ export async function sendAssignmentEmail(data: AssignmentEmailData): Promise<{ 
 
         console.log(`✅ Assignment email sent to ${candidateEmail}`);
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Failed to send email:', error);
-        return { success: false, error: error.message };
+        const message = error instanceof Error ? error.message : String(error);
+        return { success: false, error: message };
     }
 }

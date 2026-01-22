@@ -17,12 +17,13 @@ export async function GET(request: Request) {
         const candidates = await getCandidates(campaign);
         console.log(`Candidates fetched for [${campaign}] in ${Date.now() - startTime}ms:`, candidates.length);
         return NextResponse.json({ candidates });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error fetching candidates:', error);
+        const message = error instanceof Error ? error.message : String(error);
         return NextResponse.json(
             {
                 error: 'Failed to fetch candidates',
-                details: error?.message || String(error),
+                details: message,
                 candidates: []
             },
             { status: 500 }

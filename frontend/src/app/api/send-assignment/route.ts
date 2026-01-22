@@ -1,7 +1,6 @@
 // API Route: Send Assignment Email
 import { NextRequest, NextResponse } from 'next/server';
 import { sendAssignmentEmail } from '@/lib/email-service';
-import { getCandidates } from '@/lib/sheets-client';
 
 // Generate a detailed assignment based on JD requirements
 function generateDetailedAssignment(candidateName: string, roleContext: string): {
@@ -13,9 +12,11 @@ function generateDetailedAssignment(candidateName: string, roleContext: string):
     submissionInstructions: string;
 } {
     // Full-Stack Developer Assignment
+    const roleLabel = roleContext ? roleContext.replace(/_/g, ' ') : 'this role';
+
     return {
-        title: 'Build a Real-Time Task Management Dashboard',
-        description: `Create a mini task management application that demonstrates your full-stack development skills. The application should allow users to create, update, and track tasks with real-time updates. Focus on clean architecture, responsive design, and efficient data handling.`,
+        title: `Build a Real-Time Task Management Dashboard (${roleLabel})`,
+        description: `Hi ${candidateName}, create a mini task management application that demonstrates your full-stack development skills for ${roleLabel}. The application should allow users to create, update, and track tasks with real-time updates. Focus on clean architecture, responsive design, and efficient data handling.`,
         techStack: [
             'React.js / Next.js',
             'TypeScript',
@@ -58,7 +59,9 @@ function generateDetailedAssignment(candidateName: string, roleContext: string):
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { candidateId, candidateEmail, candidateName, recommendation, roleContext } = body;
+    const { candidateId, candidateEmail, candidateName, recommendation, roleContext } = body;
+    void candidateId;
+    void roleContext;
 
         // Validate: Only send to Maybe, Yes or Strong Yes candidates
         if (!['Maybe', 'Yes', 'Strong Yes'].includes(recommendation)) {
@@ -101,10 +104,11 @@ export async function POST(request: NextRequest) {
             success: true,
             message: `Assignment sent to ${candidateEmail}`,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Send assignment error:', error);
+        const message = error instanceof Error ? error.message : String(error);
         return NextResponse.json(
-            { error: error.message || 'Internal server error' },
+            { error: message || 'Internal server error' },
             { status: 500 }
         );
     }

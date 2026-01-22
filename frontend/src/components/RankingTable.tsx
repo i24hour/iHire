@@ -68,6 +68,7 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                 setAssignmentStatus({ id: candidate.id, success: false, message: data.error || 'Failed' });
             }
         } catch (error) {
+            console.error('Failed to send assignment:', error);
             setAssignmentStatus({ id: candidate.id, success: false, message: 'Network error' });
         } finally {
             setSendingAssignment(null);

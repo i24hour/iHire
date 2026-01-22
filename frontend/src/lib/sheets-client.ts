@@ -2,7 +2,7 @@
 // Google Sheets Client for Frontend
 // ============================================
 
-import { google, sheets_v4 } from 'googleapis';
+import { google } from 'googleapis';
 
 export interface CandidateRecord {
     id: number;
@@ -91,11 +91,12 @@ export async function getCandidates(campaignName: string = 'Candidates'): Promis
             resumeFeedback: row[13] || '',
             assignmentFeedback: row[14] || '',
         }));
-    } catch (error: any) {
-        console.error('Failed to fetch candidates from sheet:', error?.message || error);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('Failed to fetch candidates from sheet:', message);
         // console.error('Error details:', JSON.stringify(error?.response?.data || error, null, 2));
         // Throw error so API can return it
-        throw new Error(`Sheet Error: ${error?.message || error}`);
+        throw new Error(`Sheet Error: ${message}`);
     }
 }
 

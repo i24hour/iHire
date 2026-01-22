@@ -13,12 +13,13 @@ export async function GET() {
         const campaigns = await getCampaigns();
         console.log(`Campaigns fetched in ${Date.now() - startTime}ms:`, campaigns);
         return NextResponse.json({ campaigns });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error fetching campaigns:', error);
+        const message = error instanceof Error ? error.message : String(error);
         return NextResponse.json(
             {
                 error: 'Failed to fetch campaigns',
-                details: error?.message || String(error),
+                details: message,
                 campaigns: []
             },
             { status: 500 }
