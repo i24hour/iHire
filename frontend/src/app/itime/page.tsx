@@ -7,7 +7,8 @@ interface ITimeTask {
     id: string;
     title: string;
     description: string;
-    elapsedSeconds: number;
+    startTime: number; // timestamp when task was started
+    pausedElapsed: number; // elapsed seconds when paused
     enabled: boolean;
 }
 
@@ -19,17 +20,12 @@ export default function ITimePage() {
     });
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
 
-    // Timer interval
+    // Timer interval - update current time every second
     useEffect(() => {
         const interval = setInterval(() => {
-            setTasks((prev) =>
-                prev.map((task) =>
-                    task.enabled
-                        ? { ...task, elapsedSeconds: task.elapsedSeconds + 1 }
-                        : task
-                )
-            );
+            setCurrentTime(Date.now());
         }, 1000);
         return () => clearInterval(interval);
     }, []);
@@ -46,7 +42,8 @@ export default function ITimePage() {
             id: Date.now().toString(),
             title: newTitle,
             description: newDescription,
-            elapsedSeconds: 0,
+            startTime: Date.now(), // current timestamp
+            pausedElapsed: 0,
             enabled: true,
         };
         setTasks([...tasks, newTask]);
@@ -56,14 +53,40 @@ export default function ITimePage() {
 
     const toggleTask = (id: string) => {
         setTasks((prev) =>
-            prev.map((task) =>
-                task.id === id ? { ...task, enabled: !task.enabled } : task
-            )
+            prev.map((task) => {
+                if (task.id !== id) return task;
+                
+                if (task.enabled) {
+                    // Pausing: save current elapsed time
+                    const currentElapsed = getElapsedSeconds(task);
+                    return { 
+                        ...task, 
+                        enabled: false,
+                        pausedElapsed: currentElapsed,
+                        startTime: 0
+                    };
+                } else {
+                    // Starting: set new start time
+                    return { 
+                        ...task, 
+                        enabled: true,
+                        startTime: Date.now()
+                    };
+                }
+            })
         );
     };
 
     const deleteTask = (id: string) => {
         setTasks((prev) => prev.filter((task) => task.id !== id));
+    };
+
+    const getElapsedSeconds = (task: ITimeTask): number => {
+        if (!task.enabled) {
+            return task.pausedElapsed;
+        }
+        const runningSince = (currentTime - task.startTime) / 1000;
+        return Math.floor(task.pausedElapsed + runningSince);
     };
 
     const formatElapsed = (seconds: number) => {
@@ -73,7 +96,7 @@ export default function ITimePage() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const totalTime = tasks.reduce((sum, task) => sum + task.elapsedSeconds, 0);
+    const totalTime = tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0);
     const activeTasks = tasks.filter((task) => task.enabled).length;
 
     return (
@@ -178,7 +201,7 @@ export default function ITimePage() {
                                     
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
                                         <div className={`text-2xl font-mono font-bold ${task.enabled ? 'text-white' : 'text-zinc-500'}`}>
-                                            {formatElapsed(task.elapsedSeconds)}
+                                            {formatElapsed(getElapsedSeconds(task))}
                                         </div>
                                         <button
                                             onClick={() => toggleTask(task.id)}
