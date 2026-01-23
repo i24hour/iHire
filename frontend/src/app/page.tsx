@@ -1,7 +1,6 @@
 import { Sidebar } from '@/components/Sidebar';
 import { getCandidates, CandidateRecord } from '@/lib/sheets-client';
 import Link from 'next/link';
-import { ITimeTracker } from '@/components/ITimeTracker';
 
 export default async function Home() {
   let candidates: CandidateRecord[] = [];
@@ -64,11 +63,6 @@ export default async function Home() {
             <div className="text-sm text-purple-300 mb-2">Avg. Relevance</div>
             <div className="text-4xl font-bold text-purple-400">{stats.avgRelevance}</div>
           </div>
-        </div>
-
-        {/* iTime Tracker */}
-        <div className="mb-8">
-          <ITimeTracker />
         </div>
 
         {/* Quick Actions */}

@@ -5,6 +5,146 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 
+interface ITimeTask {
+    id: string;
+    title: string;
+    description: string;
+    elapsedSeconds: number;
+    enabled: boolean;
+}
+
+function ITimeTrackerSidebar() {
+    const [tasks, setTasks] = useState<ITimeTask[]>(() => {
+        // Initialize from localStorage
+        if (typeof window === 'undefined') return [];
+        const saved = localStorage.getItem('itime_tasks');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [newTitle, setNewTitle] = useState('');
+    const [newDescription, setNewDescription] = useState('');
+
+    // Timer interval
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTasks((prev) =>
+                prev.map((task) =>
+                    task.enabled
+                        ? { ...task, elapsedSeconds: task.elapsedSeconds + 1 }
+                        : task
+                )
+            );
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Save to localStorage
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        localStorage.setItem('itime_tasks', JSON.stringify(tasks));
+    }, [tasks]);
+
+    const handleAddTask = () => {
+        if (!newTitle.trim()) return;
+        const newTask: ITimeTask = {
+            id: Date.now().toString(),
+            title: newTitle,
+            description: newDescription,
+            elapsedSeconds: 0,
+            enabled: true,
+        };
+        setTasks([...tasks, newTask]);
+        setNewTitle('');
+        setNewDescription('');
+    };
+
+    const toggleTask = (id: string) => {
+        setTasks((prev) =>
+            prev.map((task) =>
+                task.id === id ? { ...task, enabled: !task.enabled } : task
+            )
+        );
+    };
+
+    const formatElapsed = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="space-y-3">
+            {/* Add Task Form - Compact */}
+            <div className="space-y-2">
+                <input
+                    type="text"
+                    placeholder="Task title"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="w-full px-2 py-1.5 bg-black border border-zinc-700 rounded text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-purple-500"
+                />
+                <input
+                    type="text"
+                    placeholder="Description"
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    className="w-full px-2 py-1.5 bg-black border border-zinc-700 rounded text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-purple-500"
+                />
+                <button
+                    onClick={handleAddTask}
+                    className="w-full px-2 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-colors"
+                >
+                    Add Task
+                </button>
+            </div>
+
+            {/* Task List - Compact */}
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {tasks.length === 0 ? (
+                    <div className="text-center py-4 text-zinc-600 text-xs">
+                        No tasks yet
+                    </div>
+                ) : (
+                    tasks.map((task) => (
+                        <div
+                            key={task.id}
+                            className="bg-black border border-zinc-800 rounded p-2 space-y-1"
+                        >
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-medium text-zinc-200 truncate">
+                                        {task.title}
+                                    </div>
+                                    {task.description && (
+                                        <div className="text-[10px] text-zinc-500 truncate">
+                                            {task.description}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="text-xs font-mono text-emerald-400">
+                                    {formatElapsed(task.elapsedSeconds)}
+                                </div>
+                                <button
+                                    onClick={() => toggleTask(task.id)}
+                                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                                        task.enabled
+                                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
+                                    }`}
+                                >
+                                    {task.enabled ? '⏸' : '▶'}
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+}
+
 const navItems = [
     { href: '/', label: 'Overview', icon: '📊' },
     { href: '/dashboard', label: 'Candidates', icon: '👥' },
@@ -93,6 +233,14 @@ export function Sidebar() {
                             );
                         })
                     )}
+                </div>
+            </div>
+
+            {/* iTime Tracker */}
+            <div className="mb-4 mt-6">
+                <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide px-3">iTime</h3>
+                <div className="bg-zinc-900/50 rounded-lg border border-zinc-800 p-3">
+                    <ITimeTrackerSidebar />
                 </div>
             </div>
 
