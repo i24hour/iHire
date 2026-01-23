@@ -21,6 +21,8 @@ interface Milestone {
     text: string;
     completed: boolean;
     completedAt?: number;
+    createdAt: number; // timestamp when milestone was added
+    createdAtElapsed: number; // elapsed seconds when milestone was added
 }
 
 export default function ITimePage() {
@@ -119,6 +121,9 @@ export default function ITimePage() {
 
     const addMilestone = (taskId: string) => {
         if (!newMilestone.trim()) return;
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        
         setTasks((prev) =>
             prev.map((task) => {
                 if (task.id !== taskId) return task;
@@ -126,6 +131,8 @@ export default function ITimePage() {
                     id: Date.now().toString(),
                     text: newMilestone,
                     completed: false,
+                    createdAt: Date.now(),
+                    createdAtElapsed: getElapsedSeconds(task),
                 };
                 return {
                     ...task,
@@ -571,11 +578,19 @@ export default function ITimePage() {
                                                             }`}>
                                                                 {milestone.text}
                                                             </div>
-                                                            {milestone.completed && milestone.completedAt && (
-                                                                <div className="text-xs text-emerald-500 mt-1">
-                                                                    ✓ Completed
+                                                            <div className="flex items-center gap-3 mt-1">
+                                                                <div className="text-xs text-zinc-500">
+                                                                    Added at {formatElapsed(milestone.createdAtElapsed)}
                                                                 </div>
-                                                            )}
+                                                                {milestone.completed && milestone.completedAt && (
+                                                                    <>
+                                                                        <span className="text-zinc-700">•</span>
+                                                                        <div className="text-xs text-emerald-500">
+                                                                            ✓ Completed
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
