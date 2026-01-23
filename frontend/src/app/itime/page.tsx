@@ -583,8 +583,8 @@ export default function ITimePage() {
                                                         
                                                         {/* Content */}
                                                         <div className="flex-1 pt-1">
-                                                            <div className="flex items-start justify-between gap-2">
-                                                                <div className={`text-base font-medium ${
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className={`flex-1 text-base font-medium ${
                                                                     milestone.completed 
                                                                         ? 'text-zinc-500 line-through' 
                                                                         : 'text-white'
@@ -593,7 +593,8 @@ export default function ITimePage() {
                                                                 </div>
                                                                 <button
                                                                     onClick={() => deleteMilestone(selectedTask.id, milestone.id)}
-                                                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-red-400 p-1"
+                                                                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-red-400 p-1 -mt-1"
+                                                                    title="Delete milestone"
                                                                 >
                                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
