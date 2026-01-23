@@ -12,6 +12,15 @@ interface ITimeTask {
     enabled: boolean;
     completed: boolean;
     completedAt?: number; // timestamp when completed
+    targetTime?: number; // target time in seconds
+    milestones?: Milestone[];
+}
+
+interface Milestone {
+    id: string;
+    text: string;
+    completed: boolean;
+    completedAt?: number;
 }
 
 export default function ITimePage() {
@@ -23,6 +32,10 @@ export default function ITimePage() {
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
     const [currentTime, setCurrentTime] = useState(() => Date.now());
+    const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
+    const [newMilestone, setNewMilestone] = useState('');
+    const [targetHours, setTargetHours] = useState('');
+    const [targetMinutes, setTargetMinutes] = useState('');
 
     // Timer interval - update current time every second
     useEffect(() => {
@@ -48,6 +61,7 @@ export default function ITimePage() {
             pausedElapsed: 0,
             enabled: true,
             completed: false,
+            milestones: [],
         };
         setTasks([...tasks, newTask]);
         setNewTitle('');
@@ -101,6 +115,57 @@ export default function ITimePage() {
                 };
             })
         );
+    };
+
+    const addMilestone = (taskId: string) => {
+        if (!newMilestone.trim()) return;
+        setTasks((prev) =>
+            prev.map((task) => {
+                if (task.id !== taskId) return task;
+                const milestone: Milestone = {
+                    id: Date.now().toString(),
+                    text: newMilestone,
+                    completed: false,
+                };
+                return {
+                    ...task,
+                    milestones: [...(task.milestones || []), milestone],
+                };
+            })
+        );
+        setNewMilestone('');
+    };
+
+    const toggleMilestone = (taskId: string, milestoneId: string) => {
+        setTasks((prev) =>
+            prev.map((task) => {
+                if (task.id !== taskId) return task;
+                return {
+                    ...task,
+                    milestones: task.milestones?.map((m) =>
+                        m.id === milestoneId
+                            ? { ...m, completed: !m.completed, completedAt: !m.completed ? Date.now() : undefined }
+                            : m
+                    ),
+                };
+            })
+        );
+    };
+
+    const setTargetTime = (taskId: string) => {
+        const hours = parseInt(targetHours) || 0;
+        const minutes = parseInt(targetMinutes) || 0;
+        const totalSeconds = (hours * 3600) + (minutes * 60);
+        
+        if (totalSeconds <= 0) return;
+        
+        setTasks((prev) =>
+            prev.map((task) =>
+                task.id === taskId ? { ...task, targetTime: totalSeconds } : task
+            )
+        );
+        setTargetHours('');
+        setTargetMinutes('');
     };
 
     const getElapsedSeconds = (task: ITimeTask): number => {
@@ -205,7 +270,8 @@ export default function ITimePage() {
                             {pendingTasks.map((task) => (
                                 <div
                                     key={task.id}
-                                    className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 space-y-3 transition-all group"
+                                    className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-4 space-y-3 transition-all group cursor-pointer"
+                                    onClick={() => setSelectedTask(task)}
                                 >
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
@@ -219,7 +285,10 @@ export default function ITimePage() {
                                             )}
                                         </div>
                                         <button
-                                            onClick={() => deleteTask(task.id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteTask(task.id);
+                                            }}
                                             className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-red-400"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,7 +303,10 @@ export default function ITimePage() {
                                         </div>
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => toggleTask(task.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleTask(task.id);
+                                                }}
                                                 className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                                                     task.enabled
                                                         ? 'bg-white text-black hover:bg-white/90'
@@ -244,7 +316,10 @@ export default function ITimePage() {
                                                 {task.enabled ? '⏸' : '▶'}
                                             </button>
                                             <button
-                                                onClick={() => completeTask(task.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    completeTask(task.id);
+                                                }}
                                                 className="px-3 py-2 rounded-lg text-xs font-medium bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 transition-all"
                                                 title="Mark as complete"
                                             >
@@ -306,6 +381,194 @@ export default function ITimePage() {
                     </div>
                 )}
             </main>
+
+            {/* Task Detail Modal */}
+            {selectedTask && (
+                <div 
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setSelectedTask(null)}
+                >
+                    <div 
+                        className="bg-gray-900 border border-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="p-6 border-b border-gray-800">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                    <h2 className="text-2xl font-bold text-white mb-2">
+                                        {selectedTask.title}
+                                    </h2>
+                                    {selectedTask.description && (
+                                        <p className="text-zinc-400 text-sm">
+                                            {selectedTask.description}
+                                        </p>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setSelectedTask(null)}
+                                    className="text-zinc-500 hover:text-white transition-colors"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Timer Display */}
+                        <div className="p-6 border-b border-gray-800">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <div className="text-sm text-zinc-400 mb-1">Current Time</div>
+                                    <div className={`text-5xl font-mono font-bold ${selectedTask.enabled ? 'text-white' : 'text-zinc-500'}`}>
+                                        {formatElapsed(getElapsedSeconds(selectedTask))}
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => toggleTask(selectedTask.id)}
+                                        className={`px-6 py-3 rounded-lg text-sm font-medium transition-all ${
+                                            selectedTask.enabled
+                                                ? 'bg-white text-black hover:bg-white/90'
+                                                : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                                        }`}
+                                    >
+                                        {selectedTask.enabled ? '⏸ Pause' : '▶ Start'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            completeTask(selectedTask.id);
+                                            setSelectedTask(null);
+                                        }}
+                                        className="px-6 py-3 rounded-lg text-sm font-medium bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 transition-all"
+                                    >
+                                        ✓ Complete
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Progress Bar if target time is set */}
+                            {selectedTask.targetTime && (
+                                <div className="mt-4">
+                                    <div className="flex justify-between text-xs text-zinc-400 mb-2">
+                                        <span>Progress</span>
+                                        <span>Target: {formatElapsed(selectedTask.targetTime)}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                                        <div 
+                                            className={`h-full transition-all ${
+                                                getElapsedSeconds(selectedTask) >= selectedTask.targetTime
+                                                    ? 'bg-emerald-500'
+                                                    : 'bg-purple-500'
+                                            }`}
+                                            style={{
+                                                width: `${Math.min((getElapsedSeconds(selectedTask) / selectedTask.targetTime) * 100, 100)}%`
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Target Time */}
+                        <div className="p-6 border-b border-gray-800">
+                            <h3 className="text-sm font-semibold text-white mb-3">Target Time</h3>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="Hours"
+                                    value={targetHours}
+                                    onChange={(e) => setTargetHours(e.target.value)}
+                                    className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all"
+                                    min="0"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Minutes"
+                                    value={targetMinutes}
+                                    onChange={(e) => setTargetMinutes(e.target.value)}
+                                    className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all"
+                                    min="0"
+                                    max="59"
+                                />
+                                <button
+                                    onClick={() => setTargetTime(selectedTask.id)}
+                                    className="px-4 py-2 bg-white hover:bg-white/90 text-black text-sm font-medium rounded-lg transition-all"
+                                >
+                                    Set Target
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Milestones */}
+                        <div className="p-6">
+                            <h3 className="text-sm font-semibold text-white mb-3">Milestones</h3>
+                            
+                            {/* Add Milestone */}
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    type="text"
+                                    placeholder="Add a milestone..."
+                                    value={newMilestone}
+                                    onChange={(e) => setNewMilestone(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && addMilestone(selectedTask.id)}
+                                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all"
+                                />
+                                <button
+                                    onClick={() => addMilestone(selectedTask.id)}
+                                    className="px-4 py-2 bg-white hover:bg-white/90 text-black text-sm font-medium rounded-lg transition-all"
+                                >
+                                    Add
+                                </button>
+                            </div>
+
+                            {/* Milestones List */}
+                            <div className="space-y-2">
+                                {selectedTask.milestones && selectedTask.milestones.length > 0 ? (
+                                    selectedTask.milestones.map((milestone) => (
+                                        <div
+                                            key={milestone.id}
+                                            className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-lg group hover:bg-white/10 transition-all"
+                                        >
+                                            <button
+                                                onClick={() => toggleMilestone(selectedTask.id, milestone.id)}
+                                                className={`flex-shrink-0 w-5 h-5 rounded border-2 transition-all ${
+                                                    milestone.completed
+                                                        ? 'bg-emerald-500 border-emerald-500'
+                                                        : 'border-white/30 hover:border-white/50'
+                                                }`}
+                                            >
+                                                {milestone.completed && (
+                                                    <svg className="w-full h-full text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                            <span className={`flex-1 text-sm ${
+                                                milestone.completed 
+                                                    ? 'text-zinc-500 line-through' 
+                                                    : 'text-white'
+                                            }`}>
+                                                {milestone.text}
+                                            </span>
+                                            {milestone.completed && milestone.completedAt && (
+                                                <span className="text-xs text-emerald-500">
+                                                    ✓
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-6 text-zinc-600 text-sm">
+                                        No milestones yet. Add one above!
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
