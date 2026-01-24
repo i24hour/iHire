@@ -4,10 +4,11 @@ import { Sidebar } from '@/components/Sidebar';
 import { SignInModal } from '@/components/SignInModal';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ITimeTask {
     id: string;
+    _id?: string; // MongoDB ID
     title: string;
     description: string;
     startTime: number; // timestamp when task was started
@@ -30,11 +31,8 @@ interface Milestone {
 
 export default function ITimePage() {
     const { data: session, status } = useSession();
-    const [tasks, setTasks] = useState<ITimeTask[]>(() => {
-        if (typeof window === 'undefined') return [];
-        const saved = localStorage.getItem('itime_tasks');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [tasks, setTasks] = useState<ITimeTask[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
     const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -44,6 +42,40 @@ export default function ITimePage() {
     const [targetMinutes, setTargetMinutes] = useState('');
     const [showSignInModal, setShowSignInModal] = useState(false);
 
+    // Fetch tasks from MongoDB for authenticated users
+    const fetchTasks = useCallback(async () => {
+        if (status === 'loading') return;
+        
+        if (status === 'authenticated') {
+            try {
+                const response = await fetch('/api/itime');
+                if (response.ok) {
+                    const data = await response.json();
+                    setTasks(data.tasks.map((t: any) => ({
+                        ...t,
+                        id: t._id,
+                    })));
+                }
+            } catch (error) {
+                console.error('Failed to fetch tasks:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            // Load from localStorage for guest users
+            if (typeof window !== 'undefined') {
+                const saved = localStorage.getItem('itime_tasks');
+                setTasks(saved ? JSON.parse(saved) : []);
+            }
+            setIsLoading(false);
+        }
+    }, [status]);
+
+    // Initial load
+    useEffect(() => {
+        fetchTasks();
+    }, [fetchTasks]);
+
     // Timer interval - update current time every second
     useEffect(() => {
         const interval = setInterval(() => {
@@ -52,13 +84,17 @@ export default function ITimePage() {
         return () => clearInterval(interval);
     }, []);
 
-    // Save to localStorage
+    // Save tasks - MongoDB for authenticated, localStorage for guest
     useEffect(() => {
-        if (typeof window === 'undefined') return;
-        localStorage.setItem('itime_tasks', JSON.stringify(tasks));
-    }, [tasks]);
+        if (isLoading) return;
+        
+        if (status === 'unauthenticated' && typeof window !== 'undefined') {
+            // Guest mode - save to localStorage
+            localStorage.setItem('itime_tasks', JSON.stringify(tasks));
+        }
+    }, [tasks, status, isLoading]);
 
-    const handleAddTask = () => {
+    const handleAddTask = async () => {
         if (!newTitle.trim()) return;
         
         // DEBUG: Log authentication status
@@ -81,64 +117,103 @@ export default function ITimePage() {
             id: Date.now().toString(),
             title: newTitle,
             description: newDescription,
-            startTime: Date.now(), // current timestamp
+            startTime: Date.now(),
             pausedElapsed: 0,
             enabled: true,
             completed: false,
             milestones: [],
         };
-        setTasks([...tasks, newTask]);
-        setNewTitle('');
-        setNewDescription('');
+
+        try {
+            // Save to MongoDB
+            const response = await fetch('/api/itime', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newTask),
+            });
+
+            if (response.ok) {
+                const { task } = await response.json();
+                setTasks([...tasks, { ...task, id: task._id }]);
+                setNewTitle('');
+                setNewDescription('');
+            } else {
+                console.error('Failed to save task');
+            }
+        } catch (error) {
+            console.error('Error saving task:', error);
+        }
     };
 
-    const toggleTask = (id: string) => {
-        setTasks((prev) =>
-            prev.map((task) => {
-                if (task.id !== id) return task;
-                
-                if (task.enabled) {
-                    // Pausing: save current elapsed time
-                    const currentElapsed = getElapsedSeconds(task);
-                    return { 
-                        ...task, 
-                        enabled: false,
-                        pausedElapsed: currentElapsed,
-                        startTime: 0
-                    };
-                } else {
-                    // Starting: set new start time
-                    return { 
-                        ...task, 
-                        enabled: true,
-                        startTime: Date.now()
-                    };
-                }
-            })
-        );
+    const toggleTask = async (id: string) => {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        const currentElapsed = task.enabled ? getElapsedSeconds(task) : task.pausedElapsed;
+        const updatedTask = {
+            ...task,
+            enabled: !task.enabled,
+            pausedElapsed: currentElapsed,
+            startTime: !task.enabled ? Date.now() : 0
+        };
+
+        setTasks((prev) => prev.map(t => t.id === id ? updatedTask : t));
+
+        if (status === 'authenticated' && task._id) {
+            try {
+                await fetch('/api/itime', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ _id: task._id, ...updatedTask }),
+                });
+            } catch (error) {
+                console.error('Error updating task:', error);
+            }
+        }
     };
 
-    const deleteTask = (id: string) => {
-        setTasks((prev) => prev.filter((task) => task.id !== id));
+    const deleteTask = async (id: string) => {
+        const task = tasks.find(t => t.id === id);
+        setTasks((prev) => prev.filter((t) => t.id !== id));
+
+        if (status === 'authenticated' && task?._id) {
+            try {
+                await fetch(`/api/itime?id=${task._id}`, {
+                    method: 'DELETE',
+                });
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
+        }
     };
 
-    const completeTask = (id: string) => {
-        setTasks((prev) =>
-            prev.map((task) => {
-                if (task.id !== id) return task;
-                
-                // Save final elapsed time when completing
-                const finalElapsed = getElapsedSeconds(task);
-                return {
-                    ...task,
-                    completed: true,
-                    completedAt: Date.now(),
-                    enabled: false,
-                    pausedElapsed: finalElapsed,
-                    startTime: 0
-                };
-            })
-        );
+    const completeTask = async (id: string) => {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        const finalElapsed = getElapsedSeconds(task);
+        const updatedTask = {
+            ...task,
+            completed: true,
+            completedAt: Date.now(),
+            enabled: false,
+            pausedElapsed: finalElapsed,
+            startTime: 0
+        };
+
+        setTasks((prev) => prev.map(t => t.id === id ? updatedTask : t));
+
+        if (status === 'authenticated' && task._id) {
+            try {
+                await fetch('/api/itime', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ _id: task._id, ...updatedTask }),
+                });
+            } catch (error) {
+                console.error('Error completing task:', error);
+            }
+        }
     };
 
     const addMilestone = (taskId: string) => {
