@@ -1,6 +1,9 @@
 'use client';
 
 import { Sidebar } from '@/components/Sidebar';
+import { SignInModal } from '@/components/SignInModal';
+import { useSession, signOut } from 'next-auth/react';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 interface ITimeTask {
@@ -26,6 +29,7 @@ interface Milestone {
 }
 
 export default function ITimePage() {
+    const { data: session, status } = useSession();
     const [tasks, setTasks] = useState<ITimeTask[]>(() => {
         if (typeof window === 'undefined') return [];
         const saved = localStorage.getItem('itime_tasks');
@@ -38,6 +42,7 @@ export default function ITimePage() {
     const [newMilestone, setNewMilestone] = useState('');
     const [targetHours, setTargetHours] = useState('');
     const [targetMinutes, setTargetMinutes] = useState('');
+    const [showSignInModal, setShowSignInModal] = useState(false);
 
     // Timer interval - update current time every second
     useEffect(() => {
@@ -55,6 +60,23 @@ export default function ITimePage() {
 
     const handleAddTask = () => {
         if (!newTitle.trim()) return;
+        
+        // DEBUG: Log authentication status
+        console.log('🔐 Auth Status:', { status, session });
+        
+        // Check if user is authenticated (block if loading or unauthenticated)
+        if (status === 'loading') {
+            console.log('⏳ Session loading, please wait...');
+            return;
+        }
+        
+        if (status === 'unauthenticated') {
+            console.log('❌ Not authenticated - showing sign in modal');
+            setShowSignInModal(true);
+            return;
+        }
+        
+        console.log('✅ Authenticated - adding task');
         const newTask: ITimeTask = {
             id: Date.now().toString(),
             title: newTitle,
@@ -214,12 +236,50 @@ export default function ITimePage() {
             <main className="flex-1 p-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">
-                        iTime Tracker
-                    </h1>
-                    <p className="text-gray-400">
-                        Track your tasks and manage your time effectively
-                    </p>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-2">
+                                iTime Tracker
+                            </h1>
+                            <p className="text-gray-400">
+                                Track your tasks and manage your time effectively
+                            </p>
+                        </div>
+                        
+                        {/* User Info / Sign In Button */}
+                        {status === 'loading' ? (
+                            <div className="animate-pulse bg-gray-800 h-10 w-32 rounded-lg"></div>
+                        ) : session ? (
+                            <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                    <div className="text-sm font-medium text-white">{session.user?.name || session.user?.email}</div>
+                                    <div className="text-xs text-zinc-500">{session.user?.email}</div>
+                                </div>
+                                {session.user?.image && (
+                                    <Image 
+                                        src={session.user.image} 
+                                        alt="Profile" 
+                                        width={40}
+                                        height={40}
+                                        className="rounded-full border-2 border-gray-800"
+                                    />
+                                )}
+                                <button
+                                    onClick={() => signOut()}
+                                    className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                                >
+                                    Sign Out
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setShowSignInModal(true)}
+                                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-all"
+                            >
+                                Sign In
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Stats */}
@@ -632,6 +692,12 @@ export default function ITimePage() {
                     </div>
                 </div>
             )}
+
+            {/* Sign In Modal */}
+            <SignInModal 
+                isOpen={showSignInModal} 
+                onClose={() => setShowSignInModal(false)} 
+            />
         </div>
     );
 }
