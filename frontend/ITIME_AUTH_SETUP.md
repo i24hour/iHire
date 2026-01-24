@@ -3,6 +3,7 @@
 ## 🎯 What's Been Added
 
 Your iTime tracker now has **multi-user authentication**! Users can:
+
 - ✅ Sign in with **Google** (OAuth)
 - ✅ Sign in with **Email/Password**
 - ✅ Continue as **Guest** (localStorage only)
@@ -50,6 +51,7 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ```
 
 **Generate a secure NEXTAUTH_SECRET:**
+
 ```bash
 openssl rand -base64 32
 ```
@@ -61,7 +63,7 @@ Add this to `next.config.ts` for Google profile images:
 ```typescript
 const nextConfig = {
   images: {
-    domains: ['lh3.googleusercontent.com'],
+    domains: ["lh3.googleusercontent.com"],
   },
 };
 ```
@@ -105,16 +107,19 @@ Visit: http://localhost:3000/itime
 Currently, tasks are stored in localStorage. To sync across devices:
 
 ### Option 1: Use Supabase (Recommended)
+
 ```bash
 npm install @supabase/supabase-js
 ```
 
 ### Option 2: Use MongoDB
+
 ```bash
 npm install mongodb mongoose
 ```
 
 ### Option 3: Use Prisma with PostgreSQL
+
 ```bash
 npm install @prisma/client
 ```
