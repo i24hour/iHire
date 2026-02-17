@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 const navItems = [
     { href: '/', label: 'Overview', icon: '📊' },
     { href: '/dashboard', label: 'Candidates', icon: '👥' },
-    { href: '/itime', label: 'iTime', icon: '⏱️' },
+    { href: '/itime', label: 'iTime', icon: '⏱️' }, // iTime Tracker
 ];
 
 export function Sidebar() {
