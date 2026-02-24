@@ -45,7 +45,7 @@ export default function ITimePage() {
     // Fetch tasks from MongoDB for authenticated users
     const fetchTasks = useCallback(async () => {
         if (status === 'loading') return;
-        
+
         if (status === 'authenticated') {
             try {
                 const response = await fetch('/api/itime');
@@ -87,7 +87,7 @@ export default function ITimePage() {
     // Save tasks - MongoDB for authenticated, localStorage for guest
     useEffect(() => {
         if (isLoading) return;
-        
+
         if (status === 'unauthenticated' && typeof window !== 'undefined') {
             // Guest mode - save to localStorage
             localStorage.setItem('itime_tasks', JSON.stringify(tasks));
@@ -96,22 +96,22 @@ export default function ITimePage() {
 
     const handleAddTask = async () => {
         if (!newTitle.trim()) return;
-        
+
         // DEBUG: Log authentication status
         console.log('🔐 Auth Status:', { status, session });
-        
+
         // Check if user is authenticated (block if loading or unauthenticated)
         if (status === 'loading') {
             console.log('⏳ Session loading, please wait...');
             return;
         }
-        
+
         if (status === 'unauthenticated') {
             console.log('❌ Not authenticated - showing sign in modal');
             setShowSignInModal(true);
             return;
         }
-        
+
         console.log('✅ Authenticated - adding task');
         const newTask: ITimeTask = {
             id: Date.now().toString(),
@@ -220,7 +220,7 @@ export default function ITimePage() {
         if (!newMilestone.trim()) return;
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
-        
+
         setTasks((prev) =>
             prev.map((task) => {
                 if (task.id !== taskId) return task;
@@ -272,9 +272,9 @@ export default function ITimePage() {
         const hours = parseInt(targetHours) || 0;
         const minutes = parseInt(targetMinutes) || 0;
         const totalSeconds = (hours * 3600) + (minutes * 60);
-        
+
         if (totalSeconds <= 0) return;
-        
+
         setTasks((prev) =>
             prev.map((task) =>
                 task.id === taskId ? { ...task, targetTime: totalSeconds } : task
@@ -305,10 +305,10 @@ export default function ITimePage() {
     const completedTasks = tasks.filter((task) => task.completed);
 
     return (
-        <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+        <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
             <Sidebar />
 
-            <main className="flex-1 p-8">
+            <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-start justify-between">
@@ -320,7 +320,7 @@ export default function ITimePage() {
                                 Track your tasks and manage your time effectively
                             </p>
                         </div>
-                        
+
                         {/* User Info / Sign In Button */}
                         {status === 'loading' ? (
                             <div className="animate-pulse bg-gray-800 h-10 w-32 rounded-lg"></div>
@@ -331,9 +331,9 @@ export default function ITimePage() {
                                     <div className="text-xs text-zinc-500">{session.user?.email}</div>
                                 </div>
                                 {session.user?.image && (
-                                    <Image 
-                                        src={session.user.image} 
-                                        alt="Profile" 
+                                    <Image
+                                        src={session.user.image}
+                                        alt="Profile"
                                         width={40}
                                         height={40}
                                         className="rounded-full border-2 border-gray-800"
@@ -412,7 +412,7 @@ export default function ITimePage() {
                 {/* Pending Tasks */}
                 <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Active Tasks</h2>
-                    
+
                     {pendingTasks.length === 0 ? (
                         <div className="text-center py-12">
                             <div className="text-6xl mb-4">⏱️</div>
@@ -450,7 +450,7 @@ export default function ITimePage() {
                                             </svg>
                                         </button>
                                     </div>
-                                    
+
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
                                         <div className={`text-2xl font-mono font-bold ${task.enabled ? 'text-white' : 'text-zinc-500'}`}>
                                             {formatElapsed(getElapsedSeconds(task))}
@@ -461,11 +461,10 @@ export default function ITimePage() {
                                                     e.stopPropagation();
                                                     toggleTask(task.id);
                                                 }}
-                                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                                                    task.enabled
+                                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${task.enabled
                                                         ? 'bg-white text-black hover:bg-white/90'
                                                         : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-                                                }`}
+                                                    }`}
                                             >
                                                 {task.enabled ? '⏸' : '▶'}
                                             </button>
@@ -520,7 +519,7 @@ export default function ITimePage() {
                                             </button>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
                                         <div className="text-2xl font-mono font-bold text-emerald-400">
                                             {formatElapsed(getElapsedSeconds(task))}
@@ -538,7 +537,7 @@ export default function ITimePage() {
 
             {/* Task Detail Modal - Full Screen */}
             {selectedTask && (
-                <div 
+                <div
                     className="fixed inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 z-50 overflow-y-auto"
                 >
                     {/* Header */}
@@ -581,11 +580,10 @@ export default function ITimePage() {
                                         <div className="flex gap-4 justify-center">
                                             <button
                                                 onClick={() => toggleTask(selectedTask.id)}
-                                                className={`px-8 py-4 rounded-xl text-base font-medium transition-all ${
-                                                    selectedTask.enabled
+                                                className={`px-8 py-4 rounded-xl text-base font-medium transition-all ${selectedTask.enabled
                                                         ? 'bg-white text-black hover:bg-white/90'
                                                         : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-                                                }`}
+                                                    }`}
                                             >
                                                 {selectedTask.enabled ? '⏸ Pause' : '▶ Start'}
                                             </button>
@@ -609,12 +607,11 @@ export default function ITimePage() {
                                                 <span>{formatElapsed(selectedTask.targetTime)}</span>
                                             </div>
                                             <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-                                                <div 
-                                                    className={`h-full transition-all ${
-                                                        getElapsedSeconds(selectedTask) >= selectedTask.targetTime
+                                                <div
+                                                    className={`h-full transition-all ${getElapsedSeconds(selectedTask) >= selectedTask.targetTime
                                                             ? 'bg-emerald-500'
                                                             : 'bg-purple-500'
-                                                    }`}
+                                                        }`}
                                                     style={{
                                                         width: `${Math.min((getElapsedSeconds(selectedTask) / selectedTask.targetTime) * 100, 100)}%`
                                                     }}
@@ -668,7 +665,7 @@ export default function ITimePage() {
                             {/* Right Column - Vertical Timeline */}
                             <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
                                 <h3 className="text-xl font-semibold text-white mb-6">Milestones</h3>
-                                
+
                                 {/* Add Milestone */}
                                 <div className="flex gap-3 mb-8">
                                     <input
@@ -697,17 +694,16 @@ export default function ITimePage() {
                                                     {index < selectedTask.milestones!.length - 1 && (
                                                         <div className="absolute left-4 top-8 w-0.5 h-full bg-gradient-to-b from-white/20 to-transparent" />
                                                     )}
-                                                    
+
                                                     {/* Timeline Item */}
                                                     <div className="relative flex items-start gap-4 pb-8 group">
                                                         {/* Circle */}
                                                         <button
                                                             onClick={() => toggleMilestone(selectedTask.id, milestone.id)}
-                                                            className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${
-                                                                milestone.completed
+                                                            className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${milestone.completed
                                                                     ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/50'
                                                                     : 'bg-gray-900 border-white/30 hover:border-white/50 hover:bg-white/5'
-                                                            }`}
+                                                                }`}
                                                         >
                                                             {milestone.completed && (
                                                                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -715,15 +711,14 @@ export default function ITimePage() {
                                                                 </svg>
                                                             )}
                                                         </button>
-                                                        
+
                                                         {/* Content */}
                                                         <div className="flex-1 pt-1">
                                                             <div className="flex items-start justify-between gap-3">
-                                                                <div className={`flex-1 text-base font-medium ${
-                                                                    milestone.completed 
-                                                                        ? 'text-zinc-500 line-through' 
+                                                                <div className={`flex-1 text-base font-medium ${milestone.completed
+                                                                        ? 'text-zinc-500 line-through'
                                                                         : 'text-white'
-                                                                }`}>
+                                                                    }`}>
                                                                     {milestone.text}
                                                                 </div>
                                                                 <button
@@ -769,9 +764,9 @@ export default function ITimePage() {
             )}
 
             {/* Sign In Modal */}
-            <SignInModal 
-                isOpen={showSignInModal} 
-                onClose={() => setShowSignInModal(false)} 
+            <SignInModal
+                isOpen={showSignInModal}
+                onClose={() => setShowSignInModal(false)}
             />
         </div>
     );

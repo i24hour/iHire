@@ -60,9 +60,9 @@ export default function CandidateDetailPage() {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+            <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
                 <Sidebar />
-                <main className="flex-1 flex items-center justify-center">
+                <main className="flex-1 p-4 pt-20 md:p-8 flex items-center justify-center w-full">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
                 </main>
             </div>
@@ -71,9 +71,9 @@ export default function CandidateDetailPage() {
 
     if (!candidate) {
         return (
-            <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+            <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
                 <Sidebar />
-                <main className="flex-1 flex items-center justify-center">
+                <main className="flex-1 p-4 pt-20 md:p-8 flex items-center justify-center w-full">
                     <div className="text-center">
                         <h2 className="text-2xl font-bold text-white mb-4">Candidate Not Found</h2>
                         <button
@@ -89,10 +89,10 @@ export default function CandidateDetailPage() {
     }
 
     return (
-        <div className="flex min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+        <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
             <Sidebar />
 
-            <main className="flex-1 p-8">
+            <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 {/* Back Button */}
                 <button
                     onClick={() => router.push('/dashboard')}
