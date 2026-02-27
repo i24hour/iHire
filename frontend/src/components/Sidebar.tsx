@@ -76,8 +76,7 @@ export function Sidebar() {
                     <div className="flex items-center gap-1">
                         <span className="text-2xl font-semibold text-white tracking-tight">iW</span>
                         <div className="animate-spin-slow rounded-full h-6 w-6 border-t-2 border-b-2 border-white mt-1 hidden md:block"></div>
-                        <span className="text-2xl font-semibold text-white tracking-tight hidden md:block">r</span>
-                        <span className="text-2xl font-semibold text-white tracking-tight md:hidden">r</span>
+                        <span className="text-2xl font-semibold text-white tracking-tight">r</span>
                         <span className="text-2xl font-semibold text-white tracking-tight">K</span>
                     </div>
                 </div>
