@@ -42,10 +42,12 @@ export function Sidebar() {
     return (
         <>
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-black border-b border-zinc-800 z-40 flex items-center justify-between px-4">
-                <div className="flex items-center gap-3">
-                    <div className="animate-spin-slow rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>
-                    <h1 className="text-xl font-semibold text-white tracking-tight">iHire</h1>
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-black border-b border-zinc-800 z-50 flex items-center justify-between px-4">
+                <div className="flex items-center gap-1">
+                    <span className="text-xl font-semibold text-white tracking-tight">iW</span>
+                    <div className="animate-spin-slow rounded-full h-5 w-5 border-t-2 border-b-2 border-white mt-1"></div>
+                    <span className="text-xl font-semibold text-white tracking-tight font-serif italic ml-0.5">r</span>
+                    <span className="text-xl font-semibold text-white tracking-tight">K</span>
                 </div>
                 <button onClick={() => setIsOpen(true)} className="p-2 -mr-2 text-zinc-400 hover:text-white">
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -57,12 +59,12 @@ export function Sidebar() {
             {/* Mobile Overlay */}
             {isOpen && (
                 <div
-                    className="md:hidden fixed inset-0 bg-black/80 z-40 backdrop-blur-sm"
+                    className="md:hidden fixed inset-0 bg-black/80 z-[60] backdrop-blur-sm"
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
-            <aside className={`fixed md:relative top-0 left-0 z-50 h-[100dvh] w-64 bg-black border-r border-zinc-800 p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed md:relative top-0 left-0 z-[70] h-[100dvh] w-64 bg-black border-r border-zinc-800 p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Close Button on Mobile */}
                 <button onClick={() => setIsOpen(false)} className="md:hidden absolute top-4 right-4 text-zinc-400 hover:text-white">
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -70,14 +72,12 @@ export function Sidebar() {
                     </svg>
                 </button>
 
-                {/* Logo */}
-                <div className="mb-8 flex items-center gap-3">
-                    <div className="animate-spin-slow rounded-full h-7 w-7 border-t-2 border-b-2 border-white hidden md:block"></div>
-                    <div>
-                        <h1 className="text-xl font-semibold text-white tracking-tight">
-                            iHire
-                        </h1>
-                        <p className="text-xs text-zinc-500">Multi-Agent Analysis</p>
+                <div className="mb-8 flex items-center gap-1">
+                    <div className="flex items-center gap-1">
+                        <span className="text-2xl font-semibold text-white tracking-tight">iW</span>
+                        <div className="animate-spin-slow rounded-full h-6 w-6 border-t-2 border-b-2 border-white mt-1 hidden md:block"></div>
+                        <span className="text-2xl font-semibold text-white tracking-tight font-serif italic ml-0.5">r</span>
+                        <span className="text-2xl font-semibold text-white tracking-tight">K</span>
                     </div>
                 </div>
 
