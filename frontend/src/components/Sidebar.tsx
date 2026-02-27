@@ -46,7 +46,7 @@ export function Sidebar() {
                 <div className="flex items-center gap-1">
                     <span className="text-xl font-semibold text-white tracking-tight">iW</span>
                     <div className="animate-spin-slow rounded-full h-5 w-5 border-t-2 border-b-2 border-white mt-1"></div>
-                    <span className="text-xl font-semibold text-white tracking-tight">K</span>
+                    <span className="text-xl font-semibold text-white tracking-tight">r</span>
                     <span className="text-xl font-semibold text-white tracking-tight">K</span>
                 </div>
                 <button onClick={() => setIsOpen(true)} className="p-2 -mr-2 text-zinc-400 hover:text-white">
