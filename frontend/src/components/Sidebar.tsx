@@ -46,7 +46,10 @@ export function Sidebar() {
                 <div className="flex items-center gap-1">
                     <span className="text-xl font-semibold text-white tracking-tight">iW</span>
                     <div className="animate-spin-slow rounded-full h-5 w-5 border-t-2 border-b-2 border-white mt-1"></div>
-                    <span className="text-xl font-semibold text-white tracking-tight font-serif italic ml-0.5">r</span>
+                    {/* Cursive handwritten-style 'r' */}
+                    <svg viewBox="0 0 18 26" className="h-5 w-3.5 fill-white" style={{ marginLeft: '1px', marginRight: '1px' }}>
+                        <path d="M14 5 C14 5, 14 2, 10 2 C6 2, 4 5, 4 9 C4 13, 4 22, 5 24 M5 24 C5 24, 5 14, 5 10 C5 8, 6 5, 9 5 C12 5, 13 7, 13 9 C13 11, 11 12, 9 12 C7 12, 5 12, 5 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
                     <span className="text-xl font-semibold text-white tracking-tight">K</span>
                 </div>
                 <button onClick={() => setIsOpen(true)} className="p-2 -mr-2 text-zinc-400 hover:text-white">
@@ -76,7 +79,11 @@ export function Sidebar() {
                     <div className="flex items-center gap-1">
                         <span className="text-2xl font-semibold text-white tracking-tight">iW</span>
                         <div className="animate-spin-slow rounded-full h-6 w-6 border-t-2 border-b-2 border-white mt-1 hidden md:block"></div>
-                        <span className="text-2xl font-semibold text-white tracking-tight font-serif italic ml-0.5">r</span>
+                        {/* Cursive handwritten-style 'r' */}
+                        <svg viewBox="0 0 18 26" className="h-6 w-4 fill-white hidden md:block" style={{ marginLeft: '1px', marginRight: '1px' }}>
+                            <path d="M14 5 C14 5, 14 2, 10 2 C6 2, 4 5, 4 9 C4 13, 4 22, 5 24 M5 24 C5 24, 5 14, 5 10 C5 8, 6 5, 9 5 C12 5, 13 7, 13 9 C13 11, 11 12, 9 12 C7 12, 5 12, 5 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                        </svg>
+                        <span className="text-2xl font-semibold text-white tracking-tight font-serif italic ml-0.5 md:hidden">r</span>
                         <span className="text-2xl font-semibold text-white tracking-tight">K</span>
                     </div>
                 </div>
