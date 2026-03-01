@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 const navItems = [
     { href: '/', label: 'Overview', icon: '📊' },
-    { href: '/dashboard', label: 'Candidates', icon: '👥' },
+    // { href: '/dashboard', label: 'Candidates', icon: '👥' },
     { href: '/itime', label: 'iTime', icon: '⏱️' }, // iTime Tracker
 ];
 
@@ -103,6 +103,7 @@ export function Sidebar() {
                 </nav>
 
                 {/* Campaigns / Jobs */}
+                {/* 
                 <div className="mb-4">
                     <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide px-3">Active Jobs</h3>
                     <div className="space-y-1">
@@ -131,6 +132,7 @@ export function Sidebar() {
                         )}
                     </div>
                 </div>
+                */}
 
                 {/* Stats Summary */}
                 <div className="mt-auto p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
