@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import Link from 'next/link';
 
@@ -28,16 +28,16 @@ interface Milestone {
     createdAtElapsed: number;
 }
 
-export default function WorkerTasksPage({ params }: { params: { userId: string } }) {
+export default function WorkerTasksPage({ params }: { params: Promise<{ userId: string }> }) {
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(() => Date.now());
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
 
-    // We need to unwrap params in Next.js 15+ 
-    // Usually this is done via React.use(params) but for simplicity we'll decode it here
-    const userId = decodeURIComponent(params.userId);
+    // Unwrap params in Next.js 15+ using React.use
+    const resolvedParams = use(params);
+    const userId = decodeURIComponent(resolvedParams.userId);
 
     const fetchTasks = useCallback(async () => {
         try {
