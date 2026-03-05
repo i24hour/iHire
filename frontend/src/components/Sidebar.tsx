@@ -8,8 +8,8 @@ import { motion } from 'framer-motion';
 const navItems = [
     // { href: '/', label: 'Overview', icon: '📊' },
     // { href: '/dashboard', label: 'Candidates', icon: '👥' },
-    { href: '/itime', label: 'iTime', icon: '⏱️' }, // iTime Tracker
-    { href: '/workers', label: 'WOrKers', icon: '👷' }, // Workers Directory
+    { href: '/itime', label: 'iTime' }, // iTime Tracker
+    { href: '/workers', label: 'WOrKers' }, // Workers Directory
 ];
 
 export function Sidebar() {
@@ -95,7 +95,6 @@ export function Sidebar() {
                                         : 'text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
                                         }`}
                                 >
-                                    <span className="text-base">{item.icon}</span>
                                     <span className="font-medium text-sm">{item.label}</span>
                                 </motion.div>
                             </Link>
