@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 const navItems = [
     // { href: '/', label: 'Overview', icon: '📊' },
@@ -14,6 +15,7 @@ const navItems = [
 
 export function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
     const [campaigns, setCampaigns] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
@@ -83,21 +85,21 @@ export function Sidebar() {
                 </div>
 
                 {/* Main Navigation */}
-                <nav className="space-y-1 mb-8">
+                <nav className="space-y-4 mb-8 w-full">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
-                            <Link key={item.href} href={item.href}>
-                                <motion.div
-                                    whileHover={{ x: 2 }}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 ${isActive
-                                        ? 'bg-zinc-900 text-white'
-                                        : 'text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200'
-                                        }`}
-                                >
-                                    <span className="font-medium text-sm">{item.label}</span>
-                                </motion.div>
-                            </Link>
+                            <LiquidButton
+                                key={item.href}
+                                onClick={() => router.push(item.href)}
+                                className={`w-full justify-start text-left px-5 py-3 rounded-xl transition-all duration-300 ${isActive
+                                        ? 'shadow-[0_0_15px_rgba(16,185,129,0.5)] border border-emerald-500/50 text-emerald-400 bg-emerald-500/10'
+                                        : 'text-zinc-400 border border-transparent hover:text-white hover:bg-zinc-900/50'
+                                    }`}
+                                variant="default"
+                            >
+                                <span className="font-medium text-sm flex-1">{item.label}</span>
+                            </LiquidButton>
                         );
                     })}
                 </nav>
