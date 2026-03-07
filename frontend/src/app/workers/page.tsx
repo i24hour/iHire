@@ -78,7 +78,7 @@ export default function WorkersPage() {
 
                     {/* Workers Grid */}
                     <div>
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4 max-w-3xl">
                             {workers.length === 0 ? (
                                 <p className="text-zinc-500">No workers found yet. Tasks need to be created first.</p>
                             ) : (
