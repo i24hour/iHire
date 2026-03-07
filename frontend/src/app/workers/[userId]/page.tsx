@@ -104,8 +104,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 <Sidebar />
                 <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full animate-pulse space-y-6">
                     <div className="h-10 w-48 bg-zinc-800/50 rounded-md"></div>
-                    <div className="h-32 w-full bg-zinc-900/40 border border-zinc-800 rounded-2xl"></div>
-                    <div className="h-64 w-full bg-zinc-900/40 border border-zinc-800 rounded-2xl"></div>
+                    <div className="h-32 w-full bg-black border border-zinc-800 rounded-2xl"></div>
+                    <div className="h-64 w-full bg-black border border-zinc-800 rounded-2xl"></div>
                 </main>
             </div>
         );
@@ -116,7 +116,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
             <div className="flex flex-col md:flex-row min-h-screen bg-black">
                 <Sidebar />
                 <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full flex items-center justify-center">
-                    <div className="flex flex-col items-center justify-center bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 gap-4">
+                    <div className="flex flex-col items-center justify-center bg-black border border-zinc-800 rounded-2xl p-8 gap-4">
                         <p className="text-white">Error: {error}</p>
                         <LiquidButton onClick={() => router.push('/workers')} className="text-white">
                             Back to Workers Directory
@@ -156,29 +156,29 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 max-w-5xl">
-                    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 flex flex-col justify-center">
+                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 flex flex-col justify-center">
                         <div className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">Total Tasks</div>
                         <div className="text-3xl sm:text-4xl font-bold text-white truncate">{tasks.length}</div>
                     </div>
 
-                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
+                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
                         <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Running</div>
                         <div className="text-3xl sm:text-4xl font-bold text-white truncate">{activeTasksCount}</div>
                     </div>
 
-                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
+                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
                         <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Completed</div>
                         <div className="text-3xl sm:text-4xl font-bold text-white truncate">{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
+                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
                         <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Total Time</div>
                         <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white truncate tracking-tight">{formatElapsed(totalTime)}</div>
                     </div>
                 </div>
 
                 {/* Active/Pending Tasks */}
-                <div className="bg-zinc-900/30 rounded-2xl border border-zinc-800/50 p-6 mb-8 max-w-5xl">
+                <div className="bg-black rounded-2xl border border-zinc-800/50 p-6 mb-8 max-w-5xl">
                     <h2 className="text-lg font-semibold text-white mb-4">Active Tasks</h2>
 
                     {pendingTasks.length === 0 ? (
@@ -232,7 +232,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                 {/* Completed Tasks */}
                 {completedTasks.length > 0 && (
-                    <div className="bg-zinc-900/30 rounded-2xl border border-zinc-800/50 p-6 max-w-5xl mb-8">
+                    <div className="bg-black rounded-2xl border border-zinc-800/50 p-6 max-w-5xl mb-8">
                         <h2 className="text-lg font-semibold text-white mb-4">Completed Tasks</h2>
                         <div className="flex flex-col gap-3">
                             {completedTasks.map((task) => (
@@ -276,7 +276,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
             {selectedTask && (
                 <div className="fixed inset-0 bg-black/95 z-[80] overflow-y-auto backdrop-blur-md">
                     {/* Header */}
-                    <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
+                    <div className="sticky top-0 z-10 bg-black backdrop-blur-xl border-b border-gray-800">
                         <div className="max-w-7xl mx-auto px-8 py-6">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
@@ -323,7 +323,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                             {/* Left Column - Timer & Controls */}
                             <div className="space-y-8">
                                 {/* Timer Display */}
-                                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
                                     <div className="text-center">
                                         <div className="text-sm text-zinc-400 mb-4 uppercase tracking-wide">Time Recorded</div>
                                         <div className={`text-8xl font-mono font-bold mb-8 ${selectedTask.enabled ? 'text-white' : 'text-zinc-300'}`}>
@@ -358,7 +358,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                             </div>
 
                             {/* Right Column - Vertical Timeline */}
-                            <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                            <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
                                 <h3 className="text-xl font-semibold text-white mb-6">Milestones Log</h3>
 
                                 {/* Vertical Timeline */}
@@ -377,7 +377,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                                         {/* Circle */}
                                                         <div className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${milestone.completed
                                                             ? 'bg-white text-black border-white/50 shadow-lg shadow-white/20'
-                                                            : 'bg-gray-900 border-white/30'
+                                                            : 'bg-black border-white/30'
                                                             }`}
                                                         >
                                                             {milestone.completed && (

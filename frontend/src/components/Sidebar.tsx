@@ -87,14 +87,14 @@ export function Sidebar() {
                 {/* Main Navigation */}
                 <nav className="space-y-4 mb-8 w-full">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                         return (
                             <LiquidButton
                                 key={item.href}
                                 onClick={() => router.push(item.href)}
                                 className={`w-full justify-start text-left px-5 py-3 rounded-full transition-all duration-300 ${isActive
                                     ? 'shadow-[0_0_15px_rgba(255,255,255,0.3)] border border-white/20 text-white bg-white/5'
-                                    : 'text-zinc-400 border border-transparent hover:text-white hover:bg-zinc-900/50'
+                                    : 'text-zinc-400 border border-transparent hover:text-white hover:bg-black'
                                     }`}
                                 variant="default"
                             >
@@ -123,7 +123,7 @@ export function Sidebar() {
                                     <Link key={campaign} href={`/dashboard?campaign=${encodeURIComponent(campaign)}`}>
                                         <motion.div
                                             whileHover={{ x: 2 }}
-                                            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 text-zinc-400 hover:bg-zinc-900/30 hover:text-zinc-200`}
+                                            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 text-zinc-400 hover:bg-black hover:text-zinc-200`}
                                         >
                                             <span className="text-xs">💼</span>
                                             <span className="font-medium text-sm truncate">{campaign}</span>
@@ -137,7 +137,7 @@ export function Sidebar() {
                 */}
 
                 {/* Stats Summary */}
-                <div className="mt-auto p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                <div className="mt-auto p-4 bg-black rounded-lg border border-zinc-800">
                     <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide">Quick Stats</h3>
                     <div className="space-y-2.5">
                         <div className="flex justify-between">

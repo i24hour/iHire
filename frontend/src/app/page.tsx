@@ -46,7 +46,7 @@ export default async function Home() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+          <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
             <div className="text-sm text-gray-400 mb-2">Total Candidates</div>
             <div className="text-4xl font-bold text-white">{stats.total}</div>
           </div>
@@ -70,7 +70,7 @@ export default async function Home() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Top Candidates */}
-          <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+          <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Top Candidates</h2>
               <Link href="/dashboard" className="text-sm text-white hover:text-zinc-300">
@@ -113,7 +113,7 @@ export default async function Home() {
           </div>
 
           {/* Recommendation Breakdown */}
-          <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+          <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Recommendation Breakdown</h2>
 
             <div className="space-y-4">
@@ -173,7 +173,7 @@ export default async function Home() {
         </div>
 
         {/* System Status */}
-        <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+        <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">System Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-xl">

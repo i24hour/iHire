@@ -361,7 +361,7 @@ export default function ITimePage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
                         <div className="text-sm text-gray-400 mb-2">Total Tasks</div>
                         <div className="text-4xl font-bold text-white">{tasks.length}</div>
                     </div>
@@ -383,7 +383,7 @@ export default function ITimePage() {
                 </div>
 
                 {/* Add Task Form */}
-                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
+                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Add New Task</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <input
@@ -412,7 +412,7 @@ export default function ITimePage() {
                 </div>
 
                 {/* Pending Tasks */}
-                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
+                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Active Tasks</h2>
 
                     {pendingTasks.length === 0 ? (
@@ -491,7 +491,7 @@ export default function ITimePage() {
 
                 {/* Completed Tasks */}
                 {completedTasks.length > 0 && (
-                    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
                         <h2 className="text-lg font-semibold text-white mb-4">Completed Tasks</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {completedTasks.map((task) => (
@@ -544,7 +544,7 @@ export default function ITimePage() {
                     className="fixed inset-0 bg-black z-[80] overflow-y-auto"
                 >
                     {/* Header */}
-                    <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
+                    <div className="sticky top-0 z-10 bg-black backdrop-blur-xl border-b border-gray-800">
                         <div className="max-w-7xl mx-auto px-8 py-6">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
@@ -574,7 +574,7 @@ export default function ITimePage() {
                             {/* Left Column - Timer & Controls */}
                             <div className="space-y-8">
                                 {/* Timer Display */}
-                                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
                                     <div className="text-center">
                                         <div className="text-sm text-zinc-400 mb-4 uppercase tracking-wide">Current Time</div>
                                         <div className={`text-8xl font-mono font-bold mb-8 ${selectedTask.enabled ? 'text-white' : 'text-zinc-500'}`}>
@@ -625,7 +625,7 @@ export default function ITimePage() {
                                 </div>
 
                                 {/* Target Time */}
-                                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
                                     <h3 className="text-xl font-semibold text-white mb-4">Set Target Time</h3>
                                     <div className="flex gap-3">
                                         <div className="flex-1">
@@ -663,7 +663,7 @@ export default function ITimePage() {
                             </div>
 
                             {/* Right Column - Vertical Timeline */}
-                            <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                            <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
                                 <h3 className="text-xl font-semibold text-white mb-6">Milestones</h3>
 
                                 {/* Add Milestone */}
@@ -702,7 +702,7 @@ export default function ITimePage() {
                                                             onClick={() => toggleMilestone(selectedTask.id, milestone.id)}
                                                             className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${milestone.completed
                                                                 ? 'bg-white text-black border-white/50 shadow-lg shadow-white/20'
-                                                                : 'bg-gray-900 border-white/30 hover:border-white/50 hover:bg-white/5'
+                                                                : 'bg-black border-white/30 hover:border-white/50 hover:bg-white/5'
                                                                 }`}
                                                         >
                                                             {milestone.completed && (

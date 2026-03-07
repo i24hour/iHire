@@ -34,7 +34,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
             onClick={onClose}
         >
             <div 
-                className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-8"
+                className="bg-black border border-gray-800 rounded-2xl max-w-md w-full p-8"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -77,7 +77,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
                         <div className="w-full border-t border-gray-800"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-gray-900 text-zinc-500">Or continue with email</span>
+                        <span className="px-2 bg-black text-zinc-500">Or continue with email</span>
                     </div>
                 </div>
 

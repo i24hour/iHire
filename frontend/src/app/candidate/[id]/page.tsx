@@ -67,8 +67,8 @@ export default function CandidateDetailPage() {
                     {/* Back Button Skeleton */}
                     <div className="w-40 h-8 bg-zinc-800/50 rounded-lg mb-6"></div>
                     {/* Header Skeleton */}
-                    <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6 mb-6 h-32"></div>
-                    <div className="h-64 bg-gray-900/50 rounded-2xl border border-gray-800 mb-6"></div>
+                    <div className="bg-black rounded-2xl border border-gray-800 p-6 mb-6 h-32"></div>
+                    <div className="h-64 bg-black rounded-2xl border border-gray-800 mb-6"></div>
                 </main>
             </div>
         );
@@ -111,7 +111,7 @@ export default function CandidateDetailPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-6"
+                    className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-6"
                 >
                     <div className="flex items-start justify-between">
                         <div>
@@ -164,7 +164,7 @@ export default function CandidateDetailPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+                            className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
                         >
                             <h3 className="text-lg font-semibold text-white mb-4">Interview Focus Areas</h3>
                             <ul className="space-y-2">
@@ -184,7 +184,7 @@ export default function CandidateDetailPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="bg-zinc-900/20 backdrop-blur-xl rounded-2xl border border-white/20 p-6"
+                            className="bg-black backdrop-blur-xl rounded-2xl border border-white/20 p-6"
                         >
                             <h3 className="text-lg font-semibold text-white mb-4">Risk Notes</h3>
                             <ul className="space-y-2">
@@ -204,7 +204,7 @@ export default function CandidateDetailPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
+                            className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6"
                         >
                             <h3 className="text-lg font-semibold text-white mb-4">Assignment</h3>
                             <p className="text-gray-300">{candidate.assignmentBrief}</p>
@@ -217,7 +217,7 @@ export default function CandidateDetailPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 }}
-                            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 lg:col-span-2"
+                            className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 lg:col-span-2"
                         >
                             <h3 className="text-lg font-semibold text-white mb-4">Resume Feedback</h3>
                             <div className="text-gray-300 whitespace-pre-line">

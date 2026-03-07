@@ -56,7 +56,7 @@ export function CandidateCard({
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 cursor-pointer hover:border-white/20 transition-all duration-300 relative overflow-hidden"
+            className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 cursor-pointer hover:border-white/20 transition-all duration-300 relative overflow-hidden"
         >
             {/* Header */}
             <div className="flex items-start justify-between mb-4">

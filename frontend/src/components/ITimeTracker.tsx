@@ -92,7 +92,7 @@ export function ITimeTracker() {
   };
 
   return (
-    <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6">
+    <div className="bg-black border border-zinc-800 rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl font-semibold text-white">iTime</h2>

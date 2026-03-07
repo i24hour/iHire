@@ -39,7 +39,7 @@ export function ScoreChart({ executionFit, founderConfidence, relevance, metrics
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Main Scores */}
-            <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+            <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Overall Scores</h3>
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -70,7 +70,7 @@ export function ScoreChart({ executionFit, founderConfidence, relevance, metrics
 
             {/* Detailed Metrics */}
             {detailedData && (
-                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
                     <h3 className="text-lg font-semibold text-white mb-4">Detailed Metrics</h3>
                     <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">

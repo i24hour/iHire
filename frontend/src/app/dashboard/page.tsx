@@ -156,10 +156,10 @@ function DashboardContent() {
 
                 {loading ? (
                     <div className="animate-pulse space-y-4">
-                        <div className="h-10 bg-zinc-900/50 rounded-lg w-full"></div>
-                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
-                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
-                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
+                        <div className="h-10 bg-black rounded-lg w-full"></div>
+                        <div className="h-16 bg-black rounded-lg w-full"></div>
+                        <div className="h-16 bg-black rounded-lg w-full"></div>
+                        <div className="h-16 bg-black rounded-lg w-full"></div>
                     </div>
                 ) : viewMode === 'table' ? (
                     <RankingTable
@@ -199,12 +199,12 @@ export default function DashboardPage() {
                 <Sidebar />
                 <main className="flex-1 p-8">
                     <div className="animate-pulse flex items-center gap-4 mb-8">
-                        <div className="h-8 bg-zinc-900/80 rounded w-1/4"></div>
+                        <div className="h-8 bg-black rounded w-1/4"></div>
                     </div>
                     <div className="animate-pulse space-y-4">
-                        <div className="h-10 bg-zinc-900/50 rounded-lg w-full"></div>
-                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
-                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
+                        <div className="h-10 bg-black rounded-lg w-full"></div>
+                        <div className="h-16 bg-black rounded-lg w-full"></div>
+                        <div className="h-16 bg-black rounded-lg w-full"></div>
                     </div>
                 </main>
             </div>
