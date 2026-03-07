@@ -78,7 +78,7 @@ export default function WorkersPage() {
 
                     {/* Workers Grid */}
                     <div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="flex flex-col gap-4">
                             {workers.length === 0 ? (
                                 <p className="text-zinc-500">No workers found yet. Tasks need to be created first.</p>
                             ) : (
@@ -87,13 +87,13 @@ export default function WorkersPage() {
                                         <motion.div
                                             whileHover={{ y: -4, scale: 1.01 }}
                                             whileTap={{ scale: 0.98 }}
-                                            className="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 h-full flex flex-col hover:border-zinc-700 transition-colors cursor-pointer group"
+                                            className="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-zinc-700 transition-colors cursor-pointer group w-full"
                                         >
-                                            <div className="flex items-center gap-4 mb-6">
-                                                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-xl uppercase ring-1 ring-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
+                                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex shrink-0 items-center justify-center text-emerald-500 font-bold text-xl uppercase ring-1 ring-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
                                                     {worker.userId.charAt(0)}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
+                                                <div className="flex-1 min-w-[150px] overflow-hidden">
                                                     <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.userId}>
                                                         {worker.userId.split('@')[0]}
                                                     </h3>
@@ -103,16 +103,16 @@ export default function WorkersPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-4 mt-auto">
-                                                <div className="bg-zinc-950/50 rounded-xl p-3 border border-zinc-800/50">
-                                                    <span className="block text-xs font-medium text-zinc-500 mb-1">Total Tasks</span>
-                                                    <span className="block text-xl font-semibold text-zinc-300">
+                                            <div className="flex flex-row gap-4 mt-auto">
+                                                <div className="bg-zinc-950/50 rounded-xl px-4 py-2 border border-zinc-800/50 flex flex-col justify-center min-w-[120px]">
+                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500 mb-0.5">Total Tasks</span>
+                                                    <span className="block text-2xl font-bold text-zinc-300 leading-none">
                                                         {worker.totalTasks}
                                                     </span>
                                                 </div>
-                                                <div className="bg-emerald-950/20 rounded-xl p-3 border border-emerald-900/30">
-                                                    <span className="block text-xs font-medium text-emerald-500/70 mb-1">Completed</span>
-                                                    <span className="block text-xl font-semibold text-emerald-400">
+                                                <div className="bg-emerald-950/20 rounded-xl px-4 py-2 border border-emerald-900/30 flex flex-col justify-center min-w-[120px]">
+                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-500/70 mb-0.5">Completed</span>
+                                                    <span className="block text-2xl font-bold text-emerald-400 leading-none">
                                                         {worker.completedTasks}
                                                     </span>
                                                 </div>
