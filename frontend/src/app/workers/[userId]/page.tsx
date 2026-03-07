@@ -100,7 +100,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
     if (isLoading) {
         return (
-            <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+            <div className="flex flex-col md:flex-row min-h-screen bg-black">
                 <Sidebar />
                 <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full animate-pulse space-y-6">
                     <div className="h-10 w-48 bg-zinc-800/50 rounded-md"></div>
@@ -113,7 +113,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
     if (error) {
         return (
-            <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+            <div className="flex flex-col md:flex-row min-h-screen bg-black">
                 <Sidebar />
                 <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full flex items-center justify-center">
                     <div className="flex flex-col items-center justify-center bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 gap-4">
@@ -128,7 +128,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     }
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+        <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
 
             <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
@@ -274,7 +274,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
             {/* Task Detail Modal - Read Only */}
             {selectedTask && (
-                <div className="fixed inset-0 bg-gradient-to-br from-gray-950/95 via-gray-900/95 to-gray-950/95 z-[80] overflow-y-auto backdrop-blur-md">
+                <div className="fixed inset-0 bg-black/95 z-[80] overflow-y-auto backdrop-blur-md">
                     {/* Header */}
                     <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
                         <div className="max-w-7xl mx-auto px-8 py-6">

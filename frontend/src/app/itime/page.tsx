@@ -306,7 +306,7 @@ export default function ITimePage() {
     const completedTasks = tasks.filter((task) => task.completed);
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+        <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
 
             <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
@@ -541,7 +541,7 @@ export default function ITimePage() {
             {/* Task Detail Modal - Full Screen */}
             {selectedTask && (
                 <div
-                    className="fixed inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 z-[80] overflow-y-auto"
+                    className="fixed inset-0 bg-black z-[80] overflow-y-auto"
                 >
                     {/* Header */}
                     <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">

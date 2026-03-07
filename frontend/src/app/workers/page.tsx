@@ -40,7 +40,7 @@ export default function WorkersPage() {
     // We will render loading and error states inside the main layout to preserve the sidebar
 
     return (
-        <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+        <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
             <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 <div className="space-y-8">
