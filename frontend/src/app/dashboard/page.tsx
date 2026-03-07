@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { RankingTable } from '@/components/RankingTable';
 import { CandidateCard } from '@/components/CandidateCard';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 interface CandidateRecord {
     id: number;
@@ -129,26 +130,27 @@ function DashboardContent() {
                         </p>
                     </div>
 
-                    {/* View Toggle */}
-                    <div className="flex items-center gap-1 bg-zinc-900 rounded-lg p-1 border border-zinc-800">
-                        <button
+                    <div className="flex items-center gap-2 bg-black/40 rounded-lg p-2 border border-zinc-800">
+                        <LiquidButton
                             onClick={() => setViewMode('table')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'table'
-                                ? 'bg-white text-black'
-                                : 'text-zinc-400 hover:text-white'
+                            className={`px-4 py-2 transition-colors ${viewMode === 'table'
+                                ? 'text-white border-b-2 border-emerald-500'
+                                : 'text-zinc-500 hover:text-white'
                                 }`}
+                            variant="ghost"
                         >
                             Table
-                        </button>
-                        <button
+                        </LiquidButton>
+                        <LiquidButton
                             onClick={() => setViewMode('cards')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'cards'
-                                ? 'bg-white text-black'
-                                : 'text-zinc-400 hover:text-white'
+                            className={`px-4 py-2 transition-colors ${viewMode === 'cards'
+                                ? 'text-white border-b-2 border-emerald-500'
+                                : 'text-zinc-500 hover:text-white'
                                 }`}
+                            variant="ghost"
                         >
                             Cards
-                        </button>
+                        </LiquidButton>
                     </div>
                 </div>
 

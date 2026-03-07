@@ -51,7 +51,7 @@ export default function WorkersPage() {
                 <p className="text-red-400">Error: {error}</p>
                 <LiquidButton
                     onClick={fetchWorkers}
-                    className="px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg shadow-zinc-800/20"
+                    className="px-4 py-2 text-white"
                     size="default"
                 >
                     Retry

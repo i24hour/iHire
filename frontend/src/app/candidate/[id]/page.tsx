@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { ScoreChart } from '@/components/ScoreChart';
 import { motion } from 'framer-motion';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 interface CandidateRecord {
     id: number;
@@ -76,12 +77,12 @@ export default function CandidateDetailPage() {
                 <main className="flex-1 p-4 pt-20 md:p-8 flex items-center justify-center w-full">
                     <div className="text-center">
                         <h2 className="text-2xl font-bold text-white mb-4">Candidate Not Found</h2>
-                        <button
+                        <LiquidButton
                             onClick={() => router.push('/dashboard')}
-                            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                            className="px-4 py-2 text-white"
                         >
                             Back to Dashboard
-                        </button>
+                        </LiquidButton>
                     </div>
                 </main>
             </div>
@@ -94,12 +95,13 @@ export default function CandidateDetailPage() {
 
             <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 {/* Back Button */}
-                <button
+                <LiquidButton
                     onClick={() => router.push('/dashboard')}
-                    className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 transition-colors"
+                    className="mb-6 text-gray-400 group flex items-center gap-2"
+                    variant="ghost"
                 >
-                    ← Back to Dashboard
-                </button>
+                    <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Dashboard
+                </LiquidButton>
 
                 {/* Header */}
                 <motion.div

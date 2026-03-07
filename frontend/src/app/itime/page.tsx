@@ -340,17 +340,18 @@ export default function ITimePage() {
                                         className="rounded-full border-2 border-gray-800"
                                     />
                                 )}
-                                <button
+                                <LiquidButton
                                     onClick={() => signOut()}
                                     className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                                    variant="ghost"
                                 >
                                     Sign Out
-                                </button>
+                                </LiquidButton>
                             </div>
                         ) : (
                             <LiquidButton
                                 onClick={() => setShowSignInModal(true)}
-                                className="px-6 py-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-sm font-bold shadow-purple-500/20"
+                                className="px-6 py-2 text-sm font-bold"
                             >
                                 Sign In
                             </LiquidButton>
@@ -404,7 +405,7 @@ export default function ITimePage() {
                     </div>
                     <LiquidButton
                         onClick={handleAddTask}
-                        className="w-full md:w-auto px-6 py-3 bg-white/10 text-white border border-white/20 shadow-white/10 text-sm font-bold"
+                        className="w-full md:w-auto px-6 py-3 text-sm font-bold text-white content-center"
                     >
                         + Add Task
                     </LiquidButton>
@@ -439,7 +440,9 @@ export default function ITimePage() {
                                                 </div>
                                             )}
                                         </div>
-                                        <button
+                                        <LiquidButton
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 deleteTask(task.id);
@@ -449,7 +452,7 @@ export default function ITimePage() {
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                             </svg>
-                                        </button>
+                                        </LiquidButton>
                                     </div>
 
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
@@ -457,28 +460,27 @@ export default function ITimePage() {
                                             {formatElapsed(getElapsedSeconds(task))}
                                         </div>
                                         <div className="flex gap-2">
-                                            <button
+                                            <LiquidButton
+                                                size="sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     toggleTask(task.id);
                                                 }}
-                                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${task.enabled
-                                                    ? 'bg-white text-black hover:bg-white/90'
-                                                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-                                                    }`}
+                                                className={`transition-all ${task.enabled ? 'text-white' : 'text-zinc-300'}`}
                                             >
                                                 {task.enabled ? '⏸' : '▶'}
-                                            </button>
-                                            <button
+                                            </LiquidButton>
+                                            <LiquidButton
+                                                size="sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     completeTask(task.id);
                                                 }}
-                                                className="px-3 py-2 rounded-lg text-xs font-medium bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 border border-emerald-500/30 transition-all"
+                                                className="text-emerald-400"
                                                 title="Mark as complete"
                                             >
                                                 ✓
-                                            </button>
+                                            </LiquidButton>
                                         </div>
                                     </div>
                                 </div>
@@ -590,7 +592,7 @@ export default function ITimePage() {
                                                     completeTask(selectedTask.id);
                                                     setSelectedTask(null);
                                                 }}
-                                                className="w-40 text-base font-bold bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/10"
+                                                className="w-40 text-base font-bold text-emerald-400"
                                             >
                                                 ✓ Complete
                                             </LiquidButton>
@@ -652,7 +654,7 @@ export default function ITimePage() {
                                         </div>
                                         <LiquidButton
                                             onClick={() => setTargetTime(selectedTask.id)}
-                                            className="px-6 py-3 bg-white/10 text-white border border-white/20 shadow-white/10 text-sm font-bold self-end"
+                                            className="px-6 py-3 text-sm font-bold self-end text-white"
                                         >
                                             Set
                                         </LiquidButton>
@@ -676,7 +678,7 @@ export default function ITimePage() {
                                     />
                                     <LiquidButton
                                         onClick={() => addMilestone(selectedTask.id)}
-                                        className="px-6 py-3 bg-white/10 text-white border border-white/20 shadow-white/10 text-sm font-bold"
+                                        className="px-6 py-3 text-sm font-bold text-white"
                                     >
                                         Add
                                     </LiquidButton>

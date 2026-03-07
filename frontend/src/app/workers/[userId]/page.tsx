@@ -128,7 +128,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         <div>
                             <LiquidButton
                                 onClick={() => router.push('/workers')}
-                                className="text-emerald-400 text-sm mb-4 bg-emerald-900/20 border border-emerald-500/20 hover:bg-emerald-900/40 px-4 py-2"
+                                className="mb-4 text-emerald-400"
                                 size="sm"
                             >
                                 ← Back to Workers
