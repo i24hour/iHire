@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/Sidebar';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 interface WorkerStats {
     userId: string;
@@ -48,12 +49,13 @@ export default function WorkersPage() {
         return (
             <div className="flex flex-col h-[100dvh] items-center justify-center bg-black text-white gap-4">
                 <p className="text-red-400">Error: {error}</p>
-                <button
+                <LiquidButton
                     onClick={fetchWorkers}
-                    className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                    className="px-4 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg shadow-zinc-800/20"
+                    size="default"
                 >
                     Retry
-                </button>
+                </LiquidButton>
             </div>
         );
     }

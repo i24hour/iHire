@@ -2,8 +2,9 @@
 
 import { Sidebar } from '@/components/Sidebar';
 import { SignInModal } from '@/components/SignInModal';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { useState, useEffect, useCallback } from 'react';
 
 interface ITimeTask {
@@ -347,12 +348,12 @@ export default function ITimePage() {
                                 </button>
                             </div>
                         ) : (
-                            <button
+                            <LiquidButton
                                 onClick={() => setShowSignInModal(true)}
-                                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-all"
+                                className="px-6 py-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-sm font-bold shadow-purple-500/20"
                             >
                                 Sign In
-                            </button>
+                            </LiquidButton>
                         )}
                     </div>
                 </div>
@@ -401,12 +402,12 @@ export default function ITimePage() {
                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all"
                         />
                     </div>
-                    <button
+                    <LiquidButton
                         onClick={handleAddTask}
-                        className="w-full md:w-auto px-6 py-3 bg-white hover:bg-white/90 text-black text-sm font-medium rounded-lg transition-all"
+                        className="w-full md:w-auto px-6 py-3 bg-white/10 text-white border border-white/20 shadow-white/10 text-sm font-bold"
                     >
                         + Add Task
-                    </button>
+                    </LiquidButton>
                 </div>
 
                 {/* Pending Tasks */}
@@ -578,24 +579,21 @@ export default function ITimePage() {
                                             {formatElapsed(getElapsedSeconds(selectedTask))}
                                         </div>
                                         <div className="flex gap-4 justify-center">
-                                            <button
+                                            <LiquidButton
                                                 onClick={() => toggleTask(selectedTask.id)}
-                                                className={`px-8 py-4 rounded-xl text-base font-medium transition-all ${selectedTask.enabled
-                                                    ? 'bg-white text-black hover:bg-white/90'
-                                                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-                                                    }`}
+                                                className={`w-40 text-base font-bold transition-all ${selectedTask.enabled ? 'text-white' : 'text-zinc-300'}`}
                                             >
                                                 {selectedTask.enabled ? '⏸ Pause' : '▶ Start'}
-                                            </button>
-                                            <button
+                                            </LiquidButton>
+                                            <LiquidButton
                                                 onClick={() => {
                                                     completeTask(selectedTask.id);
                                                     setSelectedTask(null);
                                                 }}
-                                                className="px-8 py-4 rounded-xl text-base font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-all"
+                                                className="w-40 text-base font-bold bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 shadow-emerald-500/10"
                                             >
                                                 ✓ Complete
-                                            </button>
+                                            </LiquidButton>
                                         </div>
                                     </div>
 
@@ -652,12 +650,12 @@ export default function ITimePage() {
                                                 max="59"
                                             />
                                         </div>
-                                        <button
+                                        <LiquidButton
                                             onClick={() => setTargetTime(selectedTask.id)}
-                                            className="px-6 py-3 bg-white hover:bg-white/90 text-black text-sm font-medium rounded-lg transition-all self-end"
+                                            className="px-6 py-3 bg-white/10 text-white border border-white/20 shadow-white/10 text-sm font-bold self-end"
                                         >
                                             Set
-                                        </button>
+                                        </LiquidButton>
                                     </div>
                                 </div>
                             </div>
@@ -676,12 +674,12 @@ export default function ITimePage() {
                                         onKeyDown={(e) => e.key === 'Enter' && addMilestone(selectedTask.id)}
                                         className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all"
                                     />
-                                    <button
+                                    <LiquidButton
                                         onClick={() => addMilestone(selectedTask.id)}
-                                        className="px-6 py-3 bg-white hover:bg-white/90 text-black text-sm font-medium rounded-lg transition-all"
+                                        className="px-6 py-3 bg-white/10 text-white border border-white/20 shadow-white/10 text-sm font-bold"
                                     >
                                         Add
-                                    </button>
+                                    </LiquidButton>
                                 </div>
 
                                 {/* Vertical Timeline */}
@@ -761,13 +759,14 @@ export default function ITimePage() {
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Sign In Modal */}
             <SignInModal
                 isOpen={showSignInModal}
                 onClose={() => setShowSignInModal(false)}
             />
-        </div>
+        </div >
     );
 }

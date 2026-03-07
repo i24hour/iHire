@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import { Sidebar } from '@/components/Sidebar';
+import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import Link from 'next/link';
 
 // Use same types as ITimeTracker
@@ -120,9 +121,11 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 <div className="mb-8">
                     <div className="flex items-start justify-between">
                         <div>
-                            <Link href="/workers" className="text-emerald-500 text-sm hover:underline mb-2 inline-block">
-                                ← Back to Workers
-                            </Link>
+                            <LiquidButton asChild className="text-emerald-400 text-sm mb-4 bg-emerald-900/20 border border-emerald-500/20 hover:bg-emerald-900/40 px-4 py-2" size="sm">
+                                <Link href="/workers">
+                                    ← Back to Workers
+                                </Link>
+                            </LiquidButton>
                             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
                                 {userId.split('@')[0]}'s Tasks
                                 <span className="bg-zinc-800 text-xs px-2 py-1 rounded text-zinc-400 font-normal">Read-only View</span>
@@ -284,14 +287,16 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                         </p>
                                     )}
                                 </div>
-                                <button
+                                <LiquidButton
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => setSelectedTask(null)}
-                                    className="text-zinc-500 hover:text-white transition-colors bg-zinc-800/50 hover:bg-zinc-800 p-2 rounded-full"
+                                    className="text-zinc-500 hover:text-white transition-colors bg-zinc-800/50 hover:bg-zinc-800 rounded-full"
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                     </svg>
-                                </button>
+                                </LiquidButton>
                             </div>
                         </div>
                     </div>
