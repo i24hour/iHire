@@ -51,17 +51,17 @@ export default async function Home() {
             <div className="text-4xl font-bold text-white">{stats.total}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50  rounded-2xl border border-white/20 p-6">
+          <div className="bg-black  rounded-2xl border border-white/20 p-6">
             <div className="text-sm text-zinc-300 mb-2">Strong Yes</div>
             <div className="text-4xl font-bold text-white">{stats.strongYes}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50  rounded-2xl border border-white/20 p-6">
+          <div className="bg-black  rounded-2xl border border-white/20 p-6">
             <div className="text-sm text-zinc-300 mb-2">Maybe / Review</div>
             <div className="text-4xl font-bold text-white">{stats.maybe}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50  rounded-2xl border border-white/20 p-6">
+          <div className="bg-black  rounded-2xl border border-white/20 p-6">
             <div className="text-sm text-zinc-300 mb-2">Avg. Relevance</div>
             <div className="text-4xl font-bold text-white">{stats.avgRelevance}</div>
           </div>

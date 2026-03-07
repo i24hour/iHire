@@ -366,17 +366,17 @@ export default function ITimePage() {
                         <div className="text-4xl font-bold text-white">{tasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50  rounded-2xl border border-white/20 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/20 p-6">
                         <div className="text-sm text-zinc-300 mb-2">Running</div>
                         <div className="text-4xl font-bold text-white">{activeTasks}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-zinc-900 to-cyan-900/50  rounded-2xl border border-white/20 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/20 p-6">
                         <div className="text-sm text-zinc-300 mb-2">Completed</div>
                         <div className="text-4xl font-bold text-white">{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50  rounded-2xl border border-white/20 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/20 p-6">
                         <div className="text-sm text-zinc-300 mb-2">Total Time</div>
                         <div className="text-4xl font-bold text-white">{formatElapsed(totalTime)}</div>
                     </div>

@@ -70,7 +70,7 @@ export function CandidateCard({
             </div>
 
             {/* Relevance Score - Featured */}
-            <div className="mb-4 p-4 bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 rounded-xl border border-white/20">
+            <div className="mb-4 p-4 bg-black rounded-xl border border-white/20">
                 <div className="text-sm text-zinc-300 mb-1">Relevance Score</div>
                 <div className={`text-3xl font-bold ${getScoreColor(relevanceScore)}`}>
                     {relevanceScore.toFixed(1)}
