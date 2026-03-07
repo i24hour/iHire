@@ -2,7 +2,7 @@
 // Google Sheets Client for Frontend
 // ============================================
 
-import { google } from 'googleapis';
+// import { google } from 'googleapis';
 
 export interface CandidateRecord {
     id: number;
@@ -24,128 +24,9 @@ export interface CandidateRecord {
 }
 
 export async function getCampaigns(): Promise<string[]> {
-    const spreadsheetId = process.env.GOOGLE_SHEETS_OUTPUT_ID || '';
-    if (!spreadsheetId) return [];
-
-    const auth = await getAuth();
-    if (!auth) return [];
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    try {
-        const response = await sheets.spreadsheets.get({
-            spreadsheetId,
-        });
-
-        return response.data.sheets?.map(sheet => sheet.properties?.title || '').filter(title => title) || [];
-    } catch (error) {
-        console.error('Error fetching campaigns:', error);
-        return [];
-    }
+    return [];
 }
 
 export async function getCandidates(campaignName: string = 'Candidates'): Promise<CandidateRecord[]> {
-    const spreadsheetId = process.env.GOOGLE_SHEETS_OUTPUT_ID || '';
-
-    if (!spreadsheetId) {
-        console.error('GOOGLE_SHEETS_OUTPUT_ID not configured');
-        return [];
-    }
-
-    const auth = await getAuth();
-    if (!auth) return [];
-
-    const sheets = google.sheets({ version: 'v4', auth });
-
-    try {
-        console.log('Fetching from sheet:', spreadsheetId, `range: ${campaignName}!A:O`);
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId,
-            range: `${campaignName}!A:O`,
-        });
-
-        const rows = response.data.values || [];
-        console.log('Rows fetched:', rows.length);
-        if (rows.length <= 1) {
-            console.log('No candidate data in sheet yet (only header row or empty)');
-            return [];
-        }
-
-        console.log(`Fetched ${rows.length - 1} candidates from Google Sheets [${campaignName}]`);
-
-        return rows.slice(1).map((row, index) => ({
-            id: index + 1,
-            timestamp: row[0] || '',
-            candidateName: row[1] || '',
-            email: row[2] || '',
-            phone: row[3] || '',
-            resumeFileLink: row[4] || '',
-            executionFitScore: parseFloat(row[5]) || 0,
-            founderConfidenceScore: parseFloat(row[6]) || 0,
-            relevanceScore: parseFloat(row[7]) || 0,
-            roleContext: row[8] || '',
-            interviewFocusAreas: row[9] || '',
-            riskNotes: row[10] || '',
-            assignmentBrief: row[11] || '',
-            recommendation: row[12] || '',
-            resumeFeedback: row[13] || '',
-            assignmentFeedback: row[14] || '',
-        }));
-    } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error('Failed to fetch candidates from sheet:', message);
-        // console.error('Error details:', JSON.stringify(error?.response?.data || error, null, 2));
-        // Throw error so API can return it
-        throw new Error(`Sheet Error: ${message}`);
-    }
-}
-
-async function getAuth() {
-    try {
-        let credentials = null;
-
-        // Method 1: Base64 encoded credentials (for Vercel/serverless)
-        if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64) {
-            const decoded = Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64, 'base64').toString('utf-8');
-            credentials = JSON.parse(decoded);
-        }
-
-        // Method 2: Direct JSON string (alternative for serverless)
-        else if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.GOOGLE_SERVICE_ACCOUNT_JSON.startsWith('{')) {
-            credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-        }
-
-        // Method 3: File path (for local development)
-        else {
-            const fs = await import('fs');
-            const path = await import('path');
-
-            const possiblePaths = [
-                process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '',
-                path.join(process.cwd(), 'credentials.json'),
-                path.join(process.cwd(), '..', 'credentials.json'),
-            ].filter(p => p);
-
-            for (const p of possiblePaths) {
-                if (fs.existsSync(p)) {
-                    credentials = JSON.parse(fs.readFileSync(p, 'utf-8'));
-                    break;
-                }
-            }
-        }
-
-        if (credentials) {
-            // console.log('Service Account Email:', credentials.client_email);
-            return new google.auth.GoogleAuth({
-                credentials,
-                scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-            });
-        } else {
-            console.error('No credentials found (file, base64, or JSON string)');
-            return null;
-        }
-    } catch (error) {
-        console.error('Error loading credentials:', error);
-        return null;
-    }
+    return [];
 }

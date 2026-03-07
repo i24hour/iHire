@@ -176,13 +176,13 @@ export default async function Home() {
         <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">System Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-xl">
+            {/* <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-xl">
               <div className="w-3 h-3 rounded-full bg-zinc-300 animate-pulse" />
               <div>
                 <div className="text-sm font-medium text-white">Drive Monitor</div>
                 <div className="text-xs text-gray-500">Watching for new resumes</div>
               </div>
-            </div>
+            </div> */}
             <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-xl">
               <div className="w-3 h-3 rounded-full bg-zinc-300 animate-pulse" />
               <div>
