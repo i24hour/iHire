@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, use } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 // Use same types as ITimeTracker
 interface ITimeTask {
@@ -33,6 +35,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     // We need to unwrap params in Next.js 15+ using React.use
     const resolvedParams = use(params);
     const userId = decodeURIComponent(resolvedParams.userId || '');
+
+    const { data: session, status } = useSession(); // Added this line
+    const router = useRouter(); // Moved this line here
 
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -121,10 +126,12 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 <div className="mb-8">
                     <div className="flex items-start justify-between">
                         <div>
-                            <LiquidButton asChild className="text-emerald-400 text-sm mb-4 bg-emerald-900/20 border border-emerald-500/20 hover:bg-emerald-900/40 px-4 py-2" size="sm">
-                                <Link href="/workers">
-                                    ← Back to Workers
-                                </Link>
+                            <LiquidButton
+                                onClick={() => router.push('/workers')}
+                                className="text-emerald-400 text-sm mb-4 bg-emerald-900/20 border border-emerald-500/20 hover:bg-emerald-900/40 px-4 py-2"
+                                size="sm"
+                            >
+                                ← Back to Workers
                             </LiquidButton>
                             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
                                 {userId.split('@')[0]}'s Tasks
