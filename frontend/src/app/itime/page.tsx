@@ -19,6 +19,10 @@ interface ITimeTask {
     completedAt?: number; // timestamp when completed
     targetTime?: number; // target time in seconds
     milestones?: Milestone[];
+    events?: Array<{
+        type: 'start' | 'pause' | 'complete';
+        timestamp: number;
+    }>;
 }
 
 interface Milestone {
@@ -123,6 +127,7 @@ export default function ITimePage() {
             enabled: true,
             completed: false,
             milestones: [],
+            events: [{ type: 'start', timestamp: Date.now() }],
         };
 
         try {
@@ -155,7 +160,11 @@ export default function ITimePage() {
             ...task,
             enabled: !task.enabled,
             pausedElapsed: currentElapsed,
-            startTime: !task.enabled ? Date.now() : 0
+            startTime: !task.enabled ? Date.now() : 0,
+            events: [...(task.events || []), {
+                type: !task.enabled ? 'start' : 'pause',
+                timestamp: Date.now()
+            } as const]
         };
 
         setTasks((prev) => prev.map(t => t.id === id ? updatedTask : t));
@@ -199,7 +208,8 @@ export default function ITimePage() {
             completedAt: Date.now(),
             enabled: false,
             pausedElapsed: finalElapsed,
-            startTime: 0
+            startTime: 0,
+            events: [...(task.events || []), { type: 'complete', timestamp: Date.now() } as const]
         };
 
         setTasks((prev) => prev.map(t => t.id === id ? updatedTask : t));

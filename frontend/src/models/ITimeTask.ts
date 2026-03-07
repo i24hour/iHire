@@ -13,6 +13,10 @@ export interface ITimeTask {
         text: string;
         timestamp: number;
     }>;
+    events?: Array<{
+        type: 'start' | 'pause' | 'complete';
+        timestamp: number;
+    }>;
     targetTime?: number;
     createdAt?: Date;
     updatedAt?: Date;
@@ -50,6 +54,10 @@ const ITimeTaskSchema = new mongoose.Schema<ITimeTask>({
     },
     milestones: [{
         text: String,
+        timestamp: Number,
+    }],
+    events: [{
+        type: { type: String, enum: ['start', 'pause', 'complete'] },
         timestamp: Number,
     }],
     targetTime: {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import { PerformanceChart } from '@/components/PerformanceChart';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -175,6 +176,11 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Total Time</div>
                         <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white truncate tracking-tight">{formatElapsed(totalTime)}</div>
                     </div>
+                </div>
+
+                {/* Stock Performance Chart representing Workload */}
+                <div className="max-w-5xl mb-8">
+                    <PerformanceChart tasks={tasks} />
                 </div>
 
                 {/* Active/Pending Tasks */}
