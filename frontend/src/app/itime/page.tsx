@@ -366,19 +366,19 @@ export default function ITimePage() {
                         <div className="text-4xl font-bold text-white">{tasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-emerald-900/50 to-green-900/50 backdrop-blur-xl rounded-2xl border border-emerald-500/30 p-6">
-                        <div className="text-sm text-emerald-300 mb-2">Running</div>
-                        <div className="text-4xl font-bold text-emerald-400">{activeTasks}</div>
+                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                        <div className="text-sm text-zinc-300 mb-2">Running</div>
+                        <div className="text-4xl font-bold text-white">{activeTasks}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6">
-                        <div className="text-sm text-blue-300 mb-2">Completed</div>
-                        <div className="text-4xl font-bold text-blue-400">{completedTasks.length}</div>
+                    <div className="bg-gradient-to-br from-zinc-900 to-cyan-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                        <div className="text-sm text-zinc-300 mb-2">Completed</div>
+                        <div className="text-4xl font-bold text-white">{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-purple-900/50 to-pink-900/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
-                        <div className="text-sm text-purple-300 mb-2">Total Time</div>
-                        <div className="text-4xl font-bold text-purple-400">{formatElapsed(totalTime)}</div>
+                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                        <div className="text-sm text-zinc-300 mb-2">Total Time</div>
+                        <div className="text-4xl font-bold text-white">{formatElapsed(totalTime)}</div>
                     </div>
                 </div>
 
@@ -447,7 +447,7 @@ export default function ITimePage() {
                                                 e.stopPropagation();
                                                 deleteTask(task.id);
                                             }}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-red-400"
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-white"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -476,7 +476,7 @@ export default function ITimePage() {
                                                     e.stopPropagation();
                                                     completeTask(task.id);
                                                 }}
-                                                className="text-emerald-400"
+                                                className="text-white"
                                                 title="Mark as complete"
                                             >
                                                 ✓
@@ -497,11 +497,11 @@ export default function ITimePage() {
                             {completedTasks.map((task) => (
                                 <div
                                     key={task.id}
-                                    className="bg-white/5 border border-emerald-500/30 rounded-lg p-4 space-y-3 opacity-75"
+                                    className="bg-white/5 border border-white/20 rounded-lg p-4 space-y-3 opacity-75"
                                 >
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-semibold text-white mb-1 line-through decoration-emerald-500">
+                                            <div className="text-sm font-semibold text-white mb-1 line-through decoration-white/50">
                                                 {task.title}
                                             </div>
                                             {task.description && (
@@ -511,10 +511,10 @@ export default function ITimePage() {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <span className="text-emerald-400 text-lg">✓</span>
+                                            <span className="text-white text-lg">✓</span>
                                             <button
                                                 onClick={() => deleteTask(task.id)}
-                                                className="text-zinc-500 hover:text-red-400 transition-colors"
+                                                className="text-zinc-500 hover:text-white transition-colors"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -524,7 +524,7 @@ export default function ITimePage() {
                                     </div>
 
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                                        <div className="text-2xl font-mono font-bold text-emerald-400">
+                                        <div className="text-2xl font-mono font-bold text-white">
                                             {formatElapsed(getElapsedSeconds(task))}
                                         </div>
                                         <div className="text-xs text-zinc-500">
@@ -592,7 +592,7 @@ export default function ITimePage() {
                                                     completeTask(selectedTask.id);
                                                     setSelectedTask(null);
                                                 }}
-                                                className="w-40 text-base font-bold text-emerald-400"
+                                                className="w-40 text-base font-bold text-white"
                                             >
                                                 ✓ Complete
                                             </LiquidButton>
@@ -609,8 +609,8 @@ export default function ITimePage() {
                                             <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
                                                 <div
                                                     className={`h-full transition-all ${getElapsedSeconds(selectedTask) >= selectedTask.targetTime
-                                                        ? 'bg-emerald-500'
-                                                        : 'bg-purple-500'
+                                                        ? 'bg-white text-black'
+                                                        : 'bg-white text-black'
                                                         }`}
                                                     style={{
                                                         width: `${Math.min((getElapsedSeconds(selectedTask) / selectedTask.targetTime) * 100, 100)}%`
@@ -701,7 +701,7 @@ export default function ITimePage() {
                                                         <button
                                                             onClick={() => toggleMilestone(selectedTask.id, milestone.id)}
                                                             className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${milestone.completed
-                                                                ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/50'
+                                                                ? 'bg-white text-black border-white/50 shadow-lg shadow-white/20'
                                                                 : 'bg-gray-900 border-white/30 hover:border-white/50 hover:bg-white/5'
                                                                 }`}
                                                         >
@@ -723,7 +723,7 @@ export default function ITimePage() {
                                                                 </div>
                                                                 <button
                                                                     onClick={() => deleteMilestone(selectedTask.id, milestone.id)}
-                                                                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-red-400 p-1 -mt-1"
+                                                                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-white p-1 -mt-1"
                                                                     title="Delete milestone"
                                                                 >
                                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -738,7 +738,7 @@ export default function ITimePage() {
                                                                 {milestone.completed && milestone.completedAt && (
                                                                     <>
                                                                         <span className="text-zinc-700">•</span>
-                                                                        <div className="text-xs text-emerald-500">
+                                                                        <div className="text-xs text-white">
                                                                             ✓ Completed
                                                                         </div>
                                                                     </>

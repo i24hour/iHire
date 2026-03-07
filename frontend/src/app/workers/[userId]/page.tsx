@@ -117,7 +117,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 <Sidebar />
                 <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full flex items-center justify-center">
                     <div className="flex flex-col items-center justify-center bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 gap-4">
-                        <p className="text-red-400">Error: {error}</p>
+                        <p className="text-white">Error: {error}</p>
                         <LiquidButton onClick={() => router.push('/workers')} className="text-white">
                             Back to Workers Directory
                         </LiquidButton>
@@ -138,7 +138,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         <div>
                             <LiquidButton
                                 onClick={() => router.push('/workers')}
-                                className="mb-4 text-emerald-400"
+                                className="mb-4 text-white"
                                 size="sm"
                             >
                                 ← Back to Workers
@@ -161,19 +161,19 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         <div className="text-3xl sm:text-4xl font-bold text-white truncate">{tasks.length}</div>
                     </div>
 
-                    <div className="bg-emerald-950/20 backdrop-blur-xl rounded-2xl border border-emerald-900/30 p-6 flex flex-col justify-center">
-                        <div className="text-xs uppercase tracking-wider font-semibold text-emerald-500/70 mb-1">Running</div>
-                        <div className="text-3xl sm:text-4xl font-bold text-emerald-400 truncate">{activeTasksCount}</div>
+                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
+                        <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Running</div>
+                        <div className="text-3xl sm:text-4xl font-bold text-white truncate">{activeTasksCount}</div>
                     </div>
 
-                    <div className="bg-blue-950/20 backdrop-blur-xl rounded-2xl border border-blue-900/30 p-6 flex flex-col justify-center">
-                        <div className="text-xs uppercase tracking-wider font-semibold text-blue-500/70 mb-1">Completed</div>
-                        <div className="text-3xl sm:text-4xl font-bold text-blue-400 truncate">{completedTasks.length}</div>
+                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
+                        <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Completed</div>
+                        <div className="text-3xl sm:text-4xl font-bold text-white truncate">{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-purple-950/20 backdrop-blur-xl rounded-2xl border border-purple-900/30 p-6 flex flex-col justify-center">
-                        <div className="text-xs uppercase tracking-wider font-semibold text-purple-500/70 mb-1">Total Time</div>
-                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-400 truncate tracking-tight">{formatElapsed(totalTime)}</div>
+                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-800 p-6 flex flex-col justify-center">
+                        <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Total Time</div>
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white truncate tracking-tight">{formatElapsed(totalTime)}</div>
                     </div>
                 </div>
 
@@ -208,13 +208,13 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                     </div>
 
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                                        <div className={`text-2xl font-mono font-bold ${task.enabled ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                        <div className={`text-2xl font-mono font-bold ${task.enabled ? 'text-white' : 'text-zinc-500'}`}>
                                             {formatElapsed(getElapsedSeconds(task))}
                                         </div>
                                         <div className="flex gap-2 text-xs">
                                             {task.enabled ? (
-                                                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded flex items-center gap-1">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                <span className="bg-white/10 text-white px-2 py-1 rounded flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-white text-black animate-pulse"></span>
                                                     Running
                                                 </span>
                                             ) : (
@@ -239,11 +239,11 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                 <div
                                     key={task.id}
                                     onClick={() => setSelectedTask(task)}
-                                    className="bg-white/5 hover:bg-white/10 border border-emerald-500/30 rounded-lg p-4 space-y-3 opacity-75 cursor-pointer transition-all"
+                                    className="bg-white/5 hover:bg-white/10 border border-white/20 rounded-lg p-4 space-y-3 opacity-75 cursor-pointer transition-all"
                                 >
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-semibold text-white mb-1 line-through decoration-emerald-500">
+                                            <div className="text-sm font-semibold text-white mb-1 line-through decoration-white/50">
                                                 {task.title}
                                             </div>
                                             {task.description && (
@@ -253,12 +253,12 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                             )}
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <span className="text-emerald-400 text-lg">✓</span>
+                                            <span className="text-white text-lg">✓</span>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                                        <div className="text-2xl font-mono font-bold text-emerald-400">
+                                        <div className="text-2xl font-mono font-bold text-white">
                                             {formatElapsed(getElapsedSeconds(task))}
                                         </div>
                                         <div className="text-xs text-zinc-500">
@@ -285,11 +285,11 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                             {selectedTask.title}
                                         </h1>
                                         {selectedTask.completed ? (
-                                            <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-sm font-medium border border-emerald-500/20">
+                                            <span className="bg-white/10 text-white px-3 py-1 rounded-full text-sm font-medium border border-white/20">
                                                 Completed
                                             </span>
                                         ) : selectedTask.enabled ? (
-                                            <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-medium border border-blue-500/20">
+                                            <span className="bg-white/10 text-white px-3 py-1 rounded-full text-sm font-medium border border-white/50/20">
                                                 Running
                                             </span>
                                         ) : (
@@ -326,7 +326,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                 <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
                                     <div className="text-center">
                                         <div className="text-sm text-zinc-400 mb-4 uppercase tracking-wide">Time Recorded</div>
-                                        <div className={`text-8xl font-mono font-bold mb-8 ${selectedTask.enabled ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                                        <div className={`text-8xl font-mono font-bold mb-8 ${selectedTask.enabled ? 'text-white' : 'text-zinc-300'}`}>
                                             {formatElapsed(getElapsedSeconds(selectedTask))}
                                         </div>
                                     </div>
@@ -341,8 +341,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                             <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
                                                 <div
                                                     className={`h-full transition-all ${getElapsedSeconds(selectedTask) >= selectedTask.targetTime
-                                                        ? 'bg-emerald-500'
-                                                        : 'bg-purple-500'
+                                                        ? 'bg-white text-black'
+                                                        : 'bg-white text-black'
                                                         }`}
                                                     style={{
                                                         width: `${Math.min((getElapsedSeconds(selectedTask) / selectedTask.targetTime) * 100, 100)}%`
@@ -376,7 +376,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                                     <div className="relative flex items-start gap-4 pb-8 group">
                                                         {/* Circle */}
                                                         <div className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${milestone.completed
-                                                            ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/50'
+                                                            ? 'bg-white text-black border-white/50 shadow-lg shadow-white/20'
                                                             : 'bg-gray-900 border-white/30'
                                                             }`}
                                                         >
@@ -404,7 +404,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                                                 {milestone.completed && milestone.completedAt && (
                                                                     <>
                                                                         <span className="text-zinc-700">•</span>
-                                                                        <div className="text-xs text-emerald-500">
+                                                                        <div className="text-xs text-white">
                                                                             ✓ Completed
                                                                         </div>
                                                                     </>

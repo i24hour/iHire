@@ -134,7 +134,7 @@ function DashboardContent() {
                         <LiquidButton
                             onClick={() => setViewMode('table')}
                             className={`px-4 py-2 transition-colors ${viewMode === 'table'
-                                ? 'text-white border-b-2 border-emerald-500'
+                                ? 'text-white border-b-2 border-white/50'
                                 : 'text-zinc-500 hover:text-white'
                                 }`}
                             variant="ghost"
@@ -144,7 +144,7 @@ function DashboardContent() {
                         <LiquidButton
                             onClick={() => setViewMode('cards')}
                             className={`px-4 py-2 transition-colors ${viewMode === 'cards'
-                                ? 'text-white border-b-2 border-emerald-500'
+                                ? 'text-white border-b-2 border-white/50'
                                 : 'text-zinc-500 hover:text-white'
                                 }`}
                             variant="ghost"

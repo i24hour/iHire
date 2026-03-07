@@ -93,7 +93,7 @@ export function Sidebar() {
                                 key={item.href}
                                 onClick={() => router.push(item.href)}
                                 className={`w-full justify-start text-left px-5 py-3 rounded-xl transition-all duration-300 ${isActive
-                                        ? 'shadow-[0_0_15px_rgba(16,185,129,0.5)] border border-emerald-500/50 text-emerald-400 bg-emerald-500/10'
+                                        ? 'shadow-[0_0_15px_rgba(16,185,129,0.5)] border border-white/20 text-white bg-white/5'
                                         : 'text-zinc-400 border border-transparent hover:text-white hover:bg-zinc-900/50'
                                     }`}
                                 variant="default"
@@ -146,7 +146,7 @@ export function Sidebar() {
                         </div>
                         <div className="flex justify-between">
                             <span className="text-zinc-500 text-sm">Strong Yes</span>
-                            <span className="text-emerald-500 font-medium text-sm">--</span>
+                            <span className="text-white font-medium text-sm">--</span>
                         </div>
                     </div>
                 </div>
@@ -154,7 +154,7 @@ export function Sidebar() {
                 {/* Status Indicator */}
                 <div className="mt-6 pt-6 border-t border-zinc-900">
                     <div className="flex items-center gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
                         <span className="text-zinc-500 text-xs">System Active</span>
                     </div>
                 </div>

@@ -105,18 +105,18 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
 
     const getRecommendationColor = (rec: string) => {
         switch (rec) {
-            case 'Strong Yes': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50';
-            case 'Yes': return 'bg-green-500/20 text-green-400 border-green-500/50';
-            case 'Maybe': return 'bg-amber-500/20 text-amber-400 border-amber-500/50';
-            case 'Not Now': return 'bg-red-500/20 text-red-400 border-red-500/50';
+            case 'Strong Yes': return 'bg-white/10 text-white border-white/20';
+            case 'Yes': return 'bg-white/10 text-white border-white/20';
+            case 'Maybe': return 'bg-white/10 text-white border-white/20';
+            case 'Not Now': return 'bg-white/10 text-white border-white/20';
             default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
         }
     };
 
     const getScoreColor = (score: number) => {
-        if (score >= 70) return 'text-emerald-400';
-        if (score >= 50) return 'text-amber-400';
-        return 'text-red-400';
+        if (score >= 70) return 'text-white';
+        if (score >= 50) return 'text-white';
+        return 'text-white';
     };
 
     const SortIcon = ({ field }: { field: SortField }) => (
@@ -170,25 +170,25 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                 Rank
                             </th>
                             <th
-                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-purple-400 transition-colors"
+                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                                 onClick={() => handleSort('candidateName')}
                             >
                                 Candidate <SortIcon field="candidateName" />
                             </th>
                             <th
-                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-purple-400 transition-colors"
+                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                                 onClick={() => handleSort('relevanceScore')}
                             >
                                 Relevance <SortIcon field="relevanceScore" />
                             </th>
                             <th
-                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-purple-400 transition-colors"
+                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                                 onClick={() => handleSort('executionFitScore')}
                             >
                                 Execution Fit <SortIcon field="executionFitScore" />
                             </th>
                             <th
-                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-purple-400 transition-colors"
+                                className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                                 onClick={() => handleSort('founderConfidenceScore')}
                             >
                                 Founder Confidence <SortIcon field="founderConfidenceScore" />
@@ -275,8 +275,8 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                                         ? 'bg-zinc-800 text-zinc-400 border border-zinc-700 cursor-wait'
                                                         : assignmentStatus?.id === candidate.id
                                                             ? assignmentStatus.success
-                                                                ? 'bg-green-500/20 text-green-400 border border-green-500/40'
-                                                                : 'bg-red-500/20 text-red-400 border border-red-500/40'
+                                                                ? 'bg-white/10 text-white border border-white/20'
+                                                                : 'bg-white/10 text-white border border-white/20'
                                                             : 'bg-transparent text-white border border-zinc-600 hover:border-white hover:bg-white/5'
                                                 }`}
                                         >

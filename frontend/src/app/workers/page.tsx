@@ -63,11 +63,11 @@ export default function WorkersPage() {
                         <div className="flex flex-col gap-4 max-w-3xl">
                             {loading ? (
                                 <div className="flex py-12 items-center justify-center w-full">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white/50"></div>
                                 </div>
                             ) : error ? (
                                 <div className="flex flex-col py-12 items-center justify-center text-white gap-4 w-full bg-zinc-900/40 border border-zinc-800 rounded-2xl">
-                                    <p className="text-red-400">Error: {error}</p>
+                                    <p className="text-white">Error: {error}</p>
                                     <LiquidButton
                                         onClick={fetchWorkers}
                                         className="px-4 py-2 text-white"
@@ -87,7 +87,7 @@ export default function WorkersPage() {
                                             className="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-zinc-700 transition-colors cursor-pointer group w-full"
                                         >
                                             <div className="flex items-center gap-4 flex-1 min-w-0">
-                                                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex shrink-0 items-center justify-center text-emerald-500 font-bold text-xl uppercase ring-1 ring-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
+                                                <div className="w-12 h-12 rounded-full bg-white/10 flex shrink-0 items-center justify-center text-white font-bold text-xl uppercase ring-1 ring-white/20 group-hover:bg-white/10 transition-colors">
                                                     {worker.userId.charAt(0)}
                                                 </div>
                                                 <div className="flex-1 min-w-[150px] overflow-hidden">
@@ -107,15 +107,15 @@ export default function WorkersPage() {
                                                         {worker.totalTasks}
                                                     </span>
                                                 </div>
-                                                <div className="bg-emerald-950/20 rounded-xl px-4 py-2 border border-emerald-900/30 flex flex-col justify-center min-w-[100px] flex-1">
-                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-500/70 mb-0.5">Running</span>
-                                                    <span className="block text-2xl font-bold text-emerald-400 leading-none">
+                                                <div className="bg-zinc-900/50 rounded-xl px-4 py-2 border border-zinc-800 flex flex-col justify-center min-w-[100px] flex-1">
+                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Running</span>
+                                                    <span className="block text-2xl font-bold text-white leading-none">
                                                         {worker.runningTasks || 0}
                                                     </span>
                                                 </div>
-                                                <div className="bg-blue-950/20 rounded-xl px-4 py-2 border border-blue-900/30 flex flex-col justify-center min-w-[100px] flex-1">
-                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-blue-500/70 mb-0.5">Completed</span>
-                                                    <span className="block text-2xl font-bold text-blue-400 leading-none">
+                                                <div className="bg-zinc-900/50 rounded-xl px-4 py-2 border border-zinc-800 flex flex-col justify-center min-w-[100px] flex-1">
+                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Completed</span>
+                                                    <span className="block text-2xl font-bold text-white leading-none">
                                                         {worker.completedTasks}
                                                     </span>
                                                 </div>

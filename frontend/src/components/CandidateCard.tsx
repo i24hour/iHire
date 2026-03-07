@@ -27,18 +27,18 @@ export function CandidateCard({
 }: CandidateCardProps) {
     const getRecommendationGradient = (rec: string) => {
         switch (rec) {
-            case 'Strong Yes': return 'from-emerald-500 to-green-500';
-            case 'Yes': return 'from-green-500 to-teal-500';
-            case 'Maybe': return 'from-amber-500 to-yellow-500';
-            case 'Not Now': return 'from-red-500 to-orange-500';
+            case 'Strong Yes': return 'from-zinc-900/50 to-zinc-900/50';
+            case 'Yes': return 'from-zinc-900/50 to-zinc-900/50';
+            case 'Maybe': return 'from-zinc-900/50 to-zinc-900/50';
+            case 'Not Now': return 'from-zinc-900/50 to-orange-500';
             default: return 'from-gray-500 to-gray-600';
         }
     };
 
     const getScoreColor = (score: number) => {
-        if (score >= 70) return 'text-emerald-400';
-        if (score >= 50) return 'text-amber-400';
-        return 'text-red-400';
+        if (score >= 70) return 'text-white';
+        if (score >= 50) return 'text-white';
+        return 'text-white';
     };
 
     const formatDate = (dateString: string) => {
@@ -56,7 +56,7 @@ export function CandidateCard({
             whileHover={{ scale: 1.02, y: -4 }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 cursor-pointer hover:border-purple-500/50 transition-all duration-300 relative overflow-hidden"
+            className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 cursor-pointer hover:border-white/20 transition-all duration-300 relative overflow-hidden"
         >
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
@@ -70,8 +70,8 @@ export function CandidateCard({
             </div>
 
             {/* Relevance Score - Featured */}
-            <div className="mb-4 p-4 bg-gradient-to-br from-purple-900/50 to-pink-900/50 rounded-xl border border-purple-500/30">
-                <div className="text-sm text-purple-300 mb-1">Relevance Score</div>
+            <div className="mb-4 p-4 bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 rounded-xl border border-white/20">
+                <div className="text-sm text-zinc-300 mb-1">Relevance Score</div>
                 <div className={`text-3xl font-bold ${getScoreColor(relevanceScore)}`}>
                     {relevanceScore.toFixed(1)}
                     <span className="text-lg text-gray-500">/100</span>

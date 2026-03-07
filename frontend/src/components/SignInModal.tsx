@@ -107,7 +107,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
                     </div>
                     <button
                         type="submit"
-                        className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-all"
+                        className="w-full px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-lg transition-all"
                     >
                         {isSignUp ? 'Sign Up' : 'Sign In'}
                     </button>
@@ -118,7 +118,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
                     {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
                     <button
                         onClick={() => setIsSignUp(!isSignUp)}
-                        className="text-purple-400 hover:text-purple-300 transition-colors"
+                        className="text-white hover:text-zinc-300 transition-colors"
                     >
                         {isSignUp ? 'Sign In' : 'Sign Up'}
                     </button>

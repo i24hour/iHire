@@ -107,18 +107,18 @@ export function ITimeTracker() {
           placeholder="Task title"
           value={taskTitle}
           onChange={(event) => setTaskTitle(event.target.value)}
-          className="px-4 py-3 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          className="px-4 py-3 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/50"
         />
         <input
           type="text"
           placeholder="Task description"
           value={taskDescription}
           onChange={(event) => setTaskDescription(event.target.value)}
-          className="px-4 py-3 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          className="px-4 py-3 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/50"
         />
         <button
           onClick={handleAddTask}
-          className="px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
+          className="px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
           disabled={!taskTitle.trim()}
         >
           Add Task
@@ -139,7 +139,7 @@ export function ITimeTracker() {
                   <h3 className="text-white font-medium">{task.title}</h3>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${task.enabled
-                      ? 'bg-emerald-500/20 text-emerald-400'
+                      ? 'bg-white/10 text-white'
                       : 'bg-zinc-700/40 text-zinc-400'}`}
                   >
                     {task.enabled ? 'Running' : 'Disabled'}
@@ -154,8 +154,8 @@ export function ITimeTracker() {
                 <button
                   onClick={() => toggleTask(task.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${task.enabled
-                    ? 'border-red-500/50 text-red-400 hover:bg-red-500/10'
-                    : 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10'}`}
+                    ? 'border-white/20 text-white hover:bg-white/5'
+                    : 'border-white/20 text-white hover:bg-white/5'}`}
                 >
                   {task.enabled ? 'Disable' : 'Enable'}
                 </button>

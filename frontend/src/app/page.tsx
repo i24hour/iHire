@@ -49,19 +49,19 @@ export default async function Home() {
             <div className="text-4xl font-bold text-white">{stats.total}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-900/50 to-green-900/50 backdrop-blur-xl rounded-2xl border border-emerald-500/30 p-6">
-            <div className="text-sm text-emerald-300 mb-2">Strong Yes</div>
-            <div className="text-4xl font-bold text-emerald-400">{stats.strongYes}</div>
+          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+            <div className="text-sm text-zinc-300 mb-2">Strong Yes</div>
+            <div className="text-4xl font-bold text-white">{stats.strongYes}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-900/50 to-yellow-900/50 backdrop-blur-xl rounded-2xl border border-amber-500/30 p-6">
-            <div className="text-sm text-amber-300 mb-2">Maybe / Review</div>
-            <div className="text-4xl font-bold text-amber-400">{stats.maybe}</div>
+          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+            <div className="text-sm text-zinc-300 mb-2">Maybe / Review</div>
+            <div className="text-4xl font-bold text-white">{stats.maybe}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-900/50 to-pink-900/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
-            <div className="text-sm text-purple-300 mb-2">Avg. Relevance</div>
-            <div className="text-4xl font-bold text-purple-400">{stats.avgRelevance}</div>
+          <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+            <div className="text-sm text-zinc-300 mb-2">Avg. Relevance</div>
+            <div className="text-4xl font-bold text-white">{stats.avgRelevance}</div>
           </div>
         </div>
 
@@ -71,7 +71,7 @@ export default async function Home() {
           <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Top Candidates</h2>
-              <Link href="/dashboard" className="text-sm text-purple-400 hover:text-purple-300">
+              <Link href="/dashboard" className="text-sm text-white hover:text-zinc-300">
                 View All →
               </Link>
             </div>
@@ -79,7 +79,7 @@ export default async function Home() {
             <div className="space-y-3">
               {topCandidates.map((candidate, index) => (
                 <div key={candidate.id} className="flex items-center gap-4 p-3 bg-gray-800/50 rounded-xl">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white font-bold text-sm">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-zinc-500 to-zinc-600 text-white font-bold text-sm">
                     {index + 1}
                   </div>
                   <div className="flex-1">
@@ -87,13 +87,13 @@ export default async function Home() {
                     <div className="text-sm text-gray-500">{candidate.roleContext.replace(/_/g, ' ')}</div>
                   </div>
                   <div className="text-right">
-                    <div className={`text-lg font-bold ${candidate.relevanceScore >= 70 ? 'text-emerald-400' :
-                      candidate.relevanceScore >= 50 ? 'text-amber-400' : 'text-red-400'
+                    <div className={`text-lg font-bold ${candidate.relevanceScore >= 70 ? 'text-white' :
+                      candidate.relevanceScore >= 50 ? 'text-white' : 'text-white'
                       }`}>
                       {candidate.relevanceScore.toFixed(1)}
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${candidate.recommendation === 'Strong Yes' ? 'bg-emerald-500/20 text-emerald-400' :
-                      candidate.recommendation === 'Yes' ? 'bg-green-500/20 text-green-400' :
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${candidate.recommendation === 'Strong Yes' ? 'bg-white/10 text-white' :
+                      candidate.recommendation === 'Yes' ? 'bg-white/10 text-white' :
                         'bg-gray-500/20 text-gray-400'
                       }`}>
                       {candidate.recommendation}
@@ -118,11 +118,11 @@ export default async function Home() {
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm text-gray-400">Strong Yes</span>
-                  <span className="text-sm text-emerald-400">{stats.strongYes}</span>
+                  <span className="text-sm text-white">{stats.strongYes}</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-zinc-500 to-zinc-600 rounded-full"
                     style={{ width: `${stats.total > 0 ? (stats.strongYes / stats.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -131,11 +131,11 @@ export default async function Home() {
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm text-gray-400">Yes</span>
-                  <span className="text-sm text-green-400">{stats.yes}</span>
+                  <span className="text-sm text-white">{stats.yes}</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-green-500 to-teal-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-zinc-900 to-zinc-900 rounded-full"
                     style={{ width: `${stats.total > 0 ? (stats.yes / stats.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -144,11 +144,11 @@ export default async function Home() {
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm text-gray-400">Maybe</span>
-                  <span className="text-sm text-amber-400">{stats.maybe}</span>
+                  <span className="text-sm text-white">{stats.maybe}</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-zinc-500 to-zinc-600 rounded-full"
                     style={{ width: `${stats.total > 0 ? (stats.maybe / stats.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -157,11 +157,11 @@ export default async function Home() {
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-sm text-gray-400">Not Now</span>
-                  <span className="text-sm text-red-400">{stats.notNow}</span>
+                  <span className="text-sm text-white">{stats.notNow}</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-zinc-500 to-zinc-600 rounded-full"
                     style={{ width: `${stats.total > 0 ? (stats.notNow / stats.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -175,21 +175,21 @@ export default async function Home() {
           <h2 className="text-lg font-semibold text-white mb-4">System Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-xl">
-              <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="w-3 h-3 rounded-full bg-zinc-300 animate-pulse" />
               <div>
                 <div className="text-sm font-medium text-white">Drive Monitor</div>
                 <div className="text-xs text-gray-500">Watching for new resumes</div>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-xl">
-              <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="w-3 h-3 rounded-full bg-zinc-300 animate-pulse" />
               <div>
                 <div className="text-sm font-medium text-white">AI Agents</div>
                 <div className="text-xs text-gray-500">6 agents ready</div>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-gray-800/50 rounded-xl">
-              <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="w-3 h-3 rounded-full bg-zinc-300 animate-pulse" />
               <div>
                 <div className="text-sm font-medium text-white">Notifications</div>
                 <div className="text-xs text-gray-500">Email alerts active</div>

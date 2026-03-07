@@ -51,10 +51,10 @@ export default function CandidateDetailPage() {
 
     const getRecommendationGradient = (rec: string) => {
         switch (rec) {
-            case 'Strong Yes': return 'from-emerald-500 to-green-500';
-            case 'Yes': return 'from-green-500 to-teal-500';
-            case 'Maybe': return 'from-amber-500 to-yellow-500';
-            case 'Not Now': return 'from-red-500 to-orange-500';
+            case 'Strong Yes': return 'from-zinc-500 to-zinc-600';
+            case 'Yes': return 'from-zinc-900 to-zinc-900';
+            case 'Maybe': return 'from-zinc-500 to-zinc-600';
+            case 'Not Now': return 'from-zinc-500 to-zinc-600';
             default: return 'from-gray-500 to-gray-600';
         }
     };
@@ -132,7 +132,7 @@ export default function CandidateDetailPage() {
                             href={candidate.resumeFileLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-lg hover:bg-purple-500/30 transition-colors"
+                            className="px-4 py-2 bg-white/10 text-white border border-white/20 rounded-lg hover:bg-white text-black/30 transition-colors"
                         >
                             View Resume
                         </a>
@@ -170,7 +170,7 @@ export default function CandidateDetailPage() {
                             <ul className="space-y-2">
                                 {candidate.interviewFocusAreas.split(';').map((area, index) => (
                                     <li key={index} className="flex items-start gap-2 text-gray-300">
-                                        <span className="text-purple-400 mt-1">•</span>
+                                        <span className="text-white mt-1">•</span>
                                         {area.trim()}
                                     </li>
                                 ))}
@@ -184,13 +184,13 @@ export default function CandidateDetailPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="bg-red-900/20 backdrop-blur-xl rounded-2xl border border-red-500/30 p-6"
+                            className="bg-zinc-900/20 backdrop-blur-xl rounded-2xl border border-white/20 p-6"
                         >
-                            <h3 className="text-lg font-semibold text-red-400 mb-4">Risk Notes</h3>
+                            <h3 className="text-lg font-semibold text-white mb-4">Risk Notes</h3>
                             <ul className="space-y-2">
                                 {candidate.riskNotes.split(';').map((note, index) => (
-                                    <li key={index} className="flex items-start gap-2 text-red-300">
-                                        <span className="text-red-400 mt-1">⚠</span>
+                                    <li key={index} className="flex items-start gap-2 text-zinc-300">
+                                        <span className="text-white mt-1">⚠</span>
                                         {note.trim()}
                                     </li>
                                 ))}
