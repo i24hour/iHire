@@ -154,10 +154,12 @@ function DashboardContent() {
                     </div>
                 </div>
 
-                {/* Content */}
                 {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div>
+                    <div className="animate-pulse space-y-4">
+                        <div className="h-10 bg-zinc-900/50 rounded-lg w-full"></div>
+                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
+                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
+                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
                     </div>
                 ) : viewMode === 'table' ? (
                     <RankingTable
@@ -195,8 +197,15 @@ export default function DashboardPage() {
         <Suspense fallback={
             <div className="flex min-h-screen bg-black">
                 <Sidebar />
-                <main className="flex-1 p-8 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white"></div>
+                <main className="flex-1 p-8">
+                    <div className="animate-pulse flex items-center gap-4 mb-8">
+                        <div className="h-8 bg-zinc-900/80 rounded w-1/4"></div>
+                    </div>
+                    <div className="animate-pulse space-y-4">
+                        <div className="h-10 bg-zinc-900/50 rounded-lg w-full"></div>
+                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
+                        <div className="h-16 bg-zinc-900/50 rounded-lg w-full"></div>
+                    </div>
                 </main>
             </div>
         }>

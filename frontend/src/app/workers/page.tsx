@@ -37,28 +37,7 @@ export default function WorkersPage() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="flex h-[100dvh] items-center justify-center bg-black">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="flex flex-col h-[100dvh] items-center justify-center bg-black text-white gap-4">
-                <p className="text-red-400">Error: {error}</p>
-                <LiquidButton
-                    onClick={fetchWorkers}
-                    className="px-4 py-2 text-white"
-                    size="default"
-                >
-                    Retry
-                </LiquidButton>
-            </div>
-        );
-    }
+    // We will render loading and error states inside the main layout to preserve the sidebar
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
@@ -82,7 +61,22 @@ export default function WorkersPage() {
                     {/* Workers Grid */}
                     <div>
                         <div className="flex flex-col gap-4 max-w-3xl">
-                            {workers.length === 0 ? (
+                            {loading ? (
+                                <div className="flex py-12 items-center justify-center w-full">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+                                </div>
+                            ) : error ? (
+                                <div className="flex flex-col py-12 items-center justify-center text-white gap-4 w-full bg-zinc-900/40 border border-zinc-800 rounded-2xl">
+                                    <p className="text-red-400">Error: {error}</p>
+                                    <LiquidButton
+                                        onClick={fetchWorkers}
+                                        className="px-4 py-2 text-white"
+                                        size="default"
+                                    >
+                                        Retry
+                                    </LiquidButton>
+                                </div>
+                            ) : workers.length === 0 ? (
                                 <p className="text-zinc-500">No workers found yet. Tasks need to be created first.</p>
                             ) : (
                                 workers.map((worker) => (

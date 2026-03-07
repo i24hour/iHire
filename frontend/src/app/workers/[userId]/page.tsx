@@ -100,19 +100,29 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
     if (isLoading) {
         return (
-            <div className="flex h-[100dvh] items-center justify-center bg-black">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+            <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+                <Sidebar />
+                <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full animate-pulse space-y-6">
+                    <div className="h-10 w-48 bg-zinc-800/50 rounded-md"></div>
+                    <div className="h-32 w-full bg-zinc-900/40 border border-zinc-800 rounded-2xl"></div>
+                    <div className="h-64 w-full bg-zinc-900/40 border border-zinc-800 rounded-2xl"></div>
+                </main>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex flex-col h-[100dvh] items-center justify-center bg-black text-white gap-4">
-                <p className="text-red-400">Error: {error}</p>
-                <Link href="/workers" className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors">
-                    Back to Workers Directory
-                </Link>
+            <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+                <Sidebar />
+                <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full flex items-center justify-center">
+                    <div className="flex flex-col items-center justify-center bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 gap-4">
+                        <p className="text-red-400">Error: {error}</p>
+                        <LiquidButton onClick={() => router.push('/workers')} className="text-white">
+                            Back to Workers Directory
+                        </LiquidButton>
+                    </div>
+                </main>
             </div>
         );
     }

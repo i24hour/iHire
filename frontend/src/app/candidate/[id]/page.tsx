@@ -63,8 +63,12 @@ export default function CandidateDetailPage() {
         return (
             <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
                 <Sidebar />
-                <main className="flex-1 p-4 pt-20 md:p-8 flex items-center justify-center w-full">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+                <main className="flex-1 p-4 pt-20 md:p-8 w-full animate-pulse">
+                    {/* Back Button Skeleton */}
+                    <div className="w-40 h-8 bg-zinc-800/50 rounded-lg mb-6"></div>
+                    {/* Header Skeleton */}
+                    <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6 mb-6 h-32"></div>
+                    <div className="h-64 bg-gray-900/50 rounded-2xl border border-gray-800 mb-6"></div>
                 </main>
             </div>
         );
