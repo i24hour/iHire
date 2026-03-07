@@ -9,6 +9,7 @@ interface WorkerStats {
     userId: string;
     totalTasks: number;
     completedTasks: number;
+    runningTasks?: number;
     lastActive: string;
 }
 
@@ -103,16 +104,22 @@ export default function WorkersPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-row gap-4 mt-auto">
-                                                <div className="bg-zinc-950/50 rounded-xl px-4 py-2 border border-zinc-800/50 flex flex-col justify-center min-w-[120px]">
+                                            <div className="flex flex-row flex-wrap gap-4 mt-auto">
+                                                <div className="bg-zinc-950/50 rounded-xl px-4 py-2 border border-zinc-800/50 flex flex-col justify-center min-w-[100px] flex-1">
                                                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500 mb-0.5">Total Tasks</span>
                                                     <span className="block text-2xl font-bold text-zinc-300 leading-none">
                                                         {worker.totalTasks}
                                                     </span>
                                                 </div>
-                                                <div className="bg-emerald-950/20 rounded-xl px-4 py-2 border border-emerald-900/30 flex flex-col justify-center min-w-[120px]">
-                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-500/70 mb-0.5">Completed</span>
+                                                <div className="bg-emerald-950/20 rounded-xl px-4 py-2 border border-emerald-900/30 flex flex-col justify-center min-w-[100px] flex-1">
+                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-emerald-500/70 mb-0.5">Running</span>
                                                     <span className="block text-2xl font-bold text-emerald-400 leading-none">
+                                                        {worker.runningTasks || 0}
+                                                    </span>
+                                                </div>
+                                                <div className="bg-blue-950/20 rounded-xl px-4 py-2 border border-blue-900/30 flex flex-col justify-center min-w-[100px] flex-1">
+                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-blue-500/70 mb-0.5">Completed</span>
+                                                    <span className="block text-2xl font-bold text-blue-400 leading-none">
                                                         {worker.completedTasks}
                                                     </span>
                                                 </div>

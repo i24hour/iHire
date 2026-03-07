@@ -24,6 +24,15 @@ export async function GET(request: NextRequest) {
                     completedTasks: {
                         $sum: { $cond: ["$completed", 1, 0] }
                     },
+                    runningTasks: {
+                        $sum: {
+                            $cond: [
+                                { $and: [{ $eq: ["$enabled", true] }, { $eq: ["$completed", false] }] },
+                                1,
+                                0
+                            ]
+                        }
+                    },
                     lastActive: { $max: "$updatedAt" }
                 }
             },
@@ -32,6 +41,7 @@ export async function GET(request: NextRequest) {
                     userId: "$_id",
                     totalTasks: 1,
                     completedTasks: 1,
+                    runningTasks: 1,
                     lastActive: 1,
                     _id: 0
                 }
