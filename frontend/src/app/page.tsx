@@ -1,16 +1,18 @@
 import { Sidebar } from '@/components/Sidebar';
-import { getCandidates, CandidateRecord } from '@/lib/sheets-client';
+// import { getCandidates, CandidateRecord } from '@/lib/sheets-client';
 import Link from 'next/link';
 
+interface CandidateRecord {
+  id: number;
+  candidateName: string;
+  recommendation: string;
+  relevanceScore: number;
+  roleContext: string;
+}
+
 export default async function Home() {
-  let candidates: CandidateRecord[] = [];
-  try {
-    candidates = await getCandidates();
-  } catch (error) {
-    console.error('Failed to fetch candidates during build/render:', error);
-    // Fallback to empty array so build doesn't fail
-    candidates = [];
-  }
+  // Google Sheets fetching disabled — was causing Vercel serverless timeout
+  const candidates: CandidateRecord[] = [];
 
   const stats = {
     total: candidates.length,
