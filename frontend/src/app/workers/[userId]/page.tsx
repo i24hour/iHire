@@ -29,15 +29,15 @@ interface Milestone {
 }
 
 export default function WorkerTasksPage({ params }: { params: Promise<{ userId: string }> }) {
+    // We need to unwrap params in Next.js 15+ using React.use
+    const resolvedParams = use(params);
+    const userId = decodeURIComponent(resolvedParams.userId || '');
+
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(() => Date.now());
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
-
-    // Unwrap params in Next.js 15+ using React.use
-    const resolvedParams = use(params);
-    const userId = decodeURIComponent(resolvedParams.userId);
 
     const fetchTasks = useCallback(async () => {
         try {
