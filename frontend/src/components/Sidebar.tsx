@@ -92,9 +92,9 @@ export function Sidebar() {
                             <LiquidButton
                                 key={item.href}
                                 onClick={() => router.push(item.href)}
-                                className={`w-full justify-start text-left px-5 py-3 rounded-xl transition-all duration-300 ${isActive
-                                        ? 'shadow-[0_0_15px_rgba(16,185,129,0.5)] border border-white/20 text-white bg-white/5'
-                                        : 'text-zinc-400 border border-transparent hover:text-white hover:bg-zinc-900/50'
+                                className={`w-full justify-start text-left px-5 py-3 rounded-full transition-all duration-300 ${isActive
+                                    ? 'shadow-[0_0_15px_rgba(255,255,255,0.3)] border border-white/20 text-white bg-white/5'
+                                    : 'text-zinc-400 border border-transparent hover:text-white hover:bg-zinc-900/50'
                                     }`}
                                 variant="default"
                             >
