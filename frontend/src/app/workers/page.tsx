@@ -52,7 +52,7 @@ export default function WorkersPage() {
 
                     {/* Dashboard Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-black border border-zinc-800/50 rounded-2xl p-6">
+                        <div className="bg-black border border-white/10 rounded-2xl p-6">
                             <h3 className="text-sm font-medium text-zinc-400 mb-2">Total Workers</h3>
                             <p className="text-3xl font-semibold text-white">{workers.length}</p>
                         </div>
@@ -66,7 +66,7 @@ export default function WorkersPage() {
                                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white/50"></div>
                                 </div>
                             ) : error ? (
-                                <div className="flex flex-col py-12 items-center justify-center text-white gap-4 w-full bg-black border border-zinc-800 rounded-2xl">
+                                <div className="flex flex-col py-12 items-center justify-center text-white gap-4 w-full bg-black border border-white/10 rounded-2xl">
                                     <p className="text-white">Error: {error}</p>
                                     <LiquidButton
                                         onClick={fetchWorkers}
@@ -84,7 +84,7 @@ export default function WorkersPage() {
                                         <motion.div
                                             whileHover={{ y: -4, scale: 1.01 }}
                                             whileTap={{ scale: 0.98 }}
-                                            className="bg-black border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-zinc-700 transition-colors cursor-pointer group w-full"
+                                            className="bg-black border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-zinc-700 transition-colors cursor-pointer group w-full"
                                         >
                                             <div className="flex items-center gap-4 flex-1 min-w-0">
                                                 <div className="w-12 h-12 rounded-full bg-white/10 flex shrink-0 items-center justify-center text-white font-bold text-xl uppercase ring-1 ring-white/20 group-hover:bg-white/10 transition-colors">
@@ -101,19 +101,19 @@ export default function WorkersPage() {
                                             </div>
 
                                             <div className="flex flex-row flex-wrap gap-4 mt-auto">
-                                                <div className="bg-zinc-950/50 rounded-xl px-4 py-2 border border-zinc-800/50 flex flex-col justify-center min-w-[100px] flex-1">
+                                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[100px] flex-1">
                                                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500 mb-0.5">Total Tasks</span>
                                                     <span className="block text-2xl font-bold text-zinc-300 leading-none">
                                                         {worker.totalTasks}
                                                     </span>
                                                 </div>
-                                                <div className="bg-black rounded-xl px-4 py-2 border border-zinc-800 flex flex-col justify-center min-w-[100px] flex-1">
+                                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[100px] flex-1">
                                                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Running</span>
                                                     <span className="block text-2xl font-bold text-white leading-none">
                                                         {worker.runningTasks || 0}
                                                     </span>
                                                 </div>
-                                                <div className="bg-black rounded-xl px-4 py-2 border border-zinc-800 flex flex-col justify-center min-w-[100px] flex-1">
+                                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[100px] flex-1">
                                                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Completed</span>
                                                     <span className="block text-2xl font-bold text-white leading-none">
                                                         {worker.completedTasks}

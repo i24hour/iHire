@@ -92,7 +92,7 @@ export function ITimeTracker() {
   };
 
   return (
-    <div className="bg-black border border-zinc-800 rounded-2xl p-6">
+    <div className="bg-black border border-white/10 rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl font-semibold text-white">iTime</h2>
@@ -107,18 +107,18 @@ export function ITimeTracker() {
           placeholder="Task title"
           value={taskTitle}
           onChange={(event) => setTaskTitle(event.target.value)}
-          className="px-4 py-3 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/50"
+          className="px-4 py-3 bg-black border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/50"
         />
         <input
           type="text"
           placeholder="Task description"
           value={taskDescription}
           onChange={(event) => setTaskDescription(event.target.value)}
-          className="px-4 py-3 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/50"
+          className="px-4 py-3 bg-black border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-white/50"
         />
         <button
           onClick={handleAddTask}
-          className="px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
+          className="px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-black transition-colors disabled:opacity-50"
           disabled={!taskTitle.trim()}
         >
           Add Task
@@ -132,7 +132,7 @@ export function ITimeTracker() {
           tasks.map((task) => (
             <div
               key={task.id}
-              className="flex flex-col md:flex-row md:items-center gap-4 bg-black/40 border border-zinc-800 rounded-xl p-4"
+              className="flex flex-col md:flex-row md:items-center gap-4 bg-black/40 border border-white/10 rounded-xl p-4"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ export function ITimeTracker() {
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full ${task.enabled
                       ? 'bg-white/10 text-white'
-                      : 'bg-zinc-700/40 text-zinc-400'}`}
+                      : 'bg-white/5 text-zinc-400'}`}
                   >
                     {task.enabled ? 'Running' : 'Disabled'}
                   </span>

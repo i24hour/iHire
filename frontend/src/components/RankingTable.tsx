@@ -109,7 +109,7 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
             case 'Yes': return 'bg-white/10 text-white border-white/20';
             case 'Maybe': return 'bg-white/10 text-white border-white/20';
             case 'Not Now': return 'bg-white/10 text-white border-white/20';
-            default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+            default: return 'bg-white/5 text-gray-400 border-gray-500/50';
         }
     };
 
@@ -136,22 +136,22 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
     };
 
     return (
-        <div className="bg-black rounded-xl border border-zinc-800 overflow-hidden">
+        <div className="bg-black rounded-xl border border-white/10 overflow-hidden">
             {/* Filters */}
-            <div className="p-4 border-b border-zinc-800 flex gap-4 flex-wrap">
+            <div className="p-4 border-b border-white/10 flex gap-4 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                     <input
                         type="text"
                         placeholder="Search candidates..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-4 py-2 bg-black border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600"
+                        className="w-full px-4 py-2 bg-black border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600"
                     />
                 </div>
                 <select
                     value={filterRecommendation}
                     onChange={(e) => setFilterRecommendation(e.target.value)}
-                    className="px-4 py-2 bg-black border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-zinc-600"
+                    className="px-4 py-2 bg-black border border-white/10 rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-zinc-600"
                 >
                     <option value="all">All Recommendations</option>
                     <option value="Strong Yes">Strong Yes</option>
@@ -211,11 +211,11 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="hover:bg-gray-800/30 transition-colors cursor-pointer"
+                                className="hover:bg-black transition-colors cursor-pointer"
                                 onClick={() => onSelectCandidate?.(candidate)}
                             >
                                 <td className="px-6 py-4">
-                                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-zinc-800 text-zinc-300 font-medium text-sm border border-zinc-700">
+                                    <div className="flex items-center justify-center w-7 h-7 rounded-full bg-black text-zinc-300 font-medium text-sm border border-zinc-700">
                                         {index + 1}
                                     </div>
                                 </td>
@@ -272,7 +272,7 @@ export function RankingTable({ candidates, onSelectCandidate }: RankingTableProp
                                             className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${!['Maybe', 'Yes', 'Strong Yes'].includes(candidate.recommendation)
                                                     ? 'bg-transparent text-zinc-600 border border-zinc-700 cursor-not-allowed'
                                                     : sendingAssignment === candidate.id
-                                                        ? 'bg-zinc-800 text-zinc-400 border border-zinc-700 cursor-wait'
+                                                        ? 'bg-black text-zinc-400 border border-zinc-700 cursor-wait'
                                                         : assignmentStatus?.id === candidate.id
                                                             ? assignmentStatus.success
                                                                 ? 'bg-white/10 text-white border border-white/20'

@@ -130,7 +130,7 @@ function DashboardContent() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-black/40 rounded-lg p-2 border border-zinc-800">
+                    <div className="flex items-center gap-2 bg-black/40 rounded-lg p-2 border border-white/10">
                         <LiquidButton
                             onClick={() => setViewMode('table')}
                             className={`px-4 py-2 transition-colors ${viewMode === 'table'

@@ -30,11 +30,11 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
     return (
         <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/80  z-50 flex items-center justify-center p-4"
             onClick={onClose}
         >
             <div 
-                className="bg-black border border-gray-800 rounded-2xl max-w-md w-full p-8"
+                className="bg-black border border-white/10 rounded-2xl max-w-md w-full p-8"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -74,7 +74,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
                 {/* Divider */}
                 <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-800"></div>
+                        <div className="w-full border-t border-white/10"></div>
                     </div>
                     <div className="relative flex justify-center text-sm">
                         <span className="px-2 bg-black text-zinc-500">Or continue with email</span>
@@ -107,7 +107,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
                     </div>
                     <button
                         type="submit"
-                        className="w-full px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-lg transition-all"
+                        className="w-full px-6 py-3 bg-black hover:bg-white/5 text-white font-medium rounded-lg transition-all"
                     >
                         {isSignUp ? 'Sign Up' : 'Sign In'}
                     </button>
@@ -125,7 +125,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
                 </div>
 
                 {/* Guest Mode */}
-                <div className="mt-6 pt-6 border-t border-gray-800">
+                <div className="mt-6 pt-6 border-t border-white/10">
                     <button
                         onClick={onClose}
                         className="w-full text-center text-sm text-zinc-500 hover:text-zinc-400 transition-colors"

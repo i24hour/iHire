@@ -324,7 +324,7 @@ export default function ITimePage() {
 
                         {/* User Info / Sign In Button */}
                         {status === 'loading' ? (
-                            <div className="animate-pulse bg-gray-800 h-10 w-32 rounded-lg"></div>
+                            <div className="animate-pulse bg-black h-10 w-32 rounded-lg"></div>
                         ) : session ? (
                             <div className="flex items-center gap-3">
                                 <div className="text-right">
@@ -337,7 +337,7 @@ export default function ITimePage() {
                                         alt="Profile"
                                         width={40}
                                         height={40}
-                                        className="rounded-full border-2 border-gray-800"
+                                        className="rounded-full border-2 border-white/10"
                                     />
                                 )}
                                 <LiquidButton
@@ -361,29 +361,29 @@ export default function ITimePage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/10 p-6">
                         <div className="text-sm text-gray-400 mb-2">Total Tasks</div>
                         <div className="text-4xl font-bold text-white">{tasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50  rounded-2xl border border-white/20 p-6">
                         <div className="text-sm text-zinc-300 mb-2">Running</div>
                         <div className="text-4xl font-bold text-white">{activeTasks}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-zinc-900 to-cyan-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                    <div className="bg-gradient-to-br from-zinc-900 to-cyan-900/50  rounded-2xl border border-white/20 p-6">
                         <div className="text-sm text-zinc-300 mb-2">Completed</div>
                         <div className="text-4xl font-bold text-white">{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                    <div className="bg-gradient-to-br from-zinc-900/50 to-zinc-900/50  rounded-2xl border border-white/20 p-6">
                         <div className="text-sm text-zinc-300 mb-2">Total Time</div>
                         <div className="text-4xl font-bold text-white">{formatElapsed(totalTime)}</div>
                     </div>
                 </div>
 
                 {/* Add Task Form */}
-                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
+                <div className="bg-black  rounded-2xl border border-white/10 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Add New Task</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <input
@@ -412,7 +412,7 @@ export default function ITimePage() {
                 </div>
 
                 {/* Pending Tasks */}
-                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
+                <div className="bg-black  rounded-2xl border border-white/10 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Active Tasks</h2>
 
                     {pendingTasks.length === 0 ? (
@@ -491,7 +491,7 @@ export default function ITimePage() {
 
                 {/* Completed Tasks */}
                 {completedTasks.length > 0 && (
-                    <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/10 p-6">
                         <h2 className="text-lg font-semibold text-white mb-4">Completed Tasks</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {completedTasks.map((task) => (
@@ -544,7 +544,7 @@ export default function ITimePage() {
                     className="fixed inset-0 bg-black z-[80] overflow-y-auto"
                 >
                     {/* Header */}
-                    <div className="sticky top-0 z-10 bg-black backdrop-blur-xl border-b border-gray-800">
+                    <div className="sticky top-0 z-10 bg-black  border-b border-white/10">
                         <div className="max-w-7xl mx-auto px-8 py-6">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
@@ -574,7 +574,7 @@ export default function ITimePage() {
                             {/* Left Column - Timer & Controls */}
                             <div className="space-y-8">
                                 {/* Timer Display */}
-                                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                                <div className="bg-black  rounded-2xl border border-white/10 p-8">
                                     <div className="text-center">
                                         <div className="text-sm text-zinc-400 mb-4 uppercase tracking-wide">Current Time</div>
                                         <div className={`text-8xl font-mono font-bold mb-8 ${selectedTask.enabled ? 'text-white' : 'text-zinc-500'}`}>
@@ -601,12 +601,12 @@ export default function ITimePage() {
 
                                     {/* Progress Bar if target time is set */}
                                     {selectedTask.targetTime && (
-                                        <div className="mt-8 pt-8 border-t border-gray-800">
+                                        <div className="mt-8 pt-8 border-t border-white/10">
                                             <div className="flex justify-between text-sm text-zinc-400 mb-3">
                                                 <span>Progress to Target</span>
                                                 <span>{formatElapsed(selectedTask.targetTime)}</span>
                                             </div>
-                                            <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                                            <div className="w-full bg-black rounded-full h-3 overflow-hidden">
                                                 <div
                                                     className={`h-full transition-all ${getElapsedSeconds(selectedTask) >= selectedTask.targetTime
                                                         ? 'bg-white text-black'
@@ -625,7 +625,7 @@ export default function ITimePage() {
                                 </div>
 
                                 {/* Target Time */}
-                                <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                                <div className="bg-black  rounded-2xl border border-white/10 p-8">
                                     <h3 className="text-xl font-semibold text-white mb-4">Set Target Time</h3>
                                     <div className="flex gap-3">
                                         <div className="flex-1">
@@ -663,7 +663,7 @@ export default function ITimePage() {
                             </div>
 
                             {/* Right Column - Vertical Timeline */}
-                            <div className="bg-black backdrop-blur-xl rounded-2xl border border-gray-800 p-8">
+                            <div className="bg-black  rounded-2xl border border-white/10 p-8">
                                 <h3 className="text-xl font-semibold text-white mb-6">Milestones</h3>
 
                                 {/* Add Milestone */}

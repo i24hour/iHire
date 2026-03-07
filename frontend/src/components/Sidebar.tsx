@@ -45,7 +45,7 @@ export function Sidebar() {
     return (
         <>
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-black border-b border-zinc-800 z-50 flex items-center justify-between px-4">
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-black border-b border-white/10 z-50 flex items-center justify-between px-4">
                 <div className="flex items-center gap-1">
                     <span className="text-xl font-semibold text-white tracking-tight">iW</span>
                     <div className="animate-spin-slow rounded-full h-5 w-5 border-t-2 border-b-2 border-white mt-1"></div>
@@ -62,12 +62,12 @@ export function Sidebar() {
             {/* Mobile Overlay */}
             {isOpen && (
                 <div
-                    className="md:hidden fixed inset-0 bg-black/80 z-[60] backdrop-blur-sm"
+                    className="md:hidden fixed inset-0 bg-black/80 z-[60] "
                     onClick={() => setIsOpen(false)}
                 />
             )}
 
-            <aside className={`fixed md:relative top-0 left-0 z-[70] h-[100dvh] w-64 bg-black border-r border-zinc-800 p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed md:relative top-0 left-0 z-[70] h-[100dvh] w-64 bg-black border-r border-white/10 p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 {/* Close Button on Mobile */}
                 <button onClick={() => setIsOpen(false)} className="md:hidden absolute top-4 right-4 text-zinc-400 hover:text-white">
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +137,7 @@ export function Sidebar() {
                 */}
 
                 {/* Stats Summary */}
-                <div className="mt-auto p-4 bg-black rounded-lg border border-zinc-800">
+                <div className="mt-auto p-4 bg-black rounded-lg border border-white/10">
                     <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide">Quick Stats</h3>
                     <div className="space-y-2.5">
                         <div className="flex justify-between">
@@ -152,7 +152,7 @@ export function Sidebar() {
                 </div>
 
                 {/* Status Indicator */}
-                <div className="mt-6 pt-6 border-t border-zinc-900">
+                <div className="mt-6 pt-6 border-t border-white/10">
                     <div className="flex items-center gap-2 text-sm">
                         <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
                         <span className="text-zinc-500 text-xs">System Active</span>
