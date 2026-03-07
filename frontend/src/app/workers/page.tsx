@@ -60,7 +60,7 @@ export default function WorkersPage() {
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
             <Sidebar />
-            <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full ml-0 md:ml-64">
+            <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 <div className="space-y-8">
                     {/* Header Section */}
                     <div>
