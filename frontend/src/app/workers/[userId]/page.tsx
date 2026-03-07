@@ -135,30 +135,30 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
-                        <div className="text-sm text-gray-400 mb-2">Total Tasks</div>
-                        <div className="text-4xl font-bold text-white">{tasks.length}</div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 max-w-5xl">
+                    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 flex flex-col justify-center">
+                        <div className="text-xs uppercase tracking-wider font-semibold text-gray-500 mb-1">Total Tasks</div>
+                        <div className="text-3xl sm:text-4xl font-bold text-white truncate">{tasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-emerald-900/50 to-green-900/50 backdrop-blur-xl rounded-2xl border border-emerald-500/30 p-6">
-                        <div className="text-sm text-emerald-300 mb-2">Running</div>
-                        <div className="text-4xl font-bold text-emerald-400">{activeTasksCount}</div>
+                    <div className="bg-emerald-950/20 backdrop-blur-xl rounded-2xl border border-emerald-900/30 p-6 flex flex-col justify-center">
+                        <div className="text-xs uppercase tracking-wider font-semibold text-emerald-500/70 mb-1">Running</div>
+                        <div className="text-3xl sm:text-4xl font-bold text-emerald-400 truncate">{activeTasksCount}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-6">
-                        <div className="text-sm text-blue-300 mb-2">Completed</div>
-                        <div className="text-4xl font-bold text-blue-400">{completedTasks.length}</div>
+                    <div className="bg-blue-950/20 backdrop-blur-xl rounded-2xl border border-blue-900/30 p-6 flex flex-col justify-center">
+                        <div className="text-xs uppercase tracking-wider font-semibold text-blue-500/70 mb-1">Completed</div>
+                        <div className="text-3xl sm:text-4xl font-bold text-blue-400 truncate">{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-purple-900/50 to-pink-900/50 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-6">
-                        <div className="text-sm text-purple-300 mb-2">Total Time</div>
-                        <div className="text-4xl font-bold text-purple-400">{formatElapsed(totalTime)}</div>
+                    <div className="bg-purple-950/20 backdrop-blur-xl rounded-2xl border border-purple-900/30 p-6 flex flex-col justify-center">
+                        <div className="text-xs uppercase tracking-wider font-semibold text-purple-500/70 mb-1">Total Time</div>
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-purple-400 truncate tracking-tight">{formatElapsed(totalTime)}</div>
                     </div>
                 </div>
 
                 {/* Active/Pending Tasks */}
-                <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6 mb-8">
+                <div className="bg-zinc-900/30 rounded-2xl border border-zinc-800/50 p-6 mb-8 max-w-5xl">
                     <h2 className="text-lg font-semibold text-white mb-4">Active Tasks</h2>
 
                     {pendingTasks.length === 0 ? (
@@ -167,7 +167,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                             <div className="text-zinc-400 text-lg mb-2">No active tasks</div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-3">
                             {pendingTasks.map((task) => (
                                 <div
                                     key={task.id}
@@ -212,9 +212,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                 {/* Completed Tasks */}
                 {completedTasks.length > 0 && (
-                    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
+                    <div className="bg-zinc-900/30 rounded-2xl border border-zinc-800/50 p-6 max-w-5xl mb-8">
                         <h2 className="text-lg font-semibold text-white mb-4">Completed Tasks</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-3">
                             {completedTasks.map((task) => (
                                 <div
                                     key={task.id}
