@@ -2,11 +2,5 @@
     "buildCommand": "npm run build",
     "outputDirectory": ".next",
     "framework": "nextjs",
-    "installCommand": "npm install",
-    "crons": [
-        {
-            "path": "/api/cron/ping",
-            "schedule": "*/15 * * * *"
-        }
-    ]
+    "installCommand": "npm install"
 }
