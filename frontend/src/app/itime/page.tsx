@@ -462,8 +462,8 @@ export default function ITimePage() {
                                                     toggleTask(task.id);
                                                 }}
                                                 className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${task.enabled
-                                                        ? 'bg-white text-black hover:bg-white/90'
-                                                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                                                    ? 'bg-white text-black hover:bg-white/90'
+                                                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
                                                     }`}
                                             >
                                                 {task.enabled ? '⏸' : '▶'}
@@ -538,7 +538,7 @@ export default function ITimePage() {
             {/* Task Detail Modal - Full Screen */}
             {selectedTask && (
                 <div
-                    className="fixed inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 z-50 overflow-y-auto"
+                    className="fixed inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 z-[80] overflow-y-auto"
                 >
                     {/* Header */}
                     <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
@@ -581,8 +581,8 @@ export default function ITimePage() {
                                             <button
                                                 onClick={() => toggleTask(selectedTask.id)}
                                                 className={`px-8 py-4 rounded-xl text-base font-medium transition-all ${selectedTask.enabled
-                                                        ? 'bg-white text-black hover:bg-white/90'
-                                                        : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                                                    ? 'bg-white text-black hover:bg-white/90'
+                                                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
                                                     }`}
                                             >
                                                 {selectedTask.enabled ? '⏸ Pause' : '▶ Start'}
@@ -609,8 +609,8 @@ export default function ITimePage() {
                                             <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
                                                 <div
                                                     className={`h-full transition-all ${getElapsedSeconds(selectedTask) >= selectedTask.targetTime
-                                                            ? 'bg-emerald-500'
-                                                            : 'bg-purple-500'
+                                                        ? 'bg-emerald-500'
+                                                        : 'bg-purple-500'
                                                         }`}
                                                     style={{
                                                         width: `${Math.min((getElapsedSeconds(selectedTask) / selectedTask.targetTime) * 100, 100)}%`
@@ -701,8 +701,8 @@ export default function ITimePage() {
                                                         <button
                                                             onClick={() => toggleMilestone(selectedTask.id, milestone.id)}
                                                             className={`relative z-10 flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${milestone.completed
-                                                                    ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/50'
-                                                                    : 'bg-gray-900 border-white/30 hover:border-white/50 hover:bg-white/5'
+                                                                ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/50'
+                                                                : 'bg-gray-900 border-white/30 hover:border-white/50 hover:bg-white/5'
                                                                 }`}
                                                         >
                                                             {milestone.completed && (
@@ -716,8 +716,8 @@ export default function ITimePage() {
                                                         <div className="flex-1 pt-1">
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div className={`flex-1 text-base font-medium ${milestone.completed
-                                                                        ? 'text-zinc-500 line-through'
-                                                                        : 'text-white'
+                                                                    ? 'text-zinc-500 line-through'
+                                                                    : 'text-white'
                                                                     }`}>
                                                                     {milestone.text}
                                                                 </div>

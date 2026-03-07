@@ -254,7 +254,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
             {/* Task Detail Modal - Read Only */}
             {selectedTask && (
-                <div className="fixed inset-0 bg-gradient-to-br from-gray-950/95 via-gray-900/95 to-gray-950/95 z-50 overflow-y-auto backdrop-blur-sm">
+                <div className="fixed inset-0 bg-gradient-to-br from-gray-950/95 via-gray-900/95 to-gray-950/95 z-[80] overflow-y-auto backdrop-blur-md">
                     {/* Header */}
                     <div className="sticky top-0 z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
                         <div className="max-w-7xl mx-auto px-8 py-6">
