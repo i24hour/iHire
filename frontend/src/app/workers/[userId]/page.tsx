@@ -21,6 +21,7 @@ interface ITimeTask {
     completedAt?: number;
     targetTime?: number;
     milestones?: Milestone[];
+    events?: { type: 'start' | 'pause' | 'complete'; timestamp: number; }[];
 }
 
 interface Milestone {
@@ -79,12 +80,48 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     }, []);
 
     const getElapsedSeconds = (task: ITimeTask): number => {
-        if (!task.enabled || task.completed) {
+        if (task.completed) {
             return task.pausedElapsed;
         }
-        // If task is running, calculate elapsed time since it started
-        const runningSince = (currentTime - task.startTime) / 1000;
-        return Math.floor(task.pausedElapsed + runningSince);
+
+        if (!task.events || task.events.length === 0) {
+            // Legacy fallback if no events tracking exists
+            if (!task.enabled) {
+                return task.pausedElapsed;
+            }
+            const runningSince = (currentTime - task.startTime) / 1000;
+            return Math.floor(task.pausedElapsed + runningSince);
+        }
+
+        let totalMs = 0;
+        let isRunning = false;
+        let lastStartTime = 0;
+
+        for (const ev of task.events) {
+            if (ev.type === 'start') {
+                if (!isRunning) {
+                    isRunning = true;
+                    lastStartTime = ev.timestamp;
+                }
+            } else if (ev.type === 'pause' || ev.type === 'complete') {
+                if (isRunning) {
+                    totalMs += (ev.timestamp - lastStartTime);
+                    isRunning = false;
+                }
+            }
+        }
+
+        // If it's still running right now and not completed
+        if (isRunning && !task.completed) {
+            totalMs += (currentTime - lastStartTime);
+        }
+
+        // Add any migrated legacy paused Elapsed 
+        if (task.events.length > 0 && task.events[0].type !== 'start') {
+            totalMs += (task.pausedElapsed * 1000);
+        }
+
+        return Math.floor(totalMs / 1000);
     };
 
     const formatElapsed = (seconds: number) => {

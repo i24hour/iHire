@@ -296,11 +296,46 @@ export default function ITimePage() {
     };
 
     const getElapsedSeconds = (task: ITimeTask): number => {
-        if (!task.enabled) {
+        if (task.completed) {
             return task.pausedElapsed;
         }
-        const runningSince = (currentTime - task.startTime) / 1000;
-        return Math.floor(task.pausedElapsed + runningSince);
+
+        if (!task.events || task.events.length === 0) {
+            // Legacy fallback
+            if (!task.enabled) {
+                return task.pausedElapsed;
+            }
+            const runningSince = (currentTime - task.startTime) / 1000;
+            return Math.floor(task.pausedElapsed + runningSince);
+        }
+
+        let totalMs = 0;
+        let isRunning = false;
+        let lastStartTime = 0;
+
+        for (const ev of task.events) {
+            if (ev.type === 'start') {
+                if (!isRunning) {
+                    isRunning = true;
+                    lastStartTime = ev.timestamp;
+                }
+            } else if (ev.type === 'pause' || ev.type === 'complete') {
+                if (isRunning) {
+                    totalMs += (ev.timestamp - lastStartTime);
+                    isRunning = false;
+                }
+            }
+        }
+
+        if (isRunning && !task.completed) {
+            totalMs += (currentTime - lastStartTime);
+        }
+
+        if (task.events.length > 0 && task.events[0].type !== 'start') {
+            totalMs += (task.pausedElapsed * 1000);
+        }
+
+        return Math.floor(totalMs / 1000);
     };
 
     const formatElapsed = (seconds: number) => {
