@@ -355,10 +355,9 @@ export default function ITimePage() {
             <Sidebar />
 
             <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
-                {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-start justify-between">
-                        <div>
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 md:gap-4">
+                        <div className="order-2 md:order-1">
                             <h1 className="text-3xl font-bold text-white mb-2">
                                 iTime Tracker
                             </h1>
@@ -367,63 +366,66 @@ export default function ITimePage() {
                             </p>
                         </div>
 
-                        {/* User Info / Sign In Button */}
-                        {status === 'loading' ? (
-                            <div className="animate-pulse bg-black h-10 w-32 rounded-lg"></div>
-                        ) : session ? (
-                            <div className="flex items-center gap-3">
-                                <div className="text-right">
-                                    <div className="text-sm font-medium text-white">{session.user?.name || session.user?.email}</div>
-                                    <div className="text-xs text-zinc-500">{session.user?.email}</div>
+                        <div className="order-1 md:order-2 self-start md:self-auto w-full md:w-auto flex justify-end md:block">
+
+                            {/* User Info / Sign In Button */}
+                            {status === 'loading' ? (
+                                <div className="animate-pulse bg-black h-10 w-32 rounded-lg"></div>
+                            ) : session ? (
+                                <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                        <div className="text-sm font-medium text-white">{session.user?.name || session.user?.email}</div>
+                                        <div className="text-xs text-zinc-500">{session.user?.email}</div>
+                                    </div>
+                                    {session.user?.image && (
+                                        <Image
+                                            src={session.user.image}
+                                            alt="Profile"
+                                            width={40}
+                                            height={40}
+                                            className="rounded-full border-2 border-white/10"
+                                        />
+                                    )}
+                                    <LiquidButton
+                                        onClick={() => signOut()}
+                                        className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                                        variant="ghost"
+                                    >
+                                        Sign Out
+                                    </LiquidButton>
                                 </div>
-                                {session.user?.image && (
-                                    <Image
-                                        src={session.user.image}
-                                        alt="Profile"
-                                        width={40}
-                                        height={40}
-                                        className="rounded-full border-2 border-white/10"
-                                    />
-                                )}
+                            ) : (
                                 <LiquidButton
-                                    onClick={() => signOut()}
-                                    className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
-                                    variant="ghost"
+                                    onClick={() => setShowSignInModal(true)}
+                                    className="px-6 py-2 text-sm font-bold"
                                 >
-                                    Sign Out
+                                    Sign In
                                 </LiquidButton>
-                            </div>
-                        ) : (
-                            <LiquidButton
-                                onClick={() => setShowSignInModal(true)}
-                                className="px-6 py-2 text-sm font-bold"
-                            >
-                                Sign In
-                            </LiquidButton>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-black  rounded-2xl border border-white/10 p-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+                    <div className="bg-black  rounded-2xl border border-white/10 p-4 md:p-6">
                         <div className="text-sm text-gray-400 mb-2">Total Tasks</div>
-                        <div className="text-4xl font-bold text-white">{tasks.length}</div>
+                        <div className="text-2xl md:text-4xl font-bold text-white">{tasks.length}</div>
                     </div>
 
-                    <div className="bg-black  rounded-2xl border border-white/20 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
                         <div className="text-sm text-zinc-300 mb-2">Running</div>
-                        <div className="text-4xl font-bold text-white">{activeTasks}</div>
+                        <div className="text-2xl md:text-4xl font-bold text-white">{activeTasks}</div>
                     </div>
 
-                    <div className="bg-black  rounded-2xl border border-white/20 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
                         <div className="text-sm text-zinc-300 mb-2">Completed</div>
-                        <div className="text-4xl font-bold text-white">{completedTasks.length}</div>
+                        <div className="text-2xl md:text-4xl font-bold text-white">{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-black  rounded-2xl border border-white/20 p-6">
+                    <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
                         <div className="text-sm text-zinc-300 mb-2">Total Time</div>
-                        <div className="text-4xl font-bold text-white">{formatElapsed(totalTime)}</div>
+                        <div className="text-2xl md:text-4xl font-bold text-white">{formatElapsed(totalTime)}</div>
                     </div>
                 </div>
 
