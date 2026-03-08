@@ -4,7 +4,13 @@ import { Sidebar } from '@/components/Sidebar';
 import { SignInModal } from '@/components/SignInModal';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
+
+const PerformanceChart = dynamic(
+    () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
+    { ssr: false, loading: () => <div className="h-[500px] bg-black rounded-2xl border border-white/10 flex items-center justify-center text-zinc-500">Loading chart...</div> }
+);
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { LiveTimer, LiveTotalTimer } from '@/components/LiveTimer';
 
@@ -423,6 +429,11 @@ export default function ITimePage() {
                             <LiveTotalTimer tasks={tasks} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                         </div>
                     </div>
+                </div>
+
+                {/* Performance Chart */}
+                <div className="mb-8 w-full max-w-none">
+                    <PerformanceChart tasks={tasks} />
                 </div>
 
                 {/* Add Task Form */}
