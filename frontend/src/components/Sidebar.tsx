@@ -49,7 +49,7 @@ export function Sidebar() {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-black border-b border-white/10 z-50 flex items-center justify-between px-4">
                 <div className="flex items-center gap-1">
-                    <span className="text-xl font-semibold text-white tracking-tight">iW</span>
+                    <span className="text-xl font-semibold text-white tracking-tight">infinW</span>
                     <div className="animate-spin-slow rounded-full h-5 w-5 border-t-2 border-b-2 border-white mt-1"></div>
                     <span className="text-xl font-semibold text-white tracking-tight">r</span>
                     <span className="text-xl font-semibold text-white tracking-tight">K</span>
