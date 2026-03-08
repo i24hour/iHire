@@ -241,12 +241,12 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
 
         if (chartType === 'candle') {
             const candleSeries = chart.addSeries(CandlestickSeries, {
-                upColor: '#10b981',
-                downColor: '#ef4444',
-                borderDownColor: '#ef4444',
-                borderUpColor: '#10b981',
-                wickDownColor: '#ef4444',
-                wickUpColor: '#10b981',
+                upColor: '#ef4444', // Red for workload increase
+                downColor: '#10b981', // Green for workload decrease (task completed)
+                borderDownColor: '#10b981',
+                borderUpColor: '#ef4444',
+                wickDownColor: '#10b981',
+                wickUpColor: '#ef4444',
             });
             candleSeries.setData(chartData.candleData);
             seriesRef.current = candleSeries;
@@ -322,8 +322,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                                     key={int}
                                     onClick={() => setIntervalVal(int)}
                                     className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${interval === int
-                                            ? 'bg-zinc-800 text-white shadow-md'
-                                            : 'text-zinc-500 hover:text-white'
+                                        ? 'bg-zinc-800 text-white shadow-md'
+                                        : 'text-zinc-500 hover:text-white'
                                         }`}
                                 >
                                     {int}
@@ -339,8 +339,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                                 key={range}
                                 onClick={() => handleTimeRangeChange(range)}
                                 className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${timeRange === range
-                                        ? 'bg-white text-black shadow-md'
-                                        : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                                    ? 'bg-white text-black shadow-md'
+                                    : 'text-zinc-400 hover:text-white hover:bg-white/10'
                                     }`}
                             >
                                 {range}
