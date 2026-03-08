@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
-import { PerformanceChart } from '@/components/PerformanceChart';
+import dynamic from 'next/dynamic';
+
+const PerformanceChart = dynamic(
+    () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
+    { ssr: false, loading: () => <div className="h-[500px] bg-black rounded-2xl border border-white/10 flex items-center justify-center text-zinc-500">Loading chart...</div> }
+);
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
