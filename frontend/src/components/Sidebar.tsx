@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
@@ -16,6 +17,7 @@ const navItems = [
 export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [campaigns, setCampaigns] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
@@ -151,12 +153,34 @@ export function Sidebar() {
                     </div>
                 </div>
 
-                {/* Status Indicator */}
+                {/* User Info / Authentication */}
                 <div className="mt-6 pt-6 border-t border-white/10">
-                    <div className="flex items-center gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
-                        <span className="text-zinc-500 text-xs">System Active</span>
-                    </div>
+                    {status === 'loading' ? (
+                        <div className="animate-pulse bg-white/5 h-10 w-full rounded-lg"></div>
+                    ) : session ? (
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                {session.user?.image ? (
+                                    <img src={session.user.image} alt="" className="w-8 h-8 rounded-full border border-white/10 shrink-0" />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs text-white shrink-0">
+                                        {session.user?.name?.[0] || session.user?.email?.[0] || 'U'}
+                                    </div>
+                                )}
+                                <div className="truncate pr-2">
+                                    <div className="text-sm font-medium text-white truncate">{session.user?.name || 'User'}</div>
+                                    <div className="text-xs text-zinc-500 truncate">{session.user?.email}</div>
+                                </div>
+                            </div>
+                            <button onClick={() => signOut()} className="p-2 text-zinc-500 hover:text-white transition-colors shrink-0" title="Sign Out">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                            </button>
+                        </div>
+                    ) : (
+                        <LiquidButton onClick={() => signIn('google')} className="w-full text-xs py-2 content-center text-center font-semibold text-white justify-center flex">
+                            Sign In
+                        </LiquidButton>
+                    )}
                 </div>
             </aside>
         </>
