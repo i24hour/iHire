@@ -260,14 +260,10 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                             {formatElapsed(getElapsedSeconds(task))}
                                         </div>
                                         <div className="flex gap-2 text-xs">
-                                            {task.enabled ? (
+                                            {task.enabled && (
                                                 <span className="bg-white/10 text-white px-2 py-1 rounded flex items-center gap-1">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-white text-black animate-pulse"></span>
                                                     Running
-                                                </span>
-                                            ) : (
-                                                <span className="bg-black text-zinc-400 px-2 py-1 rounded">
-                                                    Paused
                                                 </span>
                                             )}
                                         </div>

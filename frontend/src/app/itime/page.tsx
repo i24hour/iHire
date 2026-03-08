@@ -511,16 +511,6 @@ export default function ITimePage() {
                                                 size="sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    toggleTask(task.id);
-                                                }}
-                                                className={`transition-all ${task.enabled ? 'text-white' : 'text-zinc-300'}`}
-                                            >
-                                                {task.enabled ? '⏸' : '▶'}
-                                            </LiquidButton>
-                                            <LiquidButton
-                                                size="sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
                                                     completeTask(task.id);
                                                 }}
                                                 className="text-white"
