@@ -582,14 +582,14 @@ export default function ITimePage() {
                 >
                     {/* Header */}
                     <div className="sticky top-0 z-10 bg-black  border-b border-white/10">
-                        <div className="max-w-7xl mx-auto px-8 py-6">
+                        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
-                                    <h1 className="text-4xl font-bold text-white mb-2">
+                                    <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 break-words">
                                         {selectedTask.title}
                                     </h1>
                                     {selectedTask.description && (
-                                        <p className="text-zinc-400 text-lg">
+                                        <p className="text-zinc-400 text-sm md:text-lg">
                                             {selectedTask.description}
                                         </p>
                                     )}
@@ -606,15 +606,15 @@ export default function ITimePage() {
                         </div>
                     </div>
 
-                    <div className="max-w-7xl mx-auto px-8 py-12">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
                             {/* Left Column - Timer & Controls */}
                             <div className="space-y-8">
                                 {/* Timer Display */}
-                                <div className="bg-black  rounded-2xl border border-white/10 p-8">
+                                <div className="bg-black  rounded-2xl border border-white/10 p-4 md:p-8 overflow-hidden">
                                     <div className="text-center">
-                                        <div className="text-sm text-zinc-400 mb-4 uppercase tracking-wide">Current Time</div>
-                                        <div className={`text-8xl font-mono font-bold mb-8 ${selectedTask.enabled ? 'text-white' : 'text-zinc-500'}`}>
+                                        <div className="text-xs md:text-sm text-zinc-400 mb-2 md:mb-4 uppercase tracking-wide">Current Time</div>
+                                        <div className={`text-6xl sm:text-7xl md:text-8xl font-mono font-bold mb-4 md:mb-8 tracking-tighter sm:tracking-normal ${selectedTask.enabled ? 'text-white' : 'text-zinc-500'}`}>
                                             {formatElapsed(getElapsedSeconds(selectedTask))}
                                         </div>
                                         <div className="flex gap-4 justify-center">

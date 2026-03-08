@@ -321,29 +321,27 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 <div className="fixed inset-0 bg-black/95 z-[80] overflow-y-auto ">
                     {/* Header */}
                     <div className="sticky top-0 z-10 bg-black  border-b border-white/10">
-                        <div className="max-w-7xl mx-auto px-8 py-6">
+                        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <h1 className="text-4xl font-bold text-white">
+                                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
+                                        <h1 className="text-2xl md:text-4xl font-bold text-white break-words">
                                             {selectedTask.title}
                                         </h1>
-                                        {selectedTask.completed ? (
-                                            <span className="bg-white/10 text-white px-3 py-1 rounded-full text-sm font-medium border border-white/20">
-                                                Completed
-                                            </span>
-                                        ) : selectedTask.enabled ? (
-                                            <span className="bg-white/10 text-white px-3 py-1 rounded-full text-sm font-medium border border-white/50/20">
-                                                Running
-                                            </span>
-                                        ) : (
-                                            <span className="bg-black text-zinc-400 px-3 py-1 rounded-full text-sm font-medium border border-zinc-700">
-                                                Paused
-                                            </span>
-                                        )}
+                                        <div className="self-start md:self-auto">
+                                            {selectedTask.completed ? (
+                                                <span className="bg-white/10 text-white px-3 py-1 rounded-full text-xs md:text-sm font-medium border border-white/20">
+                                                    Completed
+                                                </span>
+                                            ) : (
+                                                <span className="bg-white/10 text-white px-3 py-1 rounded-full text-xs md:text-sm font-medium border border-white/50/20">
+                                                    Running
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     {selectedTask.description && (
-                                        <p className="text-zinc-400 text-lg">
+                                        <p className="text-zinc-400 text-sm md:text-lg">
                                             {selectedTask.description}
                                         </p>
                                     )}
@@ -362,15 +360,15 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         </div>
                     </div>
 
-                    <div className="max-w-7xl mx-auto px-8 py-12">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
                             {/* Left Column - Timer & Controls */}
                             <div className="space-y-8">
                                 {/* Timer Display */}
-                                <div className="bg-black  rounded-2xl border border-white/10 p-8">
+                                <div className="bg-black  rounded-2xl border border-white/10 p-4 md:p-8 overflow-hidden">
                                     <div className="text-center">
-                                        <div className="text-sm text-zinc-400 mb-4 uppercase tracking-wide">Time Recorded</div>
-                                        <div className={`text-8xl font-mono font-bold mb-8 ${selectedTask.enabled ? 'text-white' : 'text-zinc-300'}`}>
+                                        <div className="text-xs md:text-sm text-zinc-400 mb-2 md:mb-4 uppercase tracking-wide">Time Recorded</div>
+                                        <div className={`text-6xl sm:text-7xl md:text-8xl font-mono font-bold mb-4 md:mb-8 tracking-tighter sm:tracking-normal ${selectedTask.enabled ? 'text-white' : 'text-zinc-300'}`}>
                                             {formatElapsed(getElapsedSeconds(selectedTask))}
                                         </div>
                                     </div>
