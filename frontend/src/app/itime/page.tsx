@@ -5,7 +5,8 @@ import { SignInModal } from '@/components/SignInModal';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { LiveTimer, LiveTotalTimer } from '@/components/LiveTimer';
 
 interface ITimeTask {
     id: string;
@@ -40,7 +41,6 @@ export default function ITimePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
-    const [currentTime, setCurrentTime] = useState(() => Date.now());
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
     const [newMilestone, setNewMilestone] = useState('');
     const [targetHours, setTargetHours] = useState('');
@@ -81,13 +81,7 @@ export default function ITimePage() {
         fetchTasks();
     }, [fetchTasks]);
 
-    // Timer interval - update current time every second
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentTime(Date.now());
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
+    // Previous Timer Interval removed - now handled by LiveTimer components
 
     // Save tasks - MongoDB for authenticated, localStorage for guest
     useEffect(() => {
@@ -295,7 +289,7 @@ export default function ITimePage() {
         setTargetMinutes('');
     };
 
-    const getElapsedSeconds = (task: ITimeTask): number => {
+    const getElapsedSeconds = useCallback((task: ITimeTask, now: number = Date.now()): number => {
         if (task.completed) {
             return task.pausedElapsed;
         }
@@ -305,7 +299,7 @@ export default function ITimePage() {
             if (!task.enabled) {
                 return task.pausedElapsed;
             }
-            const runningSince = (currentTime - task.startTime) / 1000;
+            const runningSince = (now - task.startTime) / 1000;
             return Math.floor(task.pausedElapsed + runningSince);
         }
 
@@ -328,7 +322,7 @@ export default function ITimePage() {
         }
 
         if (isRunning && !task.completed) {
-            totalMs += (currentTime - lastStartTime);
+            totalMs += (now - lastStartTime);
         }
 
         if (task.events.length > 0 && task.events[0].type !== 'start') {
@@ -336,7 +330,7 @@ export default function ITimePage() {
         }
 
         return Math.floor(totalMs / 1000);
-    };
+    }, []);
 
     const formatElapsed = (seconds: number) => {
         const h = Math.floor(seconds / 3600);
@@ -345,10 +339,10 @@ export default function ITimePage() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const totalTime = tasks.reduce((sum, task) => !task.completed ? sum + getElapsedSeconds(task) : sum, 0);
-    const activeTasks = tasks.filter((task) => task.enabled && !task.completed).length;
-    const pendingTasks = tasks.filter((task) => !task.completed);
-    const completedTasks = tasks.filter((task) => task.completed);
+    const totalTime = useMemo(() => tasks.reduce((sum, task) => !task.completed ? sum + getElapsedSeconds(task) : sum, 0), [tasks, getElapsedSeconds]);
+    const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
+    const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
+    const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
@@ -425,7 +419,9 @@ export default function ITimePage() {
 
                     <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
                         <div className="text-sm text-zinc-300 mb-2">Total Time</div>
-                        <div className="text-2xl md:text-4xl font-bold text-white">{formatElapsed(totalTime)}</div>
+                        <div className="text-2xl md:text-4xl font-bold text-white">
+                            <LiveTotalTimer tasks={tasks} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
+                        </div>
                     </div>
                 </div>
 
@@ -504,7 +500,7 @@ export default function ITimePage() {
 
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
                                         <div className={`text-2xl font-mono font-bold ${task.enabled ? 'text-white' : 'text-zinc-500'}`}>
-                                            {formatElapsed(getElapsedSeconds(task))}
+                                            <LiveTimer task={task} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                                         </div>
                                         <div className="flex gap-2">
                                             <LiquidButton
@@ -615,7 +611,7 @@ export default function ITimePage() {
                                     <div className="text-center">
                                         <div className="text-xs md:text-sm text-zinc-400 mb-2 md:mb-4 uppercase tracking-wide">Current Time</div>
                                         <div className={`text-6xl sm:text-7xl md:text-8xl font-mono font-bold mb-4 md:mb-8 tracking-tighter sm:tracking-normal ${selectedTask.enabled ? 'text-white' : 'text-zinc-500'}`}>
-                                            {formatElapsed(getElapsedSeconds(selectedTask))}
+                                            <LiveTimer task={selectedTask} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                                         </div>
                                         <div className="flex gap-4 justify-center">
                                             <LiquidButton

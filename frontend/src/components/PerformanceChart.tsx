@@ -310,6 +310,53 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         };
     }, [chartType, chartData]);
 
+    // Live native update cycle (No React state changes triggered!)
+    useEffect(() => {
+        const intervalMs = getIntervalMs(interval);
+
+        const liveInterval = setInterval(() => {
+            if (!seriesRef.current) return;
+
+            const now = Date.now();
+            const currentWorkload = getWorkloadAtTime(tasks, now);
+            const snappedNow = snapToInterval(now, interval);
+            const timeSeconds = Math.floor(snappedNow / 1000) as Time;
+
+            if (chartType === 'line') {
+                const lineSeries = seriesRef.current as ISeriesApi<'Line'>;
+                // Live update the right-most point
+                lineSeries.update({
+                    time: timeSeconds,
+                    value: currentWorkload
+                });
+            } else {
+                const candleSeries = seriesRef.current as ISeriesApi<'Candlestick'>;
+                // We need to fetch the last known OHLC from chartData to update its close
+                const lastCandle = chartData.candleData[chartData.candleData.length - 1];
+                if (lastCandle && lastCandle.time === timeSeconds) {
+                    candleSeries.update({
+                        time: timeSeconds,
+                        open: lastCandle.open,
+                        high: Math.max(lastCandle.high, currentWorkload),
+                        low: Math.min(lastCandle.low, currentWorkload),
+                        close: currentWorkload
+                    });
+                } else {
+                    // It rolled over to a new candle bucket, start a fresh one
+                    candleSeries.update({
+                        time: timeSeconds,
+                        open: currentWorkload,
+                        high: currentWorkload,
+                        low: currentWorkload,
+                        close: currentWorkload
+                    });
+                }
+            }
+        }, 1000);
+
+        return () => clearInterval(liveInterval);
+    }, [tasks, interval, chartType, chartData]);
+
     return (
         <div className="bg-black rounded-2xl border border-white/10 p-6 flex flex-col w-full h-[500px]">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">

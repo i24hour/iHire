@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, use, useMemo } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import dynamic from 'next/dynamic';
+import { LiveTimer, LiveTotalTimer } from '@/components/LiveTimer';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -49,7 +50,6 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [currentTime, setCurrentTime] = useState(() => Date.now());
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
 
     const fetchTasks = useCallback(async () => {
@@ -77,14 +77,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     }, [fetchTasks]);
 
     // Timer interval - update current time every second to show live progress of running tasks
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentTime(Date.now());
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
+    // Removed: now handled by localized LiveTimer and LiveTotalTimer components.
 
-    const getElapsedSeconds = (task: ITimeTask): number => {
+    const getElapsedSeconds = useCallback((task: ITimeTask, now: number = Date.now()): number => {
         if (task.completed) {
             return task.pausedElapsed;
         }
@@ -94,7 +89,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
             if (!task.enabled) {
                 return task.pausedElapsed;
             }
-            const runningSince = (currentTime - task.startTime) / 1000;
+            const runningSince = (now - task.startTime) / 1000;
             return Math.floor(task.pausedElapsed + runningSince);
         }
 
@@ -118,7 +113,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
         // If it's still running right now and not completed
         if (isRunning && !task.completed) {
-            totalMs += (currentTime - lastStartTime);
+            totalMs += (now - lastStartTime);
         }
 
         // Add any migrated legacy paused Elapsed 
@@ -127,7 +122,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         }
 
         return Math.floor(totalMs / 1000);
-    };
+    }, []);
 
     const formatElapsed = (seconds: number) => {
         const h = Math.floor(seconds / 3600);
@@ -136,10 +131,11 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const totalTime = tasks.reduce((sum, task) => !task.completed ? sum + getElapsedSeconds(task) : sum, 0);
-    const activeTasksCount = tasks.filter((task) => task.enabled && !task.completed).length;
-    const pendingTasks = tasks.filter((task) => !task.completed);
-    const completedTasks = tasks.filter((task) => task.completed);
+    // The total time logic is now fully managed by the LiveTotalTimer instance
+    // to prevent continuous re-rendering of this entire page.
+    const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
+    const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
+    const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
 
     if (isLoading) {
         return (
@@ -216,7 +212,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                     <div className="bg-black  rounded-2xl border border-white/10 p-6 flex flex-col justify-center">
                         <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Total Time</div>
-                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white truncate tracking-tight">{formatElapsed(totalTime)}</div>
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white truncate tracking-tight">
+                            <LiveTotalTimer tasks={tasks} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
+                        </div>
                     </div>
                 </div>
 
@@ -257,7 +255,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
                                         <div className={`text-2xl font-mono font-bold ${task.enabled ? 'text-white' : 'text-zinc-500'}`}>
-                                            {formatElapsed(getElapsedSeconds(task))}
+                                            <LiveTimer task={task} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                                         </div>
                                         <div className="flex gap-2 text-xs">
                                             {task.enabled && (
@@ -369,7 +367,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                     <div className="text-center">
                                         <div className="text-xs md:text-sm text-zinc-400 mb-2 md:mb-4 uppercase tracking-wide">Time Recorded</div>
                                         <div className={`text-6xl sm:text-7xl md:text-8xl font-mono font-bold mb-4 md:mb-8 tracking-tighter sm:tracking-normal ${selectedTask.enabled ? 'text-white' : 'text-zinc-300'}`}>
-                                            {formatElapsed(getElapsedSeconds(selectedTask))}
+                                            <LiveTimer task={selectedTask} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                                         </div>
                                     </div>
 
