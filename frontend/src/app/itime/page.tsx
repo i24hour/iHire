@@ -345,7 +345,7 @@ export default function ITimePage() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const totalTime = tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0);
+    const totalTime = tasks.reduce((sum, task) => !task.completed ? sum + getElapsedSeconds(task) : sum, 0);
     const activeTasks = tasks.filter((task) => task.enabled && !task.completed).length;
     const pendingTasks = tasks.filter((task) => !task.completed);
     const completedTasks = tasks.filter((task) => task.completed);
