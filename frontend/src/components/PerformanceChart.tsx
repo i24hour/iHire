@@ -86,7 +86,7 @@ function getWorkloadAtTime(tasks: ChartTask[], t: number): number {
         totalMs += taskActiveMs;
     }
 
-    return totalMs / (1000 * 3600); // hours (positive value now, we'll invert in chart)
+    return -(totalMs / (1000 * 3600)); // Negated so higher workload plots lower on the chart
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
@@ -243,6 +243,10 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 },
             },
             localization: {
+                priceFormatter: (price: number) => {
+                    // Hide the mathematical negative sign since the chart drops downward for more workload
+                    return Math.abs(price).toFixed(2);
+                },
                 timeFormatter: (time: number) => {
                     const date = new Date(time * 1000);
                     return new Intl.DateTimeFormat('en-IN', {
@@ -264,19 +268,19 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
 
         if (chartType === 'candle') {
             const candleSeries = chart.addSeries(CandlestickSeries, {
-                upColor: '#ef4444', // Red for workload increase
-                downColor: '#10b981', // Green for workload decrease (task completed)
-                borderDownColor: '#10b981',
-                borderUpColor: '#ef4444',
-                wickDownColor: '#10b981',
-                wickUpColor: '#ef4444',
+                upColor: '#10b981', // Green for workload decrease (task completed, chart goes UP towards zero)
+                downColor: '#ef4444', // Red for workload increase (more tasks running, chart goes DOWN into negatives)
+                borderDownColor: '#ef4444',
+                borderUpColor: '#10b981',
+                wickDownColor: '#ef4444',
+                wickUpColor: '#10b981',
             });
             candleSeries.setData(chartData.candleData);
             seriesRef.current = candleSeries;
         } else {
             const startVal = chartData.lineData.length > 0 ? chartData.lineData[0].value : 0;
             const endVal = chartData.lineData.length > 0 ? chartData.lineData[chartData.lineData.length - 1].value : 0;
-            const isPositive = endVal <= startVal; // Lower workload = positive trend
+            const isPositive = endVal >= startVal; // Upward trend (towards 0) = less workload = positive trend (green)
             const color = isPositive ? '#10b981' : '#ef4444';
 
             const lineSeries = chart.addSeries(LineSeries, {
