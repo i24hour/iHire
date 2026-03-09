@@ -76,6 +76,13 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         fetchTasks();
     }, [fetchTasks]);
 
+    useEffect(() => {
+        // If viewing own worker profile, redirect to personal iTime tracker to allow full editing
+        if (session?.user?.email === userId || session?.user?.id === userId) {
+            router.push('/itime');
+        }
+    }, [session, userId, router]);
+
     // Timer interval - update current time every second to show live progress of running tasks
     // Removed: now handled by localized LiveTimer and LiveTotalTimer components.
 
