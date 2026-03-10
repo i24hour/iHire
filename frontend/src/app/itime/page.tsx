@@ -588,14 +588,23 @@ export default function ITimePage() {
                                         </div>
                                         <div className="flex gap-2 items-center">
                                             {task.enabled ? (
-                                                showPauseOptions === task.id ? (
-                                                    <div className="grid grid-cols-2 gap-1 w-full max-w-[120px]">
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 5); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">5m</LiquidButton>
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 15); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">15m</LiquidButton>
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 30); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">30m</LiquidButton>
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 60); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">1hr</LiquidButton>
-                                                    </div>
-                                                ) : (
+                                                <div className="relative">
+                                                    {showPauseOptions === task.id ? (
+                                                        <div className="absolute bottom-full right-0 mb-2 p-2 bg-zinc-900 border border-white/20 rounded-lg shadow-xl z-20 w-32 animate-in fade-in slide-in-from-bottom-2">
+                                                            <div className="flex justify-between items-center mb-2 px-1">
+                                                                <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Pause Timer</span>
+                                                                <button onClick={(e) => { e.stopPropagation(); setShowPauseOptions(null); }} className="text-zinc-500 hover:text-white">
+                                                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                                </button>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-1.5">
+                                                                <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 5); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10">5m</LiquidButton>
+                                                                <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 15); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10">15m</LiquidButton>
+                                                                <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 30); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10">30m</LiquidButton>
+                                                                <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 60); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10">1hr</LiquidButton>
+                                                            </div>
+                                                        </div>
+                                                    ) : null}
                                                     <LiquidButton
                                                         size="sm"
                                                         onClick={(e) => {
@@ -607,7 +616,7 @@ export default function ITimePage() {
                                                     >
                                                         ⏸
                                                     </LiquidButton>
-                                                )
+                                                </div>
                                             ) : (
                                                 <div className="flex flex-col items-end gap-1">
                                                     <LiquidButton
