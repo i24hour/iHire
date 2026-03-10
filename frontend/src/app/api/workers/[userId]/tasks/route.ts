@@ -9,11 +9,8 @@ export async function GET(
     context: { params: Promise<{ userId: string }> } | { params: { userId: string } }
 ) {
     try {
-        const session = await getServerSession(authOptions);
-
-        if (!session?.user?.email) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        // Authentication intentionally removed so anyone can view a worker's public profile tasks
+        // const session = await getServerSession(authOptions);
 
         // Await params if it's a promise (Next.js 15+ routing)
         const params = await context.params;
