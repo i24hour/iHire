@@ -589,11 +589,11 @@ export default function ITimePage() {
                                         <div className="flex gap-2 items-center">
                                             {task.enabled ? (
                                                 showPauseOptions === task.id ? (
-                                                    <div className="flex gap-1">
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 5); setShowPauseOptions(null); }} className="px-2 text-white text-xs">5m</LiquidButton>
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 15); setShowPauseOptions(null); }} className="px-2 text-white text-xs">15m</LiquidButton>
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 30); setShowPauseOptions(null); }} className="px-2 text-white text-xs">30m</LiquidButton>
-                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 60); setShowPauseOptions(null); }} className="px-2 text-white text-xs">1hr</LiquidButton>
+                                                    <div className="grid grid-cols-2 gap-1 w-full max-w-[120px]">
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 5); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">5m</LiquidButton>
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 15); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">15m</LiquidButton>
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 30); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">30m</LiquidButton>
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 60); setShowPauseOptions(null); }} className="px-1 text-white text-[10px] w-full h-6 min-h-0">1hr</LiquidButton>
                                                     </div>
                                                 ) : (
                                                     <LiquidButton
