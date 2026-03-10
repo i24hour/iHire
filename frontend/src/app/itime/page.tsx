@@ -704,7 +704,7 @@ export default function ITimePage() {
                                                         <LiquidButton onClick={() => { toggleTask(selectedTask.id, 5); setShowPauseOptions(null); }} className="px-3 text-white">5m</LiquidButton>
                                                         <LiquidButton onClick={() => { toggleTask(selectedTask.id, 15); setShowPauseOptions(null); }} className="px-3 text-white">15m</LiquidButton>
                                                         <LiquidButton onClick={() => { toggleTask(selectedTask.id, 30); setShowPauseOptions(null); }} className="px-3 text-white">30m</LiquidButton>
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id); setShowPauseOptions(null); }} className="px-3 text-zinc-400">Inf</LiquidButton>
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 60); setShowPauseOptions(null); }} className="px-3 text-white">1hr</LiquidButton>
                                                     </div>
                                                 ) : (
                                                     <LiquidButton
