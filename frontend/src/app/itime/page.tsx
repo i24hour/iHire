@@ -591,6 +591,18 @@ export default function ITimePage() {
                                                 size="sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
+                                                    // Quick toggle just triggers infinite pause to keep UI clean
+                                                    toggleTask(task.id);
+                                                }}
+                                                className={`transition-colors ${task.enabled ? 'text-zinc-400 hover:text-white' : 'text-white'}`}
+                                                title={task.enabled ? "Pause Timer" : "Resume Timer"}
+                                            >
+                                                {task.enabled ? '⏸' : '▶'}
+                                            </LiquidButton>
+                                            <LiquidButton
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     completeTask(task.id);
                                                 }}
                                                 className="text-white"
