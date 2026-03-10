@@ -586,26 +586,56 @@ export default function ITimePage() {
                                         <div className={`text-2xl font-mono font-bold ${task.enabled ? 'text-white' : 'text-zinc-500'}`}>
                                             <LiveTimer task={task} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                                         </div>
-                                        <div className="flex gap-2">
-                                            <LiquidButton
-                                                size="sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    // Quick toggle just triggers infinite pause to keep UI clean
-                                                    toggleTask(task.id);
-                                                }}
-                                                className={`transition-colors ${task.enabled ? 'text-zinc-400 hover:text-white' : 'text-white'}`}
-                                                title={task.enabled ? "Pause Timer" : "Resume Timer"}
-                                            >
-                                                {task.enabled ? '⏸' : '▶'}
-                                            </LiquidButton>
+                                        <div className="flex gap-2 items-center">
+                                            {task.enabled ? (
+                                                showPauseOptions === task.id ? (
+                                                    <div className="flex gap-1">
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 5); setShowPauseOptions(null); }} className="px-2 text-white text-xs">5m</LiquidButton>
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 15); setShowPauseOptions(null); }} className="px-2 text-white text-xs">15m</LiquidButton>
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 30); setShowPauseOptions(null); }} className="px-2 text-white text-xs">30m</LiquidButton>
+                                                        <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 60); setShowPauseOptions(null); }} className="px-2 text-white text-xs">1hr</LiquidButton>
+                                                    </div>
+                                                ) : (
+                                                    <LiquidButton
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setShowPauseOptions(task.id);
+                                                        }}
+                                                        className="text-zinc-400 hover:text-white transition-colors"
+                                                        title="Pause Timer"
+                                                    >
+                                                        ⏸
+                                                    </LiquidButton>
+                                                )
+                                            ) : (
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <LiquidButton
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleTask(task.id);
+                                                            setShowPauseOptions(null);
+                                                        }}
+                                                        className="text-white transition-colors"
+                                                        title="Resume Timer"
+                                                    >
+                                                        ▶
+                                                    </LiquidButton>
+                                                    {task.autoResumeAt && (
+                                                        <span className="text-[10px] text-zinc-500 -mt-1 block">
+                                                            {new Date(task.autoResumeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                             <LiquidButton
                                                 size="sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     completeTask(task.id);
                                                 }}
-                                                className="text-white"
+                                                className="text-white ml-2"
                                                 title="Mark as complete"
                                             >
                                                 ✓
