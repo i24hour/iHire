@@ -45,9 +45,16 @@ export default function WorkersPage() {
             <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 <div className="space-y-8">
                     {/* Header Section */}
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Workers Directory</h1>
-                        <p className="text-zinc-400">Overview of all active users and their task statistics.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Workers Directory</h1>
+                            <p className="text-zinc-400">Overview of all active users and their task statistics.</p>
+                        </div>
+                        <Link href="/itime">
+                            <LiquidButton className="text-white">
+                                + Add Task
+                            </LiquidButton>
+                        </Link>
                     </div>
 
                     {/* Dashboard Stats */}
@@ -79,7 +86,7 @@ export default function WorkersPage() {
                             ) : workers.length === 0 ? (
                                 <p className="text-zinc-500">No workers found yet. Tasks need to be created first.</p>
                             ) : (
-                                workers.map((worker) => (
+                                workers.map((worker, index) => (
                                     <Link href={`/workers/${encodeURIComponent(worker.userId)}`} key={worker.userId}>
                                         <motion.div
                                             whileHover={{ y: -4, scale: 1.01 }}
@@ -87,6 +94,11 @@ export default function WorkersPage() {
                                             className="bg-black border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-zinc-700 transition-colors cursor-pointer group w-full"
                                         >
                                             <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                {/* Rank Number */}
+                                                <div className="flex flex-col items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-zinc-400 font-bold text-sm">
+                                                    #{index + 1}
+                                                </div>
+
                                                 <div className="w-12 h-12 rounded-full bg-white/10 flex shrink-0 items-center justify-center text-white font-bold text-xl uppercase ring-1 ring-white/20 group-hover:bg-white/10 transition-colors">
                                                     {worker.userId.charAt(0)}
                                                 </div>
