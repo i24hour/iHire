@@ -25,6 +25,7 @@ interface ITimeTask {
     completed: boolean;
     completedAt?: number; // timestamp when completed
     targetTime?: number; // target time in seconds
+    autoResumeAt?: number; // scheduled automatic resume timestamp
     milestones?: Milestone[];
     events?: Array<{
         type: 'start' | 'pause' | 'complete';
@@ -52,6 +53,29 @@ export default function ITimePage() {
     const [targetHours, setTargetHours] = useState('');
     const [targetMinutes, setTargetMinutes] = useState('');
     const [showSignInModal, setShowSignInModal] = useState(false);
+    const [showPauseOptions, setShowPauseOptions] = useState<string | null>(null);
+
+    const playAlertSound = () => {
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0, ctx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.error("Audio API error", e);
+        }
+    };
 
     // Fetch tasks from MongoDB for authenticated users
     const fetchTasks = useCallback(async () => {
@@ -151,20 +175,22 @@ export default function ITimePage() {
         }
     };
 
-    const toggleTask = async (id: string) => {
+    const toggleTask = async (id: string, breakMinutes?: number) => {
         const task = tasks.find(t => t.id === id);
         if (!task) return;
 
         const currentElapsed = task.enabled ? getElapsedSeconds(task) : task.pausedElapsed;
+        const now = Date.now();
         const updatedTask = {
             ...task,
             enabled: !task.enabled,
             pausedElapsed: currentElapsed,
-            startTime: !task.enabled ? Date.now() : 0,
+            startTime: !task.enabled ? now : 0,
+            autoResumeAt: (!task.enabled) ? undefined : (breakMinutes ? now + (breakMinutes * 60000) : undefined),
             events: [...(task.events || []), {
-                type: !task.enabled ? 'start' : 'pause',
-                timestamp: Date.now()
-            } as const]
+                type: (!task.enabled ? 'start' : 'pause') as 'start' | 'pause' | 'complete',
+                timestamp: now
+            }]
         };
 
         setTasks((prev) => prev.map(t => t.id === id ? updatedTask : t));
@@ -181,6 +207,53 @@ export default function ITimePage() {
             }
         }
     };
+
+    const resumeTaskFromBreak = useCallback(async (id: string) => {
+        playAlertSound();
+        setTasks(prev => {
+            const task = prev.find(t => t.id === id);
+            if (!task || task.enabled) return prev;
+
+            const now = Date.now();
+            const updatedTask = {
+                ...task,
+                enabled: true,
+                autoResumeAt: undefined,
+                startTime: now,
+                events: [...(task.events || []), {
+                    type: 'start' as const,
+                    timestamp: now
+                }]
+            };
+
+            // Fire and forget API call
+            if (status === 'authenticated' && task._id) {
+                fetch('/api/itime', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ _id: task._id, ...updatedTask }),
+                }).catch(e => console.error(e));
+            }
+
+            return prev.map(t => t.id === id ? updatedTask : t);
+        });
+    }, [status]);
+
+    useEffect(() => {
+        const activeBreaks = tasks.filter(t => !t.enabled && t.autoResumeAt);
+        if (activeBreaks.length === 0) return;
+
+        const interval = setInterval(() => {
+            const now = Date.now();
+            activeBreaks.forEach(task => {
+                if (task.autoResumeAt && now >= task.autoResumeAt) {
+                    resumeTaskFromBreak(task.id);
+                }
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [tasks, resumeTaskFromBreak]);
 
     const deleteTask = async (id: string) => {
         const task = tasks.find(t => t.id === id);
@@ -625,12 +698,37 @@ export default function ITimePage() {
                                             <LiveTimer task={selectedTask} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                                         </div>
                                         <div className="flex gap-4 justify-center">
-                                            <LiquidButton
-                                                onClick={() => toggleTask(selectedTask.id)}
-                                                className={`w-40 text-base font-bold transition-all ${selectedTask.enabled ? 'text-white' : 'text-zinc-300'}`}
-                                            >
-                                                {selectedTask.enabled ? '⏸ Pause' : '▶ Start'}
-                                            </LiquidButton>
+                                            {selectedTask.enabled ? (
+                                                showPauseOptions === selectedTask.id ? (
+                                                    <div className="flex gap-2">
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 5); setShowPauseOptions(null); }} className="px-3 text-white">5m</LiquidButton>
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 15); setShowPauseOptions(null); }} className="px-3 text-white">15m</LiquidButton>
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 30); setShowPauseOptions(null); }} className="px-3 text-white">30m</LiquidButton>
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id); setShowPauseOptions(null); }} className="px-3 text-zinc-400">Inf</LiquidButton>
+                                                    </div>
+                                                ) : (
+                                                    <LiquidButton
+                                                        onClick={() => setShowPauseOptions(selectedTask.id)}
+                                                        className="w-40 text-base font-bold transition-all text-white"
+                                                    >
+                                                        ⏸ Pause Option
+                                                    </LiquidButton>
+                                                )
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <LiquidButton
+                                                        onClick={() => { toggleTask(selectedTask.id); setShowPauseOptions(null); }}
+                                                        className="w-40 text-base font-bold transition-all text-zinc-300"
+                                                    >
+                                                        ▶ Resume
+                                                    </LiquidButton>
+                                                    {selectedTask.autoResumeAt && (
+                                                        <span className="text-xs text-zinc-500 absolute -bottom-5">
+                                                            Resumes at {new Date(selectedTask.autoResumeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                             <LiquidButton
                                                 onClick={() => {
                                                     completeTask(selectedTask.id);

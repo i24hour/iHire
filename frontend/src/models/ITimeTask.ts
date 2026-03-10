@@ -18,6 +18,7 @@ export interface ITimeTask {
         timestamp: number;
     }>;
     targetTime?: number;
+    autoResumeAt?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -61,6 +62,9 @@ const ITimeTaskSchema = new mongoose.Schema<ITimeTask>({
         timestamp: Number,
     }],
     targetTime: {
+        type: Number,
+    },
+    autoResumeAt: {
         type: Number,
     },
 }, {
