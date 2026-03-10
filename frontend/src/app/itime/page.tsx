@@ -748,14 +748,14 @@ export default function ITimePage() {
                                         <div className={`text-6xl sm:text-7xl md:text-8xl font-mono font-bold mb-4 md:mb-8 tracking-tighter sm:tracking-normal ${selectedTask.enabled ? 'text-white' : 'text-zinc-500'}`}>
                                             <LiveTimer task={selectedTask} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
                                         </div>
-                                        <div className="flex gap-4 justify-center">
+                                        <div className="flex flex-wrap gap-4 justify-center items-center">
                                             {selectedTask.enabled ? (
                                                 showPauseOptions === selectedTask.id ? (
-                                                    <div className="flex gap-2">
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 5); setShowPauseOptions(null); }} className="px-3 text-white">5m</LiquidButton>
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 15); setShowPauseOptions(null); }} className="px-3 text-white">15m</LiquidButton>
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 30); setShowPauseOptions(null); }} className="px-3 text-white">30m</LiquidButton>
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 60); setShowPauseOptions(null); }} className="px-3 text-white">1hr</LiquidButton>
+                                                    <div className="flex flex-wrap justify-center gap-2">
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 5); setShowPauseOptions(null); }} className="px-3 py-2 text-white">5m</LiquidButton>
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 15); setShowPauseOptions(null); }} className="px-3 py-2 text-white">15m</LiquidButton>
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 30); setShowPauseOptions(null); }} className="px-3 py-2 text-white">30m</LiquidButton>
+                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 60); setShowPauseOptions(null); }} className="px-3 py-2 text-white">1hr</LiquidButton>
                                                     </div>
                                                 ) : (
                                                     <LiquidButton
@@ -766,7 +766,7 @@ export default function ITimePage() {
                                                     </LiquidButton>
                                                 )
                                             ) : (
-                                                <div className="flex flex-col items-center gap-1">
+                                                <div className="flex flex-col items-center gap-1 relative">
                                                     <LiquidButton
                                                         onClick={() => { toggleTask(selectedTask.id); setShowPauseOptions(null); }}
                                                         className="w-40 text-base font-bold transition-all text-zinc-300"
@@ -774,7 +774,7 @@ export default function ITimePage() {
                                                         ▶ Resume
                                                     </LiquidButton>
                                                     {selectedTask.autoResumeAt && (
-                                                        <span className="text-xs text-zinc-500 absolute -bottom-5">
+                                                        <span className="text-xs text-zinc-500 absolute -bottom-5 w-max">
                                                             Resumes at {new Date(selectedTask.autoResumeAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     )}
@@ -785,7 +785,7 @@ export default function ITimePage() {
                                                     completeTask(selectedTask.id);
                                                     setSelectedTask(null);
                                                 }}
-                                                className="w-40 text-base font-bold text-white"
+                                                className="w-40 text-base font-bold text-white shrink-0"
                                             >
                                                 ✓ Complete
                                             </LiquidButton>
