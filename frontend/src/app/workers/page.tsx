@@ -106,8 +106,8 @@ export default function WorkersPage() {
                                                     <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.userId}>
                                                         {worker.userId.split('@')[0]}
                                                     </h3>
-                                                    <p className="text-xs text-zinc-500 truncate" title={worker.userId}>
-                                                        {worker.userId}
+                                                    <p className="text-xs text-zinc-500 truncate" title="Email hidden for privacy">
+                                                        {worker.userId.split('@')[0].slice(0, 3)}••••@•••.com
                                                     </p>
                                                 </div>
                                             </div>
