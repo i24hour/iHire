@@ -62,17 +62,15 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
         totalTasks++;
 
-        // Check if completed by time t
-        // Legacy tasks might miss completedAt, so we fall back to task.completed
-        let isCompletedByT = false;
-        if (task.completed) {
-            if (task.completedAt) {
-                if (task.completedAt <= t) isCompletedByT = true;
-            } else {
-                // Fallback for legacy tasks: assume completed if started before t
-                if (t >= task.startTime) isCompletedByT = true;
-            }
+        // Figure out exact completion timestamp
+        let actualCompletedAt = task.completedAt;
+        if (task.completed && !actualCompletedAt && (!task.events || task.events.length === 0)) {
+            // Legacy task fallback: theoretical end time
+            actualCompletedAt = task.startTime + (task.pausedElapsed * 1000);
         }
+
+        // Check if completed strictly by time t
+        const isCompletedByT = !!(task.completed && actualCompletedAt && actualCompletedAt <= t);
 
         // Calculate its accumulated active time up to t
         let taskHours = 0;
@@ -81,16 +79,16 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
             // Legacy task with no events
             if (task.startTime && task.startTime <= t) {
                 if (isCompletedByT) {
-                    if (task.completedAt) {
-                        taskHours = (task.completedAt - task.startTime) / (1000 * 3600);
-                    } else {
-                        // Crucial fallback: use pausedElapsed if completedAt is missing
+                    taskHours = (actualCompletedAt! - task.startTime) / (1000 * 3600);
+                } else {
+                    // It's still running at time t
+                    if (!task.completed && !task.enabled) {
+                        // Paused legacy task
                         taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
+                    } else {
+                        // Running legacy task (or completed in reality, but actively running at time t)
+                        taskHours = (t - task.startTime) / (1000 * 3600);
                     }
-                } else if (!task.completed && task.enabled) {
-                    taskHours = ((t - task.startTime) + (task.pausedElapsed * 1000)) / (1000 * 3600);
-                } else if (!task.completed && !task.enabled) {
-                    taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
                 }
             }
         } else {
@@ -136,23 +134,24 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
         }
     }
 
-    // Edge cases
-    if (totalTasks === 0 || completedTasks === 0) return 0;
+    // The actual denominator for AvgTime and Completion should be tasks actively worked on
+    const activeTasksCount = completedTasks + runningTaskCount;
+    if (totalTasks === 0 || activeTasksCount === 0) return 0;
 
     // User's Updated Formula: Total Time = Running + Completed
-    // Avg time = All Total Time / Completed Tasks
+    // Avg time = All Total Time / Active Tasks (to plot moving progress accurately)
     const totalTimeHours = runningTasksHours + completedTasksHours;
-    let avgTimePerCompletedTask = totalTimeHours / completedTasks;
+    let avgTimePerTask = totalTimeHours / activeTasksCount;
 
     // Prevent division by zero or near-zero infinite scores if tasks were completed instantly
     // Assume a realistic minimum floor of 5 minutes (0.0833 hours) per task to prevent score explosion
-    if (avgTimePerCompletedTask < 0.0833) {
-        avgTimePerCompletedTask = 0.0833;
+    if (avgTimePerTask < 0.0833) {
+        avgTimePerTask = 0.0833;
     }
 
-    // Score = (Completed/Total) × (1/AvgTime) × log(Total+1) × 1000
-    const completionRate = completedTasks / totalTasks;
-    const speedFactor = 1 / avgTimePerCompletedTask;
+    // Plotting a dynamic curve: consider running tasks as partial completion basis so the line decays over time
+    const completionRate = activeTasksCount / totalTasks;
+    const speedFactor = 1 / avgTimePerTask;
     const volumeMultiplier = Math.log(totalTasks + 1);
 
     return completionRate * speedFactor * volumeMultiplier * 1000;
