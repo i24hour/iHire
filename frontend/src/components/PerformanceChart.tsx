@@ -138,21 +138,24 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 return yesterday.getTime();
             }
             case '1W': {
-                // 1 week ago from now
+                // 1 week ago at 5PM IST
                 const weekAgo = new Date(now);
                 weekAgo.setDate(weekAgo.getDate() - 7);
+                weekAgo.setHours(17, 0, 0, 0);
                 return weekAgo.getTime();
             }
             case '1M': {
-                // 1 month ago from now
+                // 1 month ago at 5PM IST
                 const monthAgo = new Date(now);
                 monthAgo.setMonth(monthAgo.getMonth() - 1);
+                monthAgo.setHours(17, 0, 0, 0);
                 return monthAgo.getTime();
             }
             case '1Y': {
-                // 1 year ago from now
+                // 1 year ago at 5PM IST
                 const yearAgo = new Date(now);
                 yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                yearAgo.setHours(17, 0, 0, 0);
                 return yearAgo.getTime();
             }
             default:
