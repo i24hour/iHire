@@ -126,47 +126,6 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         else if (range === '1Y') setIntervalVal('1d');
     };
 
-    // Compute previous close reference timestamp
-    const previousCloseTimestamp = useMemo(() => {
-        const now = new Date();
-        switch (timeRange) {
-            case '1D': {
-                // Yesterday at 5PM IST (11:30 AM UTC)
-                const yesterday = new Date(now);
-                yesterday.setDate(yesterday.getDate() - 1);
-                yesterday.setUTCHours(11, 30, 0, 0); // 5 PM IST
-                return yesterday.getTime();
-            }
-            case '1W': {
-                // 1 week ago at 5PM IST (11:30 AM UTC)
-                const weekAgo = new Date(now);
-                weekAgo.setDate(weekAgo.getDate() - 7);
-                weekAgo.setUTCHours(11, 30, 0, 0);
-                return weekAgo.getTime();
-            }
-            case '1M': {
-                // 1 month ago at 5PM IST (11:30 AM UTC)
-                const monthAgo = new Date(now);
-                monthAgo.setMonth(monthAgo.getMonth() - 1);
-                monthAgo.setUTCHours(11, 30, 0, 0);
-                return monthAgo.getTime();
-            }
-            case '1Y': {
-                // 1 year ago at 5PM IST (11:30 AM UTC)
-                const yearAgo = new Date(now);
-                yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-                yearAgo.setUTCHours(11, 30, 0, 0);
-                return yearAgo.getTime();
-            }
-            default:
-                return now.getTime() - (24 * 60 * 60 * 1000);
-        }
-    }, [timeRange]);
-
-    const previousCloseValue = useMemo(() => {
-        return getWorkloadAtTime(tasks, previousCloseTimestamp);
-    }, [tasks, previousCloseTimestamp]);
-
     // Generate OHLC data
     const chartData = useMemo(() => {
         const now = Date.now();
@@ -327,9 +286,12 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             candleSeries.setData(chartData.candleData);
             seriesRef.current = candleSeries;
         } else {
-            // Use BaselineSeries for green/red coloring relative to previous close
+            // First value becomes the baseline comparison point
+            const startVal = chartData.baselineData.length > 0 ? chartData.baselineData[0].value : 0;
+
+            // Use BaselineSeries for green/red coloring relative to the starting timeline value
             const baselineSeries = chart.addSeries(BaselineSeries, {
-                baseValue: { type: 'price' as const, price: previousCloseValue },
+                baseValue: { type: 'price' as const, price: startVal },
                 topLineColor: '#10b981',
                 topFillColor1: 'rgba(16, 185, 129, 0.28)',
                 topFillColor2: 'rgba(16, 185, 129, 0.05)',
@@ -341,19 +303,10 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 crosshairMarkerRadius: 5,
                 crosshairMarkerBorderColor: '#000',
                 crosshairMarkerBackgroundColor: '#fff',
-                priceLineVisible: false,
-                lastValueVisible: false,
+                priceLineVisible: true, // We restore the default current tracking line here!
+                lastValueVisible: true,
             });
             baselineSeries.setData(chartData.baselineData);
-
-            // Add the dotted "Previous Close" horizontal price line
-            baselineSeries.createPriceLine({
-                price: previousCloseValue,
-                color: 'rgba(255, 255, 255, 0.4)',
-                lineWidth: 1,
-                lineStyle: LineStyle.Dashed,
-                axisLabelVisible: false,
-            });
 
             seriesRef.current = baselineSeries;
         }
@@ -375,7 +328,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             chartRef.current = null;
             seriesRef.current = null;
         };
-    }, [chartType, chartData, previousCloseValue]);
+    }, [chartType, chartData]);
 
     // Live native update cycle (No React state changes triggered!)
     useEffect(() => {
