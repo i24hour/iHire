@@ -33,12 +33,14 @@ export async function GET(request: NextRequest) {
                     completedTasks: 0,
                     runningTasks: 0,
                     allTimeSeconds: 0,
-                    lastActive: task.updatedAt || new Date(0)
+                    lastActive: task.updatedAt || new Date(0),
+                    tasks: [] // Provide tasks to frontend for precise score calculation
                 });
             }
 
             const stats = userStatsMap.get(userId);
             stats.totalTasks += 1;
+            stats.tasks.push(task);
 
             if (task.completed) {
                 stats.completedTasks += 1;

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import { getScoreAtTime } from '@/components/PerformanceChart';
 
 interface WorkerStats {
     userId: string;
@@ -12,6 +13,96 @@ interface WorkerStats {
     completedTasks: number;
     runningTasks?: number;
     lastActive: string;
+    tasks: any[]; // tasks attached by backend for scoring
+}
+
+function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+    useEffect(() => {
+        // If there are running tasks across the board, tick the timer
+        // For simplicity, we can just tick every second to keep scores live
+        const interval = setInterval(() => {
+            setCurrentTime(Date.now());
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Calculate live scores and apply sorting
+    const sortedWorkers = useMemo(() => {
+        const withScores = initialWorkers.map(w => {
+            const score = getScoreAtTime(w.tasks || [], currentTime);
+            return { ...w, currentScore: score };
+        });
+
+        // Sort by score descending
+        return withScores.sort((a, b) => b.currentScore - a.currentScore);
+    }, [initialWorkers, currentTime]);
+
+    return (
+        <div className="flex flex-col gap-4 max-w-4xl">
+            {sortedWorkers.length === 0 ? (
+                <p className="text-zinc-500">No workers found yet. Tasks need to be created first.</p>
+            ) : (
+                sortedWorkers.map((worker: WorkerStats & { currentScore: number }, index: number) => (
+                    <Link href={`/workers/${encodeURIComponent(worker.userId)}`} key={worker.userId}>
+                        <motion.div
+                            whileHover={{ y: -4, scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="bg-black border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-zinc-700 transition-colors cursor-pointer group w-full"
+                        >
+                            <div className="flex items-center gap-4 flex-1 min-w-0 md:max-w-[300px]">
+                                {/* Rank Number */}
+                                <div className="flex flex-col items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-zinc-400 font-bold text-sm">
+                                    #{index + 1}
+                                </div>
+
+                                <div className="w-12 h-12 rounded-full bg-white/10 flex shrink-0 items-center justify-center text-white font-bold text-xl uppercase ring-1 ring-white/20 group-hover:bg-white/10 transition-colors">
+                                    {worker.userId.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-[150px] overflow-hidden">
+                                    <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.userId}>
+                                        {worker.userId.split('@')[0]}
+                                    </h3>
+                                    <p className="text-xs text-zinc-500 truncate" title="Email hidden for privacy">
+                                        {worker.userId.split('@')[0].slice(0, 3)}••••@•••.com
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-row flex-wrap justify-end gap-3 mt-auto md:ml-auto">
+                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[90px] flex-1 md:flex-none">
+                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500 mb-0.5">Total Tasks</span>
+                                    <span className="block text-2xl font-bold text-zinc-300 leading-none">
+                                        {worker.totalTasks}
+                                    </span>
+                                </div>
+                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[90px] flex-1 md:flex-none">
+                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Running</span>
+                                    <span className="block text-2xl font-bold text-white leading-none">
+                                        {worker.runningTasks || 0}
+                                    </span>
+                                </div>
+                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[90px] flex-1 md:flex-none">
+                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Completed</span>
+                                    <span className="block text-2xl font-bold text-white leading-none">
+                                        {worker.completedTasks}
+                                    </span>
+                                </div>
+                                <div className="bg-black rounded-xl px-4 py-2 border border-[#4CAF50]/30 shadow-[0_0_15px_rgba(76,175,80,0.1)] flex flex-col justify-center min-w-[110px] flex-1 md:flex-none relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#4CAF50]/5 to-transparent"></div>
+                                    <span className="block text-[10px] uppercase tracking-wider font-bold text-[#4CAF50] mb-0.5 relative">Live Score</span>
+                                    <span className="block text-2xl font-bold text-white leading-none font-mono tracking-tight relative">
+                                        {worker.currentScore.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </Link>
+                ))
+            )}
+        </div>
+    );
 }
 
 export default function WorkersPage() {
@@ -67,76 +158,24 @@ export default function WorkersPage() {
 
                     {/* Workers Grid */}
                     <div>
-                        <div className="flex flex-col gap-4 max-w-3xl">
-                            {loading ? (
-                                <div className="flex py-12 items-center justify-center w-full">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white/50"></div>
-                                </div>
-                            ) : error ? (
-                                <div className="flex flex-col py-12 items-center justify-center text-white gap-4 w-full bg-black border border-white/10 rounded-2xl">
-                                    <p className="text-white">Error: {error}</p>
-                                    <LiquidButton
-                                        onClick={fetchWorkers}
-                                        className="px-4 py-2 text-white"
-                                        size="default"
-                                    >
-                                        Retry
-                                    </LiquidButton>
-                                </div>
-                            ) : workers.length === 0 ? (
-                                <p className="text-zinc-500">No workers found yet. Tasks need to be created first.</p>
-                            ) : (
-                                workers.map((worker, index) => (
-                                    <Link href={`/workers/${encodeURIComponent(worker.userId)}`} key={worker.userId}>
-                                        <motion.div
-                                            whileHover={{ y: -4, scale: 1.01 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            className="bg-black border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-4 hover:border-zinc-700 transition-colors cursor-pointer group w-full"
-                                        >
-                                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                                                {/* Rank Number */}
-                                                <div className="flex flex-col items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-zinc-400 font-bold text-sm">
-                                                    #{index + 1}
-                                                </div>
-
-                                                <div className="w-12 h-12 rounded-full bg-white/10 flex shrink-0 items-center justify-center text-white font-bold text-xl uppercase ring-1 ring-white/20 group-hover:bg-white/10 transition-colors">
-                                                    {worker.userId.charAt(0)}
-                                                </div>
-                                                <div className="flex-1 min-w-[150px] overflow-hidden">
-                                                    <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.userId}>
-                                                        {worker.userId.split('@')[0]}
-                                                    </h3>
-                                                    <p className="text-xs text-zinc-500 truncate" title="Email hidden for privacy">
-                                                        {worker.userId.split('@')[0].slice(0, 3)}••••@•••.com
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-row flex-wrap gap-4 mt-auto">
-                                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[100px] flex-1">
-                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500 mb-0.5">Total Tasks</span>
-                                                    <span className="block text-2xl font-bold text-zinc-300 leading-none">
-                                                        {worker.totalTasks}
-                                                    </span>
-                                                </div>
-                                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[100px] flex-1">
-                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Running</span>
-                                                    <span className="block text-2xl font-bold text-white leading-none">
-                                                        {worker.runningTasks || 0}
-                                                    </span>
-                                                </div>
-                                                <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[100px] flex-1">
-                                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Completed</span>
-                                                    <span className="block text-2xl font-bold text-white leading-none">
-                                                        {worker.completedTasks}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    </Link>
-                                ))
-                            )}
-                        </div>
+                        {loading ? (
+                            <div className="flex py-12 items-center justify-center w-full max-w-3xl">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white/50"></div>
+                            </div>
+                        ) : error ? (
+                            <div className="flex flex-col py-12 items-center justify-center text-white gap-4 w-full max-w-3xl bg-black border border-white/10 rounded-2xl">
+                                <p className="text-white">Error: {error}</p>
+                                <LiquidButton
+                                    onClick={fetchWorkers}
+                                    className="px-4 py-2 text-white"
+                                    size="default"
+                                >
+                                    Retry
+                                </LiquidButton>
+                            </div>
+                        ) : (
+                            <LiveWorkerList initialWorkers={workers} />
+                        )}
                     </div>
                 </div>
             </main>

@@ -48,7 +48,7 @@ const getIntervalMs = (interval: CandleInterval) => {
  * - Completing a task → it exits running pool → score spikes up
  * - Edge cases: 0 tasks, 0 completed, or 0 running → score = 0
  */
-function getScoreAtTime(tasks: ChartTask[], t: number): number {
+export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let totalTasks = 0;
     let completedTasks = 0;
     let runningTaskCount = 0;
@@ -540,22 +540,24 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                     </div>
 
                     {/* Interval Selector (Candle Only) */}
-                    {chartType === 'candle' && (
-                        <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
-                            {(['1m', '5m', '10m', '15m', '1h', '1d'] as CandleInterval[]).map((int) => (
-                                <button
-                                    key={int}
-                                    onClick={() => setIntervalVal(int)}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${interval === int
-                                        ? 'bg-zinc-800 text-white shadow-md'
-                                        : 'text-zinc-500 hover:text-white'
-                                        }`}
-                                >
-                                    {int}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                    {
+                        chartType === 'candle' && (
+                            <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
+                                {(['1m', '5m', '10m', '15m', '1h', '1d'] as CandleInterval[]).map((int) => (
+                                    <button
+                                        key={int}
+                                        onClick={() => setIntervalVal(int)}
+                                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${interval === int
+                                            ? 'bg-zinc-800 text-white shadow-md'
+                                            : 'text-zinc-500 hover:text-white'
+                                            }`}
+                                    >
+                                        {int}
+                                    </button>
+                                ))}
+                            </div>
+                        )
+                    }
 
                     {/* Time Range Selector */}
                     <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
@@ -572,11 +574,11 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                             </button>
                         ))}
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Chart Container */}
-            <div ref={chartContainerRef} className="flex-1 w-full" />
-        </div>
+            < div ref={chartContainerRef} className="flex-1 w-full" />
+        </div >
     );
 }
