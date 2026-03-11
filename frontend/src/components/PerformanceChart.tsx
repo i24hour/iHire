@@ -352,8 +352,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 color: 'rgba(255, 255, 255, 0.4)',
                 lineWidth: 1,
                 lineStyle: LineStyle.Dashed,
-                axisLabelVisible: true,
-                title: 'Prev Close',
+                axisLabelVisible: false,
             });
 
             seriesRef.current = baselineSeries;
