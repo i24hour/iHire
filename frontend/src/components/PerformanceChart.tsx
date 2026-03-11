@@ -74,30 +74,27 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
             }
         }
 
-        if (isCompletedByT) {
-            completedTasks++;
-            // Calculate how long this completed task took
-            if (task.completedAt && task.startTime) {
-                completedTasksHours += (task.completedAt - task.startTime) / (1000 * 3600);
-            }
-            continue; // Completed tasks don't contribute to running avg
-        }
-
-        // --- Rest stays same for running tasks ---
-        // This task is NOT completed at time t — it's "running" (active or paused)
         // Calculate its accumulated active time up to t
         let taskHours = 0;
 
         if (!task.events || task.events.length === 0) {
+            // Legacy task with no events
             if (task.startTime && task.startTime <= t) {
-                if (!task.completed && task.enabled) {
+                if (isCompletedByT) {
+                    if (task.completedAt) {
+                        taskHours = (task.completedAt - task.startTime) / (1000 * 3600);
+                    } else {
+                        // Crucial fallback: use pausedElapsed if completedAt is missing
+                        taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
+                    }
+                } else if (!task.completed && task.enabled) {
                     taskHours = ((t - task.startTime) + (task.pausedElapsed * 1000)) / (1000 * 3600);
                 } else if (!task.completed && !task.enabled) {
                     taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
                 }
             }
         } else {
-            // Event-based calculation
+            // Modern task: Event-based calculation (strips out pause times)
             const syntheticEvents = [...task.events];
             if (syntheticEvents[0].type !== 'start' && task.startTime && task.startTime < syntheticEvents[0].timestamp) {
                 syntheticEvents.unshift({ type: 'start', timestamp: task.startTime });
@@ -111,17 +108,17 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
                 if (ev.timestamp > t) break;
                 if (ev.type === 'start') {
                     if (!isRunning) { isRunning = true; lastStartTime = ev.timestamp; }
-                } else if (ev.type === 'pause') {
-                    if (isRunning) { taskActiveMs += (ev.timestamp - lastStartTime); isRunning = false; }
-                } else if (ev.type === 'complete') {
+                } else if (ev.type === 'pause' || ev.type === 'complete') {
                     if (isRunning) { taskActiveMs += (ev.timestamp - lastStartTime); isRunning = false; }
                 }
             }
 
-            if (isRunning && lastStartTime <= t) {
+            // Only add ongoing time if it's currently running AND not completed by time t
+            if (isRunning && !isCompletedByT && lastStartTime <= t) {
                 taskActiveMs += (t - lastStartTime);
             }
 
+            // Fallback for migrated tasks missing initial start events
             if (task.pausedElapsed > 0 && syntheticEvents.length > 0 && lastStartTime === 0) {
                 taskActiveMs += (task.pausedElapsed * 1000);
             }
@@ -129,8 +126,14 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
             taskHours = taskActiveMs / (1000 * 3600);
         }
 
-        runningTaskCount++;
-        runningTasksHours += taskHours;
+        // Distribute hours to the right bucket
+        if (isCompletedByT) {
+            completedTasks++;
+            completedTasksHours += taskHours;
+        } else {
+            runningTaskCount++;
+            runningTasksHours += taskHours;
+        }
     }
 
     // Edge cases
