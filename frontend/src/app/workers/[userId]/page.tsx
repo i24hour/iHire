@@ -87,8 +87,10 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     // Removed: now handled by localized LiveTimer and LiveTotalTimer components.
 
     const getElapsedSeconds = useCallback((task: ITimeTask, now: number = Date.now()): number => {
-        if (task.completed) {
-            return task.pausedElapsed;
+        // If task is completed and has legacy `completedAt`, use total duration if no events
+        if (task.completed && task.completedAt && (!task.events || task.events.length === 0)) {
+            const completedTime = (task.completedAt - task.startTime) / 1000;
+            return Math.floor(completedTime > 0 ? completedTime : task.pausedElapsed);
         }
 
         if (!task.events || task.events.length === 0) {

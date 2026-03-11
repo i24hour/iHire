@@ -388,8 +388,10 @@ export default function ITimePage() {
     };
 
     const getElapsedSeconds = useCallback((task: ITimeTask, now: number = Date.now()): number => {
-        if (task.completed) {
-            return task.pausedElapsed;
+        // If task is completed and has legacy `completedAt`, use total duration if no events
+        if (task.completed && task.completedAt && (!task.events || task.events.length === 0)) {
+            const completedTime = (task.completedAt - task.startTime) / 1000;
+            return Math.floor(completedTime > 0 ? completedTime : task.pausedElapsed);
         }
 
         if (!task.events || task.events.length === 0) {
@@ -437,7 +439,7 @@ export default function ITimePage() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const totalTime = useMemo(() => tasks.reduce((sum, task) => !task.completed ? sum + getElapsedSeconds(task) : sum, 0), [tasks, getElapsedSeconds]);
+    const totalTime = useMemo(() => tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0), [tasks, getElapsedSeconds]);
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
