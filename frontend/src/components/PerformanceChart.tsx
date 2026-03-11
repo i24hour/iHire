@@ -432,6 +432,15 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 <div>
                     <h2 className="text-xl font-semibold text-white">Capacity & Performance</h2>
                     <p className="text-sm text-zinc-500 mt-1">Accumulated hours of active tasks</p>
+                    {chartType === 'line' && (
+                        <p className="text-xs text-zinc-600 mt-1">
+                            * Dotted line represents your previous {
+                                timeRange === '1D' ? 'day\'s' :
+                                    timeRange === '1W' ? 'week\'s' :
+                                        timeRange === '1M' ? 'month\'s' : 'year\'s'
+                            } 5 PM value
+                        </p>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
