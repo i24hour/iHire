@@ -39,11 +39,10 @@ const getIntervalMs = (interval: CandleInterval) => {
 };
 
 /**
- * Calculate the performance score at a given point in time.
+ * Calculate the performance score at a given point in time (matching Claude's formula).
  * 
- * Formula: Score = (Completed / Total) × (1 / AvgTimePerRunningTask) × log(Total + 1) × 1000
- * 
- * Where AvgTimePerRunningTask = Total Time of Running Tasks / Number of Running Tasks
+ * Formula: Score = (Completed / Total) × (1 / AvgTime) × log(Total + 1) × 1000
+ * Where AvgTime = Total Time of Running Tasks / Completed Tasks
  * 
  * - Running tasks' time ticks → avg time grows → score drops every second
  * - Completing a task → it exits running pool → score spikes up
@@ -63,7 +62,18 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
         totalTasks++;
 
         // Check if completed by time t
-        if (task.completed && task.completedAt && task.completedAt <= t) {
+        // Legacy tasks might miss completedAt, so we fall back to task.completed
+        let isCompletedByT = false;
+        if (task.completed) {
+            if (task.completedAt) {
+                if (task.completedAt <= t) isCompletedByT = true;
+            } else {
+                // Fallback for legacy tasks: assume completed if started before t
+                if (t >= task.startTime) isCompletedByT = true;
+            }
+        }
+
+        if (isCompletedByT) {
             completedTasks++;
             continue; // Completed tasks don't contribute to running avg
         }
@@ -125,12 +135,13 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
         return 1 * 1 * volumeMultiplier * 1000; // Perfect completion, infinite speed
     }
 
-    // Avg time per running task = total hours of running tasks / running task count
-    const avgTimePerTask = runningTasksHours / runningTaskCount;
+    // Claude's specific Formula from user screenshot:
+    // Avg time = Total Time (Running Tasks) / Completed Tasks
+    const avgTimePerCompletedTask = runningTasksHours / completedTasks;
 
     // Score = (Completed/Total) × (1/AvgTime) × log(Total+1) × 1000
     const completionRate = completedTasks / totalTasks;
-    const speedFactor = 1 / avgTimePerTask;
+    const speedFactor = 1 / avgTimePerCompletedTask;
     const volumeMultiplier = Math.log(totalTasks + 1);
 
     return completionRate * speedFactor * volumeMultiplier * 1000;
