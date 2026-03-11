@@ -624,6 +624,7 @@ export default function ITimePage() {
                                                                 <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 15); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10">15m</LiquidButton>
                                                                 <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 30); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10">30m</LiquidButton>
                                                                 <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, 60); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10">1hr</LiquidButton>
+                                                                <LiquidButton size="sm" onClick={(e) => { e.stopPropagation(); toggleTask(task.id); setShowPauseOptions(null); }} className="px-1 text-white text-xs w-full h-7 min-h-0 bg-white/5 hover:bg-white/10 col-span-2">Infinite</LiquidButton>
                                                             </div>
                                                         </div>
                                                     ) : null}
@@ -789,6 +790,7 @@ export default function ITimePage() {
                                                                 <LiquidButton onClick={() => { toggleTask(selectedTask.id, 15); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full">15m</LiquidButton>
                                                                 <LiquidButton onClick={() => { toggleTask(selectedTask.id, 30); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full">30m</LiquidButton>
                                                                 <LiquidButton onClick={() => { toggleTask(selectedTask.id, 60); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full">1hr</LiquidButton>
+                                                                <LiquidButton onClick={() => { toggleTask(selectedTask.id); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full col-span-2">Infinite</LiquidButton>
                                                             </div>
                                                         </div>
                                                     ) : null}
