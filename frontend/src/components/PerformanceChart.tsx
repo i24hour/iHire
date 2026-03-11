@@ -184,40 +184,33 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         else if (range === '1Y') setIntervalVal('1d');
     };
 
-    // Compute previous close reference timestamp
+    // Compute previous close reference timestamp (5 PM IST)
     const previousCloseTimestamp = useMemo(() => {
         const now = new Date();
+        const d = new Date(now);
+        // Set to 5 PM IST (11:30 AM UTC) of the current day first
+        d.setUTCHours(11, 30, 0, 0);
+
+        // If it's currently before 5 PM IST today, "previous day's 5 PM" is yesterday.
+        // If it's after 5 PM IST today, do we want today's 5 PM or yesterday's? 
+        // Typically "previous close" means yesterday's 5 PM regardless of current time.
+        d.setDate(d.getDate() - 1); // Go to yesterday's 5 PM
+
         switch (timeRange) {
-            case '1D': {
-                // Yesterday at 5PM IST (11:30 AM UTC)
-                const yesterday = new Date(now);
-                yesterday.setDate(yesterday.getDate() - 1);
-                yesterday.setUTCHours(11, 30, 0, 0); // 5 PM IST
-                return yesterday.getTime();
-            }
+            case '1D': return d.getTime();
             case '1W': {
-                // 1 week ago at 5PM IST (11:30 AM UTC)
-                const weekAgo = new Date(now);
-                weekAgo.setDate(weekAgo.getDate() - 7);
-                weekAgo.setUTCHours(11, 30, 0, 0);
-                return weekAgo.getTime();
+                d.setDate(d.getDate() - 6); // 1 week prior to yesterday
+                return d.getTime();
             }
             case '1M': {
-                // 1 month ago at 5PM IST (11:30 AM UTC)
-                const monthAgo = new Date(now);
-                monthAgo.setMonth(monthAgo.getMonth() - 1);
-                monthAgo.setUTCHours(11, 30, 0, 0);
-                return monthAgo.getTime();
+                d.setMonth(d.getMonth() - 1);
+                return d.getTime();
             }
             case '1Y': {
-                // 1 year ago at 5PM IST (11:30 AM UTC)
-                const yearAgo = new Date(now);
-                yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-                yearAgo.setUTCHours(11, 30, 0, 0);
-                return yearAgo.getTime();
+                d.setFullYear(d.getFullYear() - 1);
+                return d.getTime();
             }
-            default:
-                return now.getTime() - (24 * 60 * 60 * 1000);
+            default: return d.getTime();
         }
     }, [timeRange]);
 
