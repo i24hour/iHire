@@ -38,55 +38,102 @@ const getIntervalMs = (interval: CandleInterval) => {
     }
 };
 
-function getWorkloadAtTime(tasks: ChartTask[], t: number): number {
-    let totalMs = 0;
+/**
+ * Calculate the performance score at a given point in time.
+ * 
+ * Formula: Score = (Completed / Total) × (1 / AvgTimePerRunningTask) × log(Total + 1) × 1000
+ * 
+ * Where AvgTimePerRunningTask = Total Time of Running Tasks / Number of Running Tasks
+ * 
+ * - Running tasks' time ticks → avg time grows → score drops every second
+ * - Completing a task → it exits running pool → score spikes up
+ * - Edge cases: 0 tasks, 0 completed, or 0 running → score = 0
+ */
+function getScoreAtTime(tasks: ChartTask[], t: number): number {
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let runningTaskCount = 0;
+    let runningTasksHours = 0;
+
     for (const task of tasks) {
+        // Only count tasks that existed at time t
+        const taskStartTime = task.events?.[0]?.timestamp ?? task.startTime;
+        if (!taskStartTime || taskStartTime > t) continue;
+
+        totalTasks++;
+
+        // Check if completed by time t
+        if (task.completed && task.completedAt && task.completedAt <= t) {
+            completedTasks++;
+            continue; // Completed tasks don't contribute to running avg
+        }
+
+        // This task is NOT completed at time t — it's "running" (active or paused)
+        // Calculate its accumulated active time up to t
+        let taskHours = 0;
+
         if (!task.events || task.events.length === 0) {
             if (task.startTime && task.startTime <= t) {
-                if (task.completed && task.completedAt && task.completedAt <= t) {
-                    // completed before time t - no burden
-                } else if (task.completed && task.completedAt && task.completedAt > t) {
-                    totalMs += (t - task.startTime);
-                } else if (!task.completed && task.enabled) {
-                    totalMs += (t - task.startTime) + (task.pausedElapsed * 1000);
+                if (!task.completed && task.enabled) {
+                    taskHours = ((t - task.startTime) + (task.pausedElapsed * 1000)) / (1000 * 3600);
                 } else if (!task.completed && !task.enabled) {
-                    totalMs += (task.pausedElapsed * 1000);
+                    taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
                 }
             }
-            continue;
-        }
-
-        const syntheticEvents = [...task.events];
-        if (syntheticEvents[0].type !== 'start' && task.startTime && task.startTime < syntheticEvents[0].timestamp) {
-            syntheticEvents.unshift({ type: 'start', timestamp: task.startTime });
-        }
-
-        let taskActiveMs = 0;
-        let isRunning = false;
-        let lastStartTime = 0;
-        let isCompleted = false;
-
-        for (const ev of syntheticEvents) {
-            if (ev.timestamp > t) break;
-            if (ev.type === 'start') {
-                if (!isRunning) { isRunning = true; lastStartTime = ev.timestamp; }
-            } else if (ev.type === 'pause') {
-                if (isRunning) { taskActiveMs += (ev.timestamp - lastStartTime); isRunning = false; }
-            } else if (ev.type === 'complete') {
-                if (isRunning) { taskActiveMs += (ev.timestamp - lastStartTime); isRunning = false; }
-                isCompleted = true;
+        } else {
+            // Event-based calculation
+            const syntheticEvents = [...task.events];
+            if (syntheticEvents[0].type !== 'start' && task.startTime && task.startTime < syntheticEvents[0].timestamp) {
+                syntheticEvents.unshift({ type: 'start', timestamp: task.startTime });
             }
+
+            let taskActiveMs = 0;
+            let isRunning = false;
+            let lastStartTime = 0;
+
+            for (const ev of syntheticEvents) {
+                if (ev.timestamp > t) break;
+                if (ev.type === 'start') {
+                    if (!isRunning) { isRunning = true; lastStartTime = ev.timestamp; }
+                } else if (ev.type === 'pause') {
+                    if (isRunning) { taskActiveMs += (ev.timestamp - lastStartTime); isRunning = false; }
+                } else if (ev.type === 'complete') {
+                    if (isRunning) { taskActiveMs += (ev.timestamp - lastStartTime); isRunning = false; }
+                }
+            }
+
+            if (isRunning && lastStartTime <= t) {
+                taskActiveMs += (t - lastStartTime);
+            }
+
+            if (task.pausedElapsed > 0 && syntheticEvents.length > 0 && lastStartTime === 0) {
+                taskActiveMs += (task.pausedElapsed * 1000);
+            }
+
+            taskHours = taskActiveMs / (1000 * 3600);
         }
 
-        if (isCompleted) continue;
-        if (isRunning && lastStartTime <= t) taskActiveMs += (t - lastStartTime);
-        if (task.pausedElapsed > 0 && syntheticEvents.length > 0 && lastStartTime === 0 && !isCompleted) {
-            totalMs += (task.pausedElapsed * 1000);
-        }
-        totalMs += taskActiveMs;
+        runningTaskCount++;
+        runningTasksHours += taskHours;
     }
 
-    return -(totalMs / (1000 * 3600)); // Negated so higher workload plots lower on the chart
+    // Edge cases
+    if (totalTasks === 0 || completedTasks === 0) return 0;
+    if (runningTaskCount === 0 || runningTasksHours <= 0) {
+        // All tasks completed — use a high score based purely on completion & volume
+        const volumeMultiplier = Math.log(totalTasks + 1);
+        return 1 * 1 * volumeMultiplier * 1000; // Perfect completion, infinite speed
+    }
+
+    // Avg time per running task = total hours of running tasks / running task count
+    const avgTimePerTask = runningTasksHours / runningTaskCount;
+
+    // Score = (Completed/Total) × (1/AvgTime) × log(Total+1) × 1000
+    const completionRate = completedTasks / totalTasks;
+    const speedFactor = 1 / avgTimePerTask;
+    const volumeMultiplier = Math.log(totalTasks + 1);
+
+    return completionRate * speedFactor * volumeMultiplier * 1000;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
@@ -164,7 +211,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
     }, [timeRange]);
 
     const previousCloseValue = useMemo(() => {
-        return getWorkloadAtTime(tasks, previousCloseTimestamp);
+        return getScoreAtTime(tasks, previousCloseTimestamp);
     }, [tasks, previousCloseTimestamp]);
 
     // Generate OHLC data
@@ -196,8 +243,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             const T_end = Math.min(now, startTime + ((i + 1) * intervalMs));
             if (T_start >= now) break;
 
-            let open = getWorkloadAtTime(tasks, T_start);
-            let close = getWorkloadAtTime(tasks, T_end);
+            let open = getScoreAtTime(tasks, T_start);
+            let close = getScoreAtTime(tasks, T_end);
             let high = Math.max(open, close);
             let low = Math.min(open, close);
 
@@ -206,8 +253,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 if (task.events) {
                     for (const ev of task.events) {
                         if (ev.timestamp > T_start && ev.timestamp <= T_end) {
-                            const val = getWorkloadAtTime(tasks, ev.timestamp);
-                            const valBefore = getWorkloadAtTime(tasks, ev.timestamp - 1);
+                            const val = getScoreAtTime(tasks, ev.timestamp);
+                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1);
                             high = Math.max(high, val, valBefore);
                             low = Math.min(low, val, valBefore);
                         }
@@ -291,8 +338,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             },
             localization: {
                 priceFormatter: (price: number) => {
-                    // Hide the mathematical negative sign since the chart drops downward for more workload
-                    return Math.abs(price).toFixed(2);
+                    return price.toFixed(2);
                 },
                 timeFormatter: (time: number) => {
                     const date = new Date(time * 1000);
@@ -387,7 +433,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             if (!seriesRef.current) return;
 
             const now = Date.now();
-            const currentWorkload = getWorkloadAtTime(tasks, now);
+            const currentScore = getScoreAtTime(tasks, now);
             const snappedNow = snapToInterval(now, interval);
             const timeSeconds = Math.floor(snappedNow / 1000) as Time;
 
@@ -396,7 +442,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 // Live update the right-most point
                 baselineSeries.update({
                     time: timeSeconds,
-                    value: currentWorkload
+                    value: currentScore
                 });
             } else {
                 const candleSeries = seriesRef.current as ISeriesApi<'Candlestick'>;
@@ -406,18 +452,18 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                     candleSeries.update({
                         time: timeSeconds,
                         open: lastCandle.open,
-                        high: Math.max(lastCandle.high, currentWorkload),
-                        low: Math.min(lastCandle.low, currentWorkload),
-                        close: currentWorkload
+                        high: Math.max(lastCandle.high, currentScore),
+                        low: Math.min(lastCandle.low, currentScore),
+                        close: currentScore
                     });
                 } else {
                     // It rolled over to a new candle bucket, start a fresh one
                     candleSeries.update({
                         time: timeSeconds,
-                        open: currentWorkload,
-                        high: currentWorkload,
-                        low: currentWorkload,
-                        close: currentWorkload
+                        open: currentScore,
+                        high: currentScore,
+                        low: currentScore,
+                        close: currentScore
                     });
                 }
             }
@@ -430,15 +476,15 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         <div className="bg-black rounded-2xl border border-white/10 p-6 flex flex-col w-full h-[500px]">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
                 <div>
-                    <h2 className="text-xl font-semibold text-white">Capacity & Performance</h2>
-                    <p className="text-sm text-zinc-500 mt-1">Accumulated hours of active tasks</p>
+                    <h2 className="text-xl font-semibold text-white">Performance Score</h2>
+                    <p className="text-sm text-zinc-500 mt-1">Score = Completion × Speed × Volume</p>
                     {chartType === 'line' && (
                         <p className="text-xs text-zinc-600 mt-1">
                             * Dotted line represents your previous {
                                 timeRange === '1D' ? 'day\'s' :
                                     timeRange === '1W' ? 'week\'s' :
                                         timeRange === '1M' ? 'month\'s' : 'year\'s'
-                            } 5 PM value
+                            } 5 PM score
                         </p>
                     )}
                 </div>
