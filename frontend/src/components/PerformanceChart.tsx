@@ -184,17 +184,14 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         else if (range === '1Y') setIntervalVal('1d');
     };
 
-    // Compute previous close reference timestamp (5 PM IST)
+    // Compute previous close reference timestamp (5 PM Local Time)
     const previousCloseTimestamp = useMemo(() => {
-        const now = new Date();
-        const d = new Date(now);
-        // Set to 5 PM IST (11:30 AM UTC) of the current day first
-        d.setUTCHours(11, 30, 0, 0);
+        const d = new Date();
+        // Set to 5 PM local time of the current day first
+        d.setHours(17, 0, 0, 0);
 
-        // If it's currently before 5 PM IST today, "previous day's 5 PM" is yesterday.
-        // If it's after 5 PM IST today, do we want today's 5 PM or yesterday's? 
-        // Typically "previous close" means yesterday's 5 PM regardless of current time.
-        d.setDate(d.getDate() - 1); // Go to yesterday's 5 PM
+        // Always target the previous day's 5 PM as the reference
+        d.setDate(d.getDate() - 1);
 
         switch (timeRange) {
             case '1D': return d.getTime();
@@ -395,6 +392,16 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 crosshairMarkerBackgroundColor: '#fff',
                 priceLineVisible: false,
                 lastValueVisible: false,
+                autoscaleInfoProvider: () => {
+                    if (!chartData.baselineData.length) return null;
+                    const vals = chartData.baselineData.map(d => d.value);
+                    return {
+                        priceRange: {
+                            minValue: Math.min(...vals, previousCloseValue),
+                            maxValue: Math.max(...vals, previousCloseValue),
+                        },
+                    };
+                },
             });
             baselineSeries.setData(chartData.baselineData);
 
