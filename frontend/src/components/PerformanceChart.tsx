@@ -321,6 +321,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 borderUpColor: '#10b981',
                 wickDownColor: '#ef4444',
                 wickUpColor: '#10b981',
+                priceLineVisible: false,
+                lastValueVisible: false,
             });
             candleSeries.setData(chartData.candleData);
             seriesRef.current = candleSeries;
@@ -339,6 +341,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 crosshairMarkerRadius: 5,
                 crosshairMarkerBorderColor: '#000',
                 crosshairMarkerBackgroundColor: '#fff',
+                priceLineVisible: false,
+                lastValueVisible: false,
             });
             baselineSeries.setData(chartData.baselineData);
 
