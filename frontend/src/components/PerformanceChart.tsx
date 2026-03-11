@@ -53,6 +53,7 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let completedTasks = 0;
     let runningTaskCount = 0;
     let runningTasksHours = 0;
+    let completedTasksHours = 0; // Track historical time for when no tasks are running
 
     for (const task of tasks) {
         // Only count tasks that existed at time t
@@ -75,9 +76,14 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
         if (isCompletedByT) {
             completedTasks++;
+            // Calculate how long this completed task took
+            if (task.completedAt && task.startTime) {
+                completedTasksHours += (task.completedAt - task.startTime) / (1000 * 3600);
+            }
             continue; // Completed tasks don't contribute to running avg
         }
 
+        // --- Rest stays same for running tasks ---
         // This task is NOT completed at time t — it's "running" (active or paused)
         // Calculate its accumulated active time up to t
         let taskHours = 0;
@@ -129,15 +135,23 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
     // Edge cases
     if (totalTasks === 0 || completedTasks === 0) return 0;
-    if (runningTaskCount === 0 || runningTasksHours <= 0) {
-        // All tasks completed — use a high score based purely on completion & volume
-        const volumeMultiplier = Math.log(totalTasks + 1);
-        return 1 * 1 * volumeMultiplier * 1000; // Perfect completion, infinite speed
-    }
 
     // Claude's specific Formula from user screenshot:
     // Avg time = Total Time (Running Tasks) / Completed Tasks
-    const avgTimePerCompletedTask = runningTasksHours / completedTasks;
+    let avgTimePerCompletedTask = 0;
+
+    if (runningTasksHours > 0) {
+        avgTimePerCompletedTask = runningTasksHours / completedTasks;
+    } else {
+        // Fallback: If no tasks are running, use the historical average of completed tasks
+        avgTimePerCompletedTask = completedTasksHours / completedTasks;
+    }
+
+    // Prevent division by zero or near-zero infinite scores if tasks were completed instantly
+    // Assume a realistic minimum floor of 5 minutes (0.0833 hours) per task to prevent score explosion
+    if (avgTimePerCompletedTask < 0.0833) {
+        avgTimePerCompletedTask = 0.0833;
+    }
 
     // Score = (Completed/Total) × (1/AvgTime) × log(Total+1) × 1000
     const completionRate = completedTasks / totalTasks;
