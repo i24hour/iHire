@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { createChart, ColorType, CandlestickSeries, LineSeries, type IChartApi, type ISeriesApi, type CandlestickData, type LineData, type Time } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries, LineSeries, BaselineSeries, type IChartApi, type ISeriesApi, type CandlestickData, type LineData, type BaselineData, type Time, LineStyle } from 'lightweight-charts';
 
 export interface ChartEvent {
     type: 'start' | 'pause' | 'complete';
@@ -86,7 +86,7 @@ function getWorkloadAtTime(tasks: ChartTask[], t: number): number {
         totalMs += taskActiveMs;
     }
 
-    return totalMs / (1000 * 3600); // hours (positive value now, we'll invert in chart)
+    return -(totalMs / (1000 * 3600)); // Negated so higher workload plots lower on the chart
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
@@ -116,7 +116,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
-    const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | null>(null);
+    const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
 
     const handleTimeRangeChange = (range: TimeRange) => {
         setTimeRange(range);
@@ -125,6 +125,47 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         else if (range === '1M') setIntervalVal('1d');
         else if (range === '1Y') setIntervalVal('1d');
     };
+
+    // Compute previous close reference timestamp
+    const previousCloseTimestamp = useMemo(() => {
+        const now = new Date();
+        switch (timeRange) {
+            case '1D': {
+                // Yesterday at 5PM IST (11:30 AM UTC)
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                yesterday.setUTCHours(11, 30, 0, 0); // 5 PM IST
+                return yesterday.getTime();
+            }
+            case '1W': {
+                // 1 week ago at 5PM IST (11:30 AM UTC)
+                const weekAgo = new Date(now);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                weekAgo.setUTCHours(11, 30, 0, 0);
+                return weekAgo.getTime();
+            }
+            case '1M': {
+                // 1 month ago at 5PM IST (11:30 AM UTC)
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                monthAgo.setUTCHours(11, 30, 0, 0);
+                return monthAgo.getTime();
+            }
+            case '1Y': {
+                // 1 year ago at 5PM IST (11:30 AM UTC)
+                const yearAgo = new Date(now);
+                yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+                yearAgo.setUTCHours(11, 30, 0, 0);
+                return yearAgo.getTime();
+            }
+            default:
+                return now.getTime() - (24 * 60 * 60 * 1000);
+        }
+    }, [timeRange]);
+
+    const previousCloseValue = useMemo(() => {
+        return getWorkloadAtTime(tasks, previousCloseTimestamp);
+    }, [tasks, previousCloseTimestamp]);
 
     // Generate OHLC data
     const chartData = useMemo(() => {
@@ -148,6 +189,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
 
         const candleData: CandlestickData[] = [];
         const lineData: LineData[] = [];
+        const baselineData: BaselineData[] = [];
 
         for (let i = 0; i <= dataPointsCount; i++) {
             const T_start = startTime + (i * intervalMs);
@@ -188,9 +230,14 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 time: timeSeconds,
                 value: close,
             });
+
+            baselineData.push({
+                time: timeSeconds,
+                value: close,
+            });
         }
 
-        return { candleData, lineData };
+        return { candleData, lineData, baselineData };
     }, [tasks, timeRange, interval]);
 
     // Create/update chart
@@ -243,6 +290,10 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 },
             },
             localization: {
+                priceFormatter: (price: number) => {
+                    // Hide the mathematical negative sign since the chart drops downward for more workload
+                    return Math.abs(price).toFixed(2);
+                },
                 timeFormatter: (time: number) => {
                     const date = new Date(time * 1000);
                     return new Intl.DateTimeFormat('en-IN', {
@@ -264,31 +315,47 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
 
         if (chartType === 'candle') {
             const candleSeries = chart.addSeries(CandlestickSeries, {
-                upColor: '#ef4444', // Red for workload increase
-                downColor: '#10b981', // Green for workload decrease (task completed)
-                borderDownColor: '#10b981',
-                borderUpColor: '#ef4444',
-                wickDownColor: '#10b981',
-                wickUpColor: '#ef4444',
+                upColor: '#10b981', // Green for workload decrease (task completed, chart goes UP towards zero)
+                downColor: '#ef4444', // Red for workload increase (more tasks running, chart goes DOWN into negatives)
+                borderDownColor: '#ef4444',
+                borderUpColor: '#10b981',
+                wickDownColor: '#ef4444',
+                wickUpColor: '#10b981',
+                priceLineVisible: false,
+                lastValueVisible: false,
             });
             candleSeries.setData(chartData.candleData);
             seriesRef.current = candleSeries;
         } else {
-            const startVal = chartData.lineData.length > 0 ? chartData.lineData[0].value : 0;
-            const endVal = chartData.lineData.length > 0 ? chartData.lineData[chartData.lineData.length - 1].value : 0;
-            const isPositive = endVal <= startVal; // Lower workload = positive trend
-            const color = isPositive ? '#10b981' : '#ef4444';
-
-            const lineSeries = chart.addSeries(LineSeries, {
-                color,
+            // Use BaselineSeries for green/red coloring relative to previous close
+            const baselineSeries = chart.addSeries(BaselineSeries, {
+                baseValue: { type: 'price' as const, price: previousCloseValue },
+                topLineColor: '#10b981',
+                topFillColor1: 'rgba(16, 185, 129, 0.28)',
+                topFillColor2: 'rgba(16, 185, 129, 0.05)',
+                bottomLineColor: '#ef4444',
+                bottomFillColor1: 'rgba(239, 68, 68, 0.05)',
+                bottomFillColor2: 'rgba(239, 68, 68, 0.28)',
                 lineWidth: 2,
                 crosshairMarkerVisible: true,
                 crosshairMarkerRadius: 5,
                 crosshairMarkerBorderColor: '#000',
-                crosshairMarkerBackgroundColor: color,
+                crosshairMarkerBackgroundColor: '#fff',
+                priceLineVisible: false,
+                lastValueVisible: false,
             });
-            lineSeries.setData(chartData.lineData);
-            seriesRef.current = lineSeries;
+            baselineSeries.setData(chartData.baselineData);
+
+            // Add the dotted "Previous Close" horizontal price line
+            baselineSeries.createPriceLine({
+                price: previousCloseValue,
+                color: 'rgba(255, 255, 255, 0.4)',
+                lineWidth: 1,
+                lineStyle: LineStyle.Dashed,
+                axisLabelVisible: false,
+            });
+
+            seriesRef.current = baselineSeries;
         }
 
         chart.timeScale().fitContent();
@@ -308,7 +375,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             chartRef.current = null;
             seriesRef.current = null;
         };
-    }, [chartType, chartData]);
+    }, [chartType, chartData, previousCloseValue]);
 
     // Live native update cycle (No React state changes triggered!)
     useEffect(() => {
@@ -323,9 +390,9 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             const timeSeconds = Math.floor(snappedNow / 1000) as Time;
 
             if (chartType === 'line') {
-                const lineSeries = seriesRef.current as ISeriesApi<'Line'>;
+                const baselineSeries = seriesRef.current as ISeriesApi<'Baseline'>;
                 // Live update the right-most point
-                lineSeries.update({
+                baselineSeries.update({
                     time: timeSeconds,
                     value: currentWorkload
                 });
