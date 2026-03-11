@@ -11,7 +11,7 @@ const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
     { ssr: false, loading: () => <div className="h-[500px] bg-black rounded-2xl border border-white/10 flex items-center justify-center text-zinc-500">Loading chart...</div> }
 );
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { LiveTimer, LiveTotalTimer } from '@/components/LiveTimer';
 
 interface ITimeTask {
@@ -106,10 +106,29 @@ export default function ITimePage() {
         }
     }, [status]);
 
+    const pauseMenuRef = useRef<HTMLDivElement>(null);
+
     // Initial load
     useEffect(() => {
         fetchTasks();
     }, [fetchTasks]);
+
+    // Click outside to close pause menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (pauseMenuRef.current && !pauseMenuRef.current.contains(event.target as Node)) {
+                setShowPauseOptions(null);
+            }
+        };
+
+        if (showPauseOptions) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showPauseOptions]);
 
     // Previous Timer Interval removed - now handled by LiveTimer components
 
@@ -590,7 +609,10 @@ export default function ITimePage() {
                                             {task.enabled ? (
                                                 <div className="relative">
                                                     {showPauseOptions === task.id ? (
-                                                        <div className="absolute bottom-full right-0 mb-2 p-2 bg-zinc-900 border border-white/20 rounded-lg shadow-xl z-20 w-32 animate-in fade-in slide-in-from-bottom-2">
+                                                        <div
+                                                            ref={pauseMenuRef}
+                                                            className="absolute bottom-full right-0 mb-2 p-2 bg-zinc-900 border border-white/20 rounded-lg shadow-xl z-20 w-32 animate-in fade-in slide-in-from-bottom-2"
+                                                        >
                                                             <div className="flex justify-between items-center mb-2 px-1">
                                                                 <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Pause Timer</span>
                                                                 <button onClick={(e) => { e.stopPropagation(); setShowPauseOptions(null); }} className="text-zinc-500 hover:text-white">
@@ -750,14 +772,26 @@ export default function ITimePage() {
                                         </div>
                                         <div className="flex flex-wrap gap-4 justify-center items-center">
                                             {selectedTask.enabled ? (
-                                                showPauseOptions === selectedTask.id ? (
-                                                    <div className="flex flex-wrap justify-center gap-2">
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 5); setShowPauseOptions(null); }} className="px-3 py-2 text-white">5m</LiquidButton>
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 15); setShowPauseOptions(null); }} className="px-3 py-2 text-white">15m</LiquidButton>
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 30); setShowPauseOptions(null); }} className="px-3 py-2 text-white">30m</LiquidButton>
-                                                        <LiquidButton onClick={() => { toggleTask(selectedTask.id, 60); setShowPauseOptions(null); }} className="px-3 py-2 text-white">1hr</LiquidButton>
-                                                    </div>
-                                                ) : (
+                                                <div className="relative">
+                                                    {showPauseOptions === selectedTask.id ? (
+                                                        <div
+                                                            ref={pauseMenuRef}
+                                                            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 p-3 bg-zinc-900 border border-white/20 rounded-xl shadow-2xl z-50 w-48 animate-in fade-in slide-in-from-bottom-2"
+                                                        >
+                                                            <div className="flex justify-between items-center mb-3 px-1">
+                                                                <span className="text-xs text-zinc-400 font-semibold uppercase tracking-wider">Pause Timer</span>
+                                                                <button onClick={(e) => { e.stopPropagation(); setShowPauseOptions(null); }} className="text-zinc-500 hover:text-white transition-colors">
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                                </button>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <LiquidButton onClick={() => { toggleTask(selectedTask.id, 5); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full">5m</LiquidButton>
+                                                                <LiquidButton onClick={() => { toggleTask(selectedTask.id, 15); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full">15m</LiquidButton>
+                                                                <LiquidButton onClick={() => { toggleTask(selectedTask.id, 30); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full">30m</LiquidButton>
+                                                                <LiquidButton onClick={() => { toggleTask(selectedTask.id, 60); setShowPauseOptions(null); }} className="px-2 py-2 text-white text-sm bg-white/5 hover:bg-white/10 w-full">1hr</LiquidButton>
+                                                            </div>
+                                                        </div>
+                                                    ) : null}
                                                     <LiquidButton
                                                         onClick={() => setShowPauseOptions(selectedTask.id)}
                                                         className="w-40 text-base font-bold transition-all text-white"
@@ -767,7 +801,7 @@ export default function ITimePage() {
                                                             <span>Pause Option</span>
                                                         </div>
                                                     </LiquidButton>
-                                                )
+                                                </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-1 relative">
                                                     <LiquidButton
