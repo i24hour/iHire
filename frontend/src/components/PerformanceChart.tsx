@@ -131,31 +131,31 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         const now = new Date();
         switch (timeRange) {
             case '1D': {
-                // Yesterday at 5PM IST
+                // Yesterday at 5PM IST (11:30 AM UTC)
                 const yesterday = new Date(now);
                 yesterday.setDate(yesterday.getDate() - 1);
-                yesterday.setHours(17, 0, 0, 0); // 5 PM
+                yesterday.setUTCHours(11, 30, 0, 0); // 5 PM IST
                 return yesterday.getTime();
             }
             case '1W': {
-                // 1 week ago at 5PM IST
+                // 1 week ago at 5PM IST (11:30 AM UTC)
                 const weekAgo = new Date(now);
                 weekAgo.setDate(weekAgo.getDate() - 7);
-                weekAgo.setHours(17, 0, 0, 0);
+                weekAgo.setUTCHours(11, 30, 0, 0);
                 return weekAgo.getTime();
             }
             case '1M': {
-                // 1 month ago at 5PM IST
+                // 1 month ago at 5PM IST (11:30 AM UTC)
                 const monthAgo = new Date(now);
                 monthAgo.setMonth(monthAgo.getMonth() - 1);
-                monthAgo.setHours(17, 0, 0, 0);
+                monthAgo.setUTCHours(11, 30, 0, 0);
                 return monthAgo.getTime();
             }
             case '1Y': {
-                // 1 year ago at 5PM IST
+                // 1 year ago at 5PM IST (11:30 AM UTC)
                 const yearAgo = new Date(now);
                 yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-                yearAgo.setHours(17, 0, 0, 0);
+                yearAgo.setUTCHours(11, 30, 0, 0);
                 return yearAgo.getTime();
             }
             default:
