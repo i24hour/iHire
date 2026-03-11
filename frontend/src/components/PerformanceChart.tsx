@@ -136,16 +136,10 @@ function getScoreAtTime(tasks: ChartTask[], t: number): number {
     // Edge cases
     if (totalTasks === 0 || completedTasks === 0) return 0;
 
-    // Claude's specific Formula from user screenshot:
-    // Avg time = Total Time (Running Tasks) / Completed Tasks
-    let avgTimePerCompletedTask = 0;
-
-    if (runningTasksHours > 0) {
-        avgTimePerCompletedTask = runningTasksHours / completedTasks;
-    } else {
-        // Fallback: If no tasks are running, use the historical average of completed tasks
-        avgTimePerCompletedTask = completedTasksHours / completedTasks;
-    }
+    // User's Updated Formula: Total Time = Running + Completed
+    // Avg time = All Total Time / Completed Tasks
+    const totalTimeHours = runningTasksHours + completedTasksHours;
+    let avgTimePerCompletedTask = totalTimeHours / completedTasks;
 
     // Prevent division by zero or near-zero infinite scores if tasks were completed instantly
     // Assume a realistic minimum floor of 5 minutes (0.0833 hours) per task to prevent score explosion
