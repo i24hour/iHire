@@ -332,12 +332,12 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             // so visually dropping below the current line is Red, visually rising is Green.
             const baselineSeries = chart.addSeries(BaselineSeries, {
                 baseValue: { type: 'price' as const, price: previousCloseValue },
-                topLineColor: '#ef4444', // Red for visually down below the baseline
-                topFillColor1: 'rgba(239, 68, 68, 0.28)',
-                topFillColor2: 'rgba(239, 68, 68, 0.05)',
-                bottomLineColor: '#10b981', // Green for visually up above the baseline
-                bottomFillColor1: 'rgba(16, 185, 129, 0.05)',
-                bottomFillColor2: 'rgba(16, 185, 129, 0.28)',
+                topLineColor: '#10b981', // Green for above the baseline
+                topFillColor1: 'rgba(16, 185, 129, 0.28)',
+                topFillColor2: 'rgba(16, 185, 129, 0.05)',
+                bottomLineColor: '#ef4444', // Red for below the baseline
+                bottomFillColor1: 'rgba(239, 68, 68, 0.05)',
+                bottomFillColor2: 'rgba(239, 68, 68, 0.28)',
                 lineWidth: 2,
                 crosshairMarkerVisible: true,
                 crosshairMarkerRadius: 5,
