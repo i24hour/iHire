@@ -73,7 +73,7 @@ export function LiveTotalTimer({
         return () => clearInterval(interval);
     }, [hasRunningTasks]);
 
-    const totalTime = tasks.reduce((sum, task) => !task.completed ? sum + getElapsedSeconds(task, currentTime) : sum, 0);
+    const totalTime = tasks.reduce((sum, task) => sum + getElapsedSeconds(task, currentTime), 0);
 
     return (
         <span className={`font-mono ${className}`}>
