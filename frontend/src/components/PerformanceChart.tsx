@@ -24,6 +24,8 @@ interface PerformanceChartProps {
 
 type ChartType = 'line' | 'candle';
 type CandleInterval = '1m' | '5m' | '10m' | '15m' | '1h' | '1d';
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const getIntervalMs = (interval: CandleInterval) => {
     switch (interval) {
@@ -36,6 +38,25 @@ const getIntervalMs = (interval: CandleInterval) => {
         default: return 15 * 60 * 1000;
     }
 };
+
+function getMostRecent5PmIstTimestamp(referenceTime: number): number {
+    const istDate = new Date(referenceTime + IST_OFFSET_MS);
+    const todayFivePmIst = Date.UTC(
+        istDate.getUTCFullYear(),
+        istDate.getUTCMonth(),
+        istDate.getUTCDate(),
+        17,
+        0,
+        0,
+        0
+    ) - IST_OFFSET_MS;
+
+    return referenceTime >= todayFivePmIst ? todayFivePmIst : todayFivePmIst - DAY_MS;
+}
+
+function getNext5PmIstTimestamp(referenceTime: number): number {
+    return getMostRecent5PmIstTimestamp(referenceTime) + DAY_MS;
+}
 
 function getFocusedRange(values: number[], referenceValue?: number): { minValue: number; maxValue: number } | null {
     if (!values.length) return null;
@@ -235,17 +256,36 @@ function snapToInterval(timestamp: number, interval: CandleInterval): number {
 export function PerformanceChart({ tasks }: PerformanceChartProps) {
     const [chartType, setChartType] = useState<ChartType>('line');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
+    const [referenceNow, setReferenceNow] = useState(() => Date.now());
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
 
-    // Compute previous close reference timestamp (5 PM Local Time)
-    const previousCloseTimestamp = useMemo(() => {
-        const d = new Date();
-        d.setHours(17, 0, 0, 0);
-        d.setDate(d.getDate() - 1);
-        return d.getTime();
+    useEffect(() => {
+        let timeoutId: number | undefined;
+
+        const scheduleReferenceRefresh = () => {
+            const now = Date.now();
+            const nextFivePmIst = getNext5PmIstTimestamp(now);
+            timeoutId = window.setTimeout(() => {
+                setReferenceNow(Date.now());
+                scheduleReferenceRefresh();
+            }, Math.max((nextFivePmIst - now) + 1000, 1000));
+        };
+
+        scheduleReferenceRefresh();
+
+        return () => {
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+        };
     }, []);
+
+    // Track the most recent 5 PM IST close and refresh it automatically after each daily close.
+    const previousCloseTimestamp = useMemo(() => {
+        return getMostRecent5PmIstTimestamp(referenceNow);
+    }, [referenceNow]);
 
     const previousCloseValue = useMemo(() => {
         return getScoreAtTime(tasks, previousCloseTimestamp);
@@ -558,7 +598,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                     <h2 className="text-xl font-semibold text-white">Performance Score</h2>
                     <p className="text-sm text-zinc-500 mt-1">Score = Completion × Speed × Volume</p>
                     <p className="text-xs text-zinc-600 mt-1">
-                        * Dotted line represents your previous day&apos;s 5 PM score
+                        * Dotted line represents the most recent 5 PM IST score
                     </p>
                 </div>
 
