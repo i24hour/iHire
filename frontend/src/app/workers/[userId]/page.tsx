@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, use, useMemo } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import dynamic from 'next/dynamic';
-import { LiveTimer, LiveTotalTimer } from '@/components/LiveTimer';
+import { LiveTimer } from '@/components/LiveTimer';
+import { getScoreAtTime } from '@/components/PerformanceChart';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -51,6 +52,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
+    const [scoreNow, setScoreNow] = useState(() => Date.now());
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -75,6 +77,13 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     useEffect(() => {
         fetchTasks();
     }, [fetchTasks]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setScoreNow(Date.now());
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         // If viewing own worker profile, redirect to personal iTime tracker to allow full editing
@@ -140,11 +149,10 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    // The total time logic is now fully managed by the LiveTotalTimer instance
-    // to prevent continuous re-rendering of this entire page.
     const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
+    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow), [tasks, scoreNow]);
 
     if (isLoading) {
         return (
@@ -220,9 +228,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                     </div>
 
                     <div className="bg-black  rounded-2xl border border-white/10 p-6 flex flex-col justify-center">
-                        <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Total Time</div>
-                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white truncate tracking-tight">
-                            <LiveTotalTimer tasks={tasks} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
+                        <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Score</div>
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#4CAF50] truncate tracking-tight">
+                            {liveScore.toFixed(2)}
                         </div>
                     </div>
                 </div>
