@@ -6,6 +6,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import { getScoreAtTime } from '@/components/PerformanceChart';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -54,6 +55,7 @@ export default function ITimePage() {
     const [targetMinutes, setTargetMinutes] = useState('');
     const [showSignInModal, setShowSignInModal] = useState(false);
     const [showPauseOptions, setShowPauseOptions] = useState<string | null>(null);
+    const [scoreNow, setScoreNow] = useState<number>(() => Date.now());
 
     const playAlertSound = () => {
         try {
@@ -131,6 +133,14 @@ export default function ITimePage() {
     }, [showPauseOptions]);
 
     // Previous Timer Interval removed - now handled by LiveTimer components
+
+    useEffect(() => {
+        const scoreTimer = setInterval(() => {
+            setScoreNow(Date.now());
+        }, 1000);
+
+        return () => clearInterval(scoreTimer);
+    }, []);
 
     // Save tasks - MongoDB for authenticated, localStorage for guest
     useEffect(() => {
@@ -440,6 +450,7 @@ export default function ITimePage() {
     };
 
     const totalTime = useMemo(() => tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0), [tasks, getElapsedSeconds]);
+    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow), [tasks, scoreNow]);
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
@@ -503,8 +514,8 @@ export default function ITimePage() {
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
                     <div className="bg-black  rounded-2xl border border-white/10 p-4 md:p-6">
-                        <div className="text-sm text-gray-400 mb-2">Total Tasks</div>
-                        <div className="text-2xl md:text-4xl font-bold text-white">{tasks.length}</div>
+                        <div className="text-sm text-gray-400 mb-2">Live Score</div>
+                        <div className="text-2xl md:text-4xl font-bold text-[#4CAF50]">{liveScore.toFixed(2)}</div>
                     </div>
 
                     <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">

@@ -103,7 +103,6 @@ function getFocusedCandleRange(candles: CandlestickData[], referenceValue?: numb
 export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let totalTasks = 0;
     let completedTasks = 0;
-    let runningTaskCount = 0;
     let runningTasksHours = 0;
     let completedTasksHours = 0; // Track historical time for when no tasks are running
 
@@ -181,19 +180,15 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             completedTasks++;
             completedTasksHours += taskHours;
         } else {
-            runningTaskCount++;
             runningTasksHours += taskHours;
         }
     }
 
-    // The actual denominator for AvgTime and Completion should be tasks actively worked on
-    const activeTasksCount = completedTasks + runningTaskCount;
-    if (totalTasks === 0 || activeTasksCount === 0) return 0;
+    if (totalTasks === 0 || completedTasks === 0) return 0;
 
-    // User's Updated Formula: Total Time = Running + Completed
-    // Avg time = All Total Time / Active Tasks (to plot moving progress accurately)
+    // Avg time is evaluated against completed work so completion events move the score immediately.
     const totalTimeHours = runningTasksHours + completedTasksHours;
-    let avgTimePerTask = totalTimeHours / activeTasksCount;
+    let avgTimePerTask = totalTimeHours / completedTasks;
 
     // Prevent division by zero or near-zero infinite scores if tasks were completed instantly
     // Assume a realistic minimum floor of 5 minutes (0.0833 hours) per task to prevent score explosion
@@ -201,8 +196,7 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
         avgTimePerTask = 0.0833;
     }
 
-    // Plotting a dynamic curve: consider running tasks as partial completion basis so the line decays over time
-    const completionRate = activeTasksCount / totalTasks;
+    const completionRate = completedTasks / totalTasks;
     const speedFactor = 1 / avgTimePerTask;
     const volumeMultiplier = Math.log(totalTasks + 1);
 
