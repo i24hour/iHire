@@ -514,8 +514,8 @@ export default function ITimePage() {
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
                     <div className="bg-black  rounded-2xl border border-white/10 p-4 md:p-6">
-                        <div className="text-sm text-gray-400 mb-2">Live Score</div>
-                        <div className="text-2xl md:text-4xl font-bold text-[#4CAF50]">{liveScore.toFixed(2)}</div>
+                        <div className="text-sm text-gray-400 mb-2">Total Tasks</div>
+                        <div className="text-2xl md:text-4xl font-bold text-white">{tasks.length}</div>
                     </div>
 
                     <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
@@ -529,10 +529,8 @@ export default function ITimePage() {
                     </div>
 
                     <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
-                        <div className="text-sm text-zinc-300 mb-2">Total Time</div>
-                        <div className="text-2xl md:text-4xl font-bold text-white">
-                            <LiveTotalTimer tasks={tasks} getElapsedSeconds={getElapsedSeconds} formatElapsed={formatElapsed} />
-                        </div>
+                        <div className="text-sm text-zinc-300 mb-2">Live Score</div>
+                        <div className="text-2xl md:text-4xl font-bold text-[#4CAF50]">{liveScore.toFixed(2)}</div>
                     </div>
                 </div>
 
