@@ -47,13 +47,8 @@ function getFocusedRange(values: number[], referenceValue?: number): { minValue:
     let minValue = Math.min(...focusValues);
     let maxValue = Math.max(...focusValues);
 
-    // Include reference line only when it is reasonably close to the live region.
-    const localSpan = Math.max(maxValue - minValue, Math.max(Math.abs(latestValue), 1) * 0.05);
-    if (
-        typeof referenceValue === 'number' &&
-        Number.isFinite(referenceValue) &&
-        Math.abs(referenceValue - latestValue) <= localSpan * 3
-    ) {
+    // Always keep the previous close line in the visible range.
+    if (typeof referenceValue === 'number' && Number.isFinite(referenceValue)) {
         minValue = Math.min(minValue, referenceValue);
         maxValue = Math.max(maxValue, referenceValue);
     }
@@ -66,7 +61,7 @@ function getFocusedRange(values: number[], referenceValue?: number): { minValue:
     };
 }
 
-function getFocusedCandleRange(candles: CandlestickData[]): { minValue: number; maxValue: number } | null {
+function getFocusedCandleRange(candles: CandlestickData[], referenceValue?: number): { minValue: number; maxValue: number } | null {
     if (!candles.length) return null;
 
     const focusWindow = Math.max(24, Math.floor(candles.length * 0.2));
@@ -75,10 +70,18 @@ function getFocusedCandleRange(candles: CandlestickData[]): { minValue: number; 
     const lows = focusCandles.map((c) => c.low);
     const highs = focusCandles.map((c) => c.high);
 
-    const minValue = Math.min(...lows);
-    const maxValue = Math.max(...highs);
+    let minValue = Math.min(...lows);
+    let maxValue = Math.max(...highs);
     const latestClose = focusCandles[focusCandles.length - 1]?.close ?? maxValue;
-    const span = Math.max(maxValue - minValue, Math.max(Math.abs(latestClose), 1) * 0.05);
+    if (typeof referenceValue === 'number' && Number.isFinite(referenceValue)) {
+        minValue = Math.min(minValue, referenceValue);
+        maxValue = Math.max(maxValue, referenceValue);
+    }
+
+    const anchorValue = typeof referenceValue === 'number' && Number.isFinite(referenceValue)
+        ? referenceValue
+        : latestClose;
+    const span = Math.max(maxValue - minValue, Math.max(Math.abs(anchorValue), 1) * 0.05);
     const padding = Math.max(span * 0.2, 1);
 
     return {
@@ -422,12 +425,21 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 priceLineVisible: false,
                 lastValueVisible: false,
                 autoscaleInfoProvider: () => {
-                    const range = getFocusedCandleRange(chartData.candleData);
+                    const range = getFocusedCandleRange(chartData.candleData, previousCloseValue);
                     if (!range) return null;
                     return { priceRange: range };
                 },
             });
             candleSeries.setData(chartData.candleData);
+
+            candleSeries.createPriceLine({
+                price: previousCloseValue,
+                color: 'rgba(255, 255, 255, 0.4)',
+                lineWidth: 1,
+                lineStyle: LineStyle.Dashed,
+                axisLabelVisible: false,
+            });
+
             seriesRef.current = candleSeries;
         } else {
             // Use BaselineSeries for green/red coloring relative to the 5PM close value
@@ -543,11 +555,9 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 <div>
                     <h2 className="text-xl font-semibold text-white">Performance Score</h2>
                     <p className="text-sm text-zinc-500 mt-1">Score = Completion × Speed × Volume</p>
-                    {chartType === 'line' && (
-                        <p className="text-xs text-zinc-600 mt-1">
-                            * Dotted line represents your previous day&apos;s 5 PM score
-                        </p>
-                    )}
+                    <p className="text-xs text-zinc-600 mt-1">
+                        * Dotted line represents your previous day&apos;s 5 PM score
+                    </p>
                 </div>
 
                 <div className="flex items-center gap-3 flex-wrap">
