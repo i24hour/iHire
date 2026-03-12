@@ -113,8 +113,16 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
         totalTasks++;
 
-        // Figure out exact completion timestamp
+        // Figure out exact completion timestamp. Older persisted tasks may only have a complete event.
         let actualCompletedAt = task.completedAt;
+        if (!actualCompletedAt && task.events?.length) {
+            const completionEvent = [...task.events]
+                .reverse()
+                .find((event) => event.type === 'complete');
+            if (completionEvent) {
+                actualCompletedAt = completionEvent.timestamp;
+            }
+        }
         if (task.completed && !actualCompletedAt && (!task.events || task.events.length === 0)) {
             // Legacy task fallback: theoretical end time
             actualCompletedAt = task.startTime + (task.pausedElapsed * 1000);

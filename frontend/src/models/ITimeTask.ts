@@ -9,6 +9,7 @@ export interface ITimeTask {
     pausedElapsed: number;
     enabled: boolean;
     completed: boolean;
+    completedAt?: number;
     milestones: Array<{
         text: string;
         timestamp: number;
@@ -52,6 +53,9 @@ const ITimeTaskSchema = new mongoose.Schema<ITimeTask>({
     completed: {
         type: Boolean,
         default: false,
+    },
+    completedAt: {
+        type: Number,
     },
     milestones: [{
         text: String,
