@@ -22,7 +22,6 @@ interface PerformanceChartProps {
     tasks: ChartTask[];
 }
 
-type TimeRange = '1D' | '1W' | '1M' | '1Y';
 type ChartType = 'line' | 'candle';
 type CandleInterval = '1m' | '5m' | '10m' | '15m' | '1h' | '1d';
 
@@ -37,6 +36,56 @@ const getIntervalMs = (interval: CandleInterval) => {
         default: return 15 * 60 * 1000;
     }
 };
+
+function getFocusedRange(values: number[], referenceValue?: number): { minValue: number; maxValue: number } | null {
+    if (!values.length) return null;
+
+    const focusWindow = Math.max(24, Math.floor(values.length * 0.2));
+    const focusValues = values.slice(-focusWindow);
+    const latestValue = focusValues[focusValues.length - 1];
+
+    let minValue = Math.min(...focusValues);
+    let maxValue = Math.max(...focusValues);
+
+    // Include reference line only when it is reasonably close to the live region.
+    const localSpan = Math.max(maxValue - minValue, Math.max(Math.abs(latestValue), 1) * 0.05);
+    if (
+        typeof referenceValue === 'number' &&
+        Number.isFinite(referenceValue) &&
+        Math.abs(referenceValue - latestValue) <= localSpan * 3
+    ) {
+        minValue = Math.min(minValue, referenceValue);
+        maxValue = Math.max(maxValue, referenceValue);
+    }
+
+    const span = Math.max(maxValue - minValue, Math.max(Math.abs(latestValue), 1) * 0.05);
+    const padding = Math.max(span * 0.2, 1);
+    return {
+        minValue: minValue - padding,
+        maxValue: maxValue + padding,
+    };
+}
+
+function getFocusedCandleRange(candles: CandlestickData[]): { minValue: number; maxValue: number } | null {
+    if (!candles.length) return null;
+
+    const focusWindow = Math.max(24, Math.floor(candles.length * 0.2));
+    const focusCandles = candles.slice(-focusWindow);
+
+    const lows = focusCandles.map((c) => c.low);
+    const highs = focusCandles.map((c) => c.high);
+
+    const minValue = Math.min(...lows);
+    const maxValue = Math.max(...highs);
+    const latestClose = focusCandles[focusCandles.length - 1]?.close ?? maxValue;
+    const span = Math.max(maxValue - minValue, Math.max(Math.abs(latestClose), 1) * 0.05);
+    const padding = Math.max(span * 0.2, 1);
+
+    return {
+        minValue: minValue - padding,
+        maxValue: maxValue + padding,
+    };
+}
 
 /**
  * Calculate the performance score at a given point in time (matching Claude's formula).
@@ -179,47 +228,19 @@ function snapToInterval(timestamp: number, interval: CandleInterval): number {
 }
 
 export function PerformanceChart({ tasks }: PerformanceChartProps) {
-    const [timeRange, setTimeRange] = useState<TimeRange>('1D');
     const [chartType, setChartType] = useState<ChartType>('line');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
 
-    const handleTimeRangeChange = (range: TimeRange) => {
-        setTimeRange(range);
-        if (range === '1D') setIntervalVal('15m');
-        else if (range === '1W') setIntervalVal('1h');
-        else if (range === '1M') setIntervalVal('1d');
-        else if (range === '1Y') setIntervalVal('1d');
-    };
-
     // Compute previous close reference timestamp (5 PM Local Time)
     const previousCloseTimestamp = useMemo(() => {
         const d = new Date();
-        // Set to 5 PM local time of the current day first
         d.setHours(17, 0, 0, 0);
-
-        // Always target the previous day's 5 PM as the reference
         d.setDate(d.getDate() - 1);
-
-        switch (timeRange) {
-            case '1D': return d.getTime();
-            case '1W': {
-                d.setDate(d.getDate() - 6); // 1 week prior to yesterday
-                return d.getTime();
-            }
-            case '1M': {
-                d.setMonth(d.getMonth() - 1);
-                return d.getTime();
-            }
-            case '1Y': {
-                d.setFullYear(d.getFullYear() - 1);
-                return d.getTime();
-            }
-            default: return d.getTime();
-        }
-    }, [timeRange]);
+        return d.getTime();
+    }, []);
 
     const previousCloseValue = useMemo(() => {
         return getScoreAtTime(tasks, previousCloseTimestamp);
@@ -231,13 +252,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         let intervalMs = getIntervalMs(interval);
         const snappedNow = snapToInterval(now, interval);
 
-        let startTime = snappedNow;
-        switch (timeRange) {
-            case '1D': startTime = snappedNow - (24 * 60 * 60 * 1000); break;
-            case '1W': startTime = snappedNow - (7 * 24 * 60 * 60 * 1000); break;
-            case '1M': startTime = snappedNow - (30 * 24 * 60 * 60 * 1000); break;
-            case '1Y': startTime = snappedNow - (365 * 24 * 60 * 60 * 1000); break;
-        }
+        const startTime = snappedNow - (24 * 60 * 60 * 1000);
 
         // Keep the selected range strict so old spikes don't crush the live view scale.
 
@@ -298,7 +313,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         }
 
         return { candleData, lineData, baselineData };
-    }, [tasks, timeRange, interval]);
+    }, [tasks, interval]);
 
     // Create/update chart
     useEffect(() => {
@@ -382,6 +397,11 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 wickUpColor: '#10b981',
                 priceLineVisible: false,
                 lastValueVisible: false,
+                autoscaleInfoProvider: () => {
+                    const range = getFocusedCandleRange(chartData.candleData);
+                    if (!range) return null;
+                    return { priceRange: range };
+                },
             });
             candleSeries.setData(chartData.candleData);
             seriesRef.current = candleSeries;
@@ -405,13 +425,11 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 priceLineVisible: false,
                 lastValueVisible: false,
                 autoscaleInfoProvider: () => {
-                    if (!chartData.baselineData.length) return null;
-                    const vals = chartData.baselineData.map(d => d.value);
+                    const vals = chartData.baselineData.map((d) => d.value);
+                    const range = getFocusedRange(vals, previousCloseValue);
+                    if (!range) return null;
                     return {
-                        priceRange: {
-                            minValue: Math.min(...vals, previousCloseValue),
-                            maxValue: Math.max(...vals, previousCloseValue),
-                        },
+                        priceRange: range,
                     };
                 },
             });
@@ -503,11 +521,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                     <p className="text-sm text-zinc-500 mt-1">Score = Completion × Speed × Volume</p>
                     {chartType === 'line' && (
                         <p className="text-xs text-zinc-600 mt-1">
-                            * Dotted line represents your previous {
-                                timeRange === '1D' ? 'day\'s' :
-                                    timeRange === '1W' ? 'week\'s' :
-                                        timeRange === '1M' ? 'month\'s' : 'year\'s'
-                            } 5 PM score
+                            * Dotted line represents your previous day&apos;s 5 PM score
                         </p>
                     )}
                 </div>
@@ -551,21 +565,6 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                         )
                     }
 
-                    {/* Time Range Selector */}
-                    <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
-                        {(['1D', '1W', '1M', '1Y'] as TimeRange[]).map((range) => (
-                            <button
-                                key={range}
-                                onClick={() => handleTimeRangeChange(range)}
-                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${timeRange === range
-                                    ? 'bg-white text-black shadow-md'
-                                    : 'text-zinc-400 hover:text-white hover:bg-white/10'
-                                    }`}
-                            >
-                                {range}
-                            </button>
-                        ))}
-                    </div>
                 </div >
             </div >
 
