@@ -239,15 +239,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             case '1Y': startTime = snappedNow - (365 * 24 * 60 * 60 * 1000); break;
         }
 
-        // Extend chart start backwards to include the earliest task's execution period
-        // so the execution curve (score changing over time) is always visible
-        const earliestTaskStart = tasks.reduce((earliest, task) => {
-            const ts = task.events?.[0]?.timestamp ?? task.startTime;
-            return ts && ts < earliest ? ts : earliest;
-        }, now);
-        if (earliestTaskStart < startTime) {
-            startTime = earliestTaskStart;
-        }
+        // Keep the selected range strict so old spikes don't crush the live view scale.
 
         let dataPointsCount = Math.floor((now - startTime) / intervalMs);
         if (dataPointsCount > 500) {
