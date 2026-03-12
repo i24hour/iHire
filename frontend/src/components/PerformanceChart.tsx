@@ -252,9 +252,16 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         let intervalMs = getIntervalMs(interval);
         const snappedNow = snapToInterval(now, interval);
 
-        const startTime = snappedNow - (24 * 60 * 60 * 1000);
+        let startTime = snappedNow - (24 * 60 * 60 * 1000);
 
-        // Keep the selected range strict so old spikes don't crush the live view scale.
+        // Show full history by extending to the earliest task timestamp when available.
+        const earliestTaskStart = tasks.reduce((earliest, task) => {
+            const ts = task.events?.[0]?.timestamp ?? task.startTime;
+            return ts && ts < earliest ? ts : earliest;
+        }, now);
+        if (earliestTaskStart < startTime) {
+            startTime = earliestTaskStart;
+        }
 
         let dataPointsCount = Math.floor((now - startTime) / intervalMs);
         if (dataPointsCount > 500) {
@@ -326,6 +333,16 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             seriesRef.current = null;
         }
 
+        const firstPointTime = chartData.baselineData[0]?.time ? Number(chartData.baselineData[0].time) * 1000 : null;
+        const lastPointTime = chartData.baselineData[chartData.baselineData.length - 1]?.time
+            ? Number(chartData.baselineData[chartData.baselineData.length - 1].time) * 1000
+            : null;
+        const spansMultipleDays = !!(
+            firstPointTime &&
+            lastPointTime &&
+            (lastPointTime - firstPointTime) > (24 * 60 * 60 * 1000)
+        );
+
         const chart = createChart(chartContainerRef.current, {
             layout: {
                 background: { type: ColorType.Solid, color: 'transparent' },
@@ -356,11 +373,18 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 secondsVisible: false,
                 tickMarkFormatter: (time: number) => {
                     const date = new Date(time * 1000);
-                    return new Intl.DateTimeFormat('en-IN', {
+                    return new Intl.DateTimeFormat('en-IN', spansMultipleDays ? {
+                        timeZone: 'Asia/Kolkata',
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                    } : {
                         timeZone: 'Asia/Kolkata',
                         hour: '2-digit',
                         minute: '2-digit',
-                        hour12: false
+                        hour12: false,
                     }).format(date);
                 },
             },
