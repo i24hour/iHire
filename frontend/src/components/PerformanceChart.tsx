@@ -112,20 +112,23 @@ function getFocusedCandleRange(candles: CandlestickData[], referenceValue?: numb
 }
 
 /**
- * Calculate the performance score at a given point in time (matching Claude's formula).
+ * Calculate the performance score at a given point in time.
  * 
- * Formula: Score = (Completed / Total) × (1 / AvgTime) × log(Total + 1) × 1000
- * Where AvgTime = Total Time of Running Tasks / Completed Tasks
+ * Formula:
+ * Score = Completion_Rate × Speed_Score × Volume_Bonus × 1000
+ * Completion_Rate = completed_tasks / total_tasks
+ * Avg_Time_Per_Task = completed_time_hrs / completed_tasks
+ * Speed_Score = 1 / max(Avg_Time_Per_Task, 0.5)
+ * Volume_Bonus = log10(completed_tasks + 1) × 2
  * 
- * - Running tasks' time ticks → avg time grows → score drops every second
- * - Completing a task → it exits running pool → score spikes up
- * - Edge cases: 0 tasks, 0 completed, or 0 running → score = 0
+ * - Running task timers do not directly change the score
+ * - Completing a task adds to completed count and completed task hours
+ * - Edge cases: no tasks or no completed tasks => score = 0
  */
 export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let totalTasks = 0;
     let completedTasks = 0;
-    let runningTasksHours = 0;
-    let completedTasksHours = 0; // Track historical time for when no tasks are running
+    let completedTasksHours = 0;
 
     for (const task of tasks) {
         // Only count tasks that existed at time t
@@ -204,32 +207,23 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             taskHours = taskActiveMs / (1000 * 3600);
         }
 
-        // Distribute hours to the right bucket
+        // Only completed tasks contribute to completed_time_hrs.
         if (isCompletedByT) {
             completedTasks++;
             completedTasksHours += taskHours;
-        } else {
-            runningTasksHours += taskHours;
         }
     }
 
     if (totalTasks === 0 || completedTasks === 0) return 0;
 
-    // Avg time is evaluated against completed work so completion events move the score immediately.
-    const totalTimeHours = runningTasksHours + completedTasksHours;
-    let avgTimePerTask = totalTimeHours / completedTasks;
-
-    // Prevent division by zero or near-zero infinite scores if tasks were completed instantly
-    // Assume a realistic minimum floor of 5 minutes (0.0833 hours) per task to prevent score explosion
-    if (avgTimePerTask < 0.0833) {
-        avgTimePerTask = 0.0833;
-    }
-
     const completionRate = completedTasks / totalTasks;
-    const speedFactor = 1 / avgTimePerTask;
-    const volumeMultiplier = Math.log(totalTasks + 1);
+    const avgTimePerTask = completedTasksHours / completedTasks;
+    const clampedAvgTime = Math.max(avgTimePerTask, 0.5);
+    const speedScore = 1 / clampedAvgTime;
+    const volumeBonus = Math.log10(completedTasks + 1) * 2;
+    const score = completionRate * speedScore * volumeBonus * 1000;
 
-    return completionRate * speedFactor * volumeMultiplier * 1000;
+    return Math.round(score * 100) / 100;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
