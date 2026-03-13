@@ -117,17 +117,18 @@ function getFocusedCandleRange(candles: CandlestickData[], referenceValue?: numb
  * Formula:
  * Score = Completion_Rate × Speed_Score × Volume_Bonus × 1000
  * Completion_Rate = completed_tasks / total_tasks
- * Avg_Time_Per_Task = completed_time_hrs / completed_tasks
+ * Avg_Time_Per_Task = total_time_hrs / completed_tasks
  * Speed_Score = 1 / max(Avg_Time_Per_Task, 0.5)
  * Volume_Bonus = log10(completed_tasks + 1) × 2
  * 
- * - Running task timers do not directly change the score
+ * - Total time includes completed task time plus active running time
  * - Completing a task adds to completed count and completed task hours
  * - Edge cases: no tasks or no completed tasks => score = 0
  */
 export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let totalTasks = 0;
     let completedTasks = 0;
+    let runningTasksHours = 0;
     let completedTasksHours = 0;
 
     for (const task of tasks) {
@@ -207,17 +208,20 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             taskHours = taskActiveMs / (1000 * 3600);
         }
 
-        // Only completed tasks contribute to completed_time_hrs.
+        // Total time = completed task hours + active time accumulated on incomplete tasks.
         if (isCompletedByT) {
             completedTasks++;
             completedTasksHours += taskHours;
+        } else {
+            runningTasksHours += taskHours;
         }
     }
 
     if (totalTasks === 0 || completedTasks === 0) return 0;
 
     const completionRate = completedTasks / totalTasks;
-    const avgTimePerTask = completedTasksHours / completedTasks;
+    const totalTimeHours = completedTasksHours + runningTasksHours;
+    const avgTimePerTask = totalTimeHours / completedTasks;
     const clampedAvgTime = Math.max(avgTimePerTask, 0.5);
     const speedScore = 1 / clampedAvgTime;
     const volumeBonus = Math.log10(completedTasks + 1) * 2;
