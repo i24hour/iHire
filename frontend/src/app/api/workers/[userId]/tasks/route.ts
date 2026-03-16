@@ -4,6 +4,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     request: NextRequest,
     context: { params: Promise<{ userId: string }> } | { params: { userId: string } }

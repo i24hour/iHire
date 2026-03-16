@@ -76,6 +76,13 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
     useEffect(() => {
         fetchTasks();
+        
+        // Poll every 10 seconds to keep data fresh for viewers
+        const pollInterval = setInterval(() => {
+            fetchTasks();
+        }, 10000);
+        
+        return () => clearInterval(pollInterval);
     }, [fetchTasks]);
 
     useEffect(() => {
