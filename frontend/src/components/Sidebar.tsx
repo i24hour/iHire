@@ -12,6 +12,7 @@ const navItems = [
     // { href: '/dashboard', label: 'Candidates', icon: '👥' },
     { href: '/itime', label: 'iTime' }, // iTime Tracker
     { href: '/workers', label: 'WOrKers' }, // Workers Directory
+    { href: '/info', label: 'Info' }, // Info Page
 ];
 
 export function Sidebar() {
