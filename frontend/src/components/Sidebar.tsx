@@ -6,13 +6,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import { IdeasSidebar } from '@/components/IdeasSidebar';
 
 const navItems = [
-    // { href: '/', label: 'Overview', icon: '📊' },
-    // { href: '/dashboard', label: 'Candidates', icon: '👥' },
-    { href: '/itime', label: 'iTime' }, // iTime Tracker
-    { href: '/workers', label: 'WOrKers' }, // Workers Directory
-    { href: '/info', label: 'Info' }, // Info Page
+    { href: '/itime', label: 'iTime' },
+    { href: '/workers', label: 'WOrKers' },
+    { href: '/info', label: 'Info' },
 ];
 
 export function Sidebar() {
@@ -65,7 +64,7 @@ export function Sidebar() {
             {/* Mobile Overlay */}
             {isOpen && (
                 <div
-                    className="md:hidden fixed inset-0 bg-black/80 z-[60] "
+                    className="md:hidden fixed inset-0 bg-black/80 z-[60]"
                     onClick={() => setIsOpen(false)}
                 />
             )}
@@ -107,49 +106,23 @@ export function Sidebar() {
                     })}
                 </nav>
 
-                {/* Campaigns / Jobs */}
-                {/* 
-                <div className="mb-4">
-                    <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide px-3">Active Jobs</h3>
-                    <div className="space-y-1">
-                        {loading ? (
-                            <div className="px-3 text-zinc-600 text-sm">Loading...</div>
-                        ) : campaigns.length === 0 ? (
-                            <div className="px-3 text-zinc-600 text-sm">No active jobs</div>
-                        ) : (
-                            campaigns.map((campaign) => {
-                                // Check if active based on URL param
-                                // Note: This is client-side, so we can check window.location or useSearchParams
-                                // But Sidebar is a client component, so useSearchParams is better
-                                // However, for simplicity in this edit, let's just use Link
-                                return (
-                                    <Link key={campaign} href={`/dashboard?campaign=${encodeURIComponent(campaign)}`}>
-                                        <motion.div
-                                            whileHover={{ x: 2 }}
-                                            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 text-zinc-400 hover:bg-black hover:text-zinc-200`}
-                                        >
-                                            <span className="text-xs">💼</span>
-                                            <span className="font-medium text-sm truncate">{campaign}</span>
-                                        </motion.div>
-                                    </Link>
-                                );
-                            })
-                        )}
-                    </div>
-                </div>
-                */}
+                {/* Scrollable middle section: Ideas + Quick Stats */}
+                <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
+                    {/* Ideas Panel */}
+                    <IdeasSidebar />
 
-                {/* Stats Summary */}
-                <div className="mt-auto p-4 bg-black rounded-lg border border-white/10">
-                    <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide">Quick Stats</h3>
-                    <div className="space-y-2.5">
-                        <div className="flex justify-between">
-                            <span className="text-zinc-500 text-sm">Total Candidates</span>
-                            <span className="text-zinc-300 font-medium text-sm">--</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-zinc-500 text-sm">Strong Yes</span>
-                            <span className="text-white font-medium text-sm">--</span>
+                    {/* Stats Summary */}
+                    <div className="mt-4 p-4 bg-black rounded-lg border border-white/10">
+                        <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide">Quick Stats</h3>
+                        <div className="space-y-2.5">
+                            <div className="flex justify-between">
+                                <span className="text-zinc-500 text-sm">Total Candidates</span>
+                                <span className="text-zinc-300 font-medium text-sm">--</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-zinc-500 text-sm">Strong Yes</span>
+                                <span className="text-white font-medium text-sm">--</span>
+                            </div>
                         </div>
                     </div>
                 </div>
