@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 // Toggle isPublic — only the owner can do this
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { ideaId: string } }
+    { params }: { params: Promise<{ ideaId: string }> }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function PATCH(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { ideaId } = params;
+        const { ideaId } = await params;
         await connectDB();
 
         const idea = await Idea.findById(ideaId);
@@ -32,7 +32,6 @@ export async function PATCH(
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Toggle visibility
         idea.isPublic = !idea.isPublic;
         await idea.save();
 
@@ -47,7 +46,7 @@ export async function PATCH(
 // Delete an idea — only the owner can do this
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { ideaId: string } }
+    { params }: { params: Promise<{ ideaId: string }> }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -56,7 +55,7 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { ideaId } = params;
+        const { ideaId } = await params;
         await connectDB();
 
         const idea = await Idea.findById(ideaId);
