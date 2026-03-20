@@ -20,6 +20,7 @@ export interface ITimeTask {
     }>;
     targetTime?: number;
     autoResumeAt?: number;
+    isPublic?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -70,6 +71,10 @@ const ITimeTaskSchema = new mongoose.Schema<ITimeTask>({
     },
     autoResumeAt: {
         type: Number,
+    },
+    isPublic: {
+        type: Boolean,
+        default: true,
     },
 }, {
     timestamps: true,

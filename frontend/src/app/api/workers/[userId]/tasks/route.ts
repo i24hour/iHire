@@ -25,7 +25,8 @@ export async function GET(
         await connectDB();
 
         const tasks = await ITimeTask.find({
-            userId: targetUserId
+            userId: targetUserId,
+            isPublic: { $ne: false } // Default is true, so we only filter out explicit false
         }).sort({ createdAt: -1 });
 
         return NextResponse.json({ tasks });

@@ -27,6 +27,7 @@ interface ITimeTask {
     completed: boolean;
     completedAt?: number;
     targetTime?: number;
+    isPublic?: boolean;
     milestones?: Milestone[];
     events?: { type: 'start' | 'pause' | 'complete'; timestamp: number; }[];
 }
