@@ -11,14 +11,16 @@ interface ChainCardProps {
         name: string;
         status: 'Active' | 'Idle' | 'Burst';
         totalTime: number;
+        maxTime?: number;
         members: any[];
         burstAt?: number;
         createdBy?: string;
     };
+    rank?: number;
     onDelete?: (chainId: string) => void;
 }
 
-export function ChainCard({ chain, onDelete }: ChainCardProps) {
+export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
     const { data: session } = useSession();
     const [isDeleting, setIsDeleting] = useState(false);
     const activeMembers = chain.members.filter(m => m.isWorking).length;
@@ -66,6 +68,19 @@ export function ChainCard({ chain, onDelete }: ChainCardProps) {
                 whileTap={{ scale: 0.98 }}
                 className={`bg-black border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all cursor-pointer group relative overflow-hidden ${chain.status === 'Burst' ? 'shake-subtle' : ''}`}
             >
+                {/* Rank Badge */}
+                {rank && (
+                    <div className="absolute top-0 right-0 z-20">
+                        <div className={`
+                            px-3 py-1 rounded-bl-xl font-bold text-[10px] uppercase tracking-widest
+                            ${rank === 1 ? 'bg-yellow-500 text-black' : 
+                              rank === 2 ? 'bg-zinc-300 text-black' : 
+                              rank === 3 ? 'bg-amber-700 text-white' : 'bg-white/10 text-zinc-400'}
+                        `}>
+                            Rank #{rank}
+                        </div>
+                    </div>
+                )}
                 {/* Glow effect based on status */}
                 <div className={`absolute -inset-0.5 rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity duration-500 ${
                     chain.status === 'Active' ? 'bg-green-500' : 

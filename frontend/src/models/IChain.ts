@@ -14,6 +14,7 @@ export interface IChain {
     name: string;
     status: 'Active' | 'Idle' | 'Burst';
     totalTime: number; // total seconds
+    maxTime: number; // maximum time reached before a burst or currently
     lastStartedAt?: number; // timestamp when at least one user started working
     burstAt?: number; // timestamp when chain burst
     whatsappLink?: string;
@@ -40,6 +41,7 @@ const ChainSchema = new mongoose.Schema({
         default: 'Idle' 
     },
     totalTime: { type: Number, default: 0 },
+    maxTime: { type: Number, default: 0 },
     lastStartedAt: { type: Number },
     burstAt: { type: Number },
     whatsappLink: { type: String },

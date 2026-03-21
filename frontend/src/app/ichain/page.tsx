@@ -33,7 +33,10 @@ export default function IChainPage() {
     }, []);
 
     const handleChainCreated = (newChain: any) => {
-        setChains([newChain, ...chains]);
+        const updatedChains = [newChain, ...chains];
+        // Sort by maxTime (or totalTime for new chain)
+        updatedChains.sort((a, b) => (b.maxTime || b.totalTime || 0) - (a.maxTime || a.totalTime || 0));
+        setChains(updatedChains);
     };
 
     const handleChainDeleted = (chainId: string) => {
@@ -85,10 +88,11 @@ export default function IChainPage() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {chains.map(chain => (
+                                {chains.map((chain, index) => (
                                     <ChainCard 
                                         key={chain._id} 
                                         chain={chain} 
+                                        rank={index + 1}
                                         onDelete={handleChainDeleted}
                                     />
                                 ))}

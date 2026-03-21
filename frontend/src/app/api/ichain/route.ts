@@ -10,16 +10,24 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
     try {
         await connectDB();
-        let chains = await Chain.find().sort({ createdAt: -1 });
+        let chains = await Chain.find().sort({ maxTime: -1, createdAt: -1 });
 
         const now = Date.now();
         // Calculate live totalTime for Active status chains
         chains = chains.map((chain: any) => {
             if (chain.status === 'Active' && chain.lastStartedAt) {
-                chain.totalTime += Math.floor((now - chain.lastStartedAt) / 1000);
+                const liveTotalTime = chain.totalTime + Math.floor((now - chain.lastStartedAt) / 1000);
+                chain.totalTime = liveTotalTime;
+                // Temporarily update maxTime for ranking in UI if it's currently higher
+                if (liveTotalTime > (chain.maxTime || 0)) {
+                    chain.maxTime = liveTotalTime;
+                }
             }
             return chain;
         });
+
+        // Re-sort in memory because live updates might change the order
+        chains.sort((a: any, b: any) => (b.maxTime || 0) - (a.maxTime || 0));
 
         return NextResponse.json({ chains });
     } catch (error) {

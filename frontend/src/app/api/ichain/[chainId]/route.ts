@@ -108,6 +108,10 @@ export async function PUT(
             }
             chain.lastStartedAt = now;
             chain.status = 'Active';
+            // Update maxTime if current totalTime is higher
+            if (chain.totalTime > (chain.maxTime || 0)) {
+                chain.maxTime = chain.totalTime;
+            }
         } else {
             // No one is working
             if (chain.status === 'Active') {
@@ -116,6 +120,11 @@ export async function PUT(
                 }
                 chain.lastStartedAt = undefined;
                 
+                // Update maxTime before potential burst
+                if (chain.totalTime > (chain.maxTime || 0)) {
+                    chain.maxTime = chain.totalTime;
+                }
+
                 // If the last person just stopped, the chain bursts
                 if (isWorking === false) {
                     chain.status = 'Burst';
