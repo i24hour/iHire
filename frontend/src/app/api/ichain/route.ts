@@ -48,9 +48,23 @@ export async function POST(request: NextRequest) {
         const allMemberEmails = [...new Set([...memberEmails, session.user.email])];
 
         // Get unique users for the emails
-        // Since we don't have a formal User model, we'll look at ITimeTask to find names or just use emails
+        // Since we don't have a formal User model, we'll try to find any chain they are already a member of to get their image
         const members = await Promise.all(allMemberEmails.map(async (email: string) => {
-            // Try to find a task by this user to get their name
+            // First try to find in existing chains
+            const existingChainWithUser = await Chain.findOne({ 'members.userId': email });
+            const existingMember = existingChainWithUser?.members.find((m: any) => m.userId === email);
+
+            if (existingMember?.image) {
+                return {
+                    userId: email,
+                    name: existingMember.name,
+                    image: existingMember.image,
+                    isWorking: false,
+                    contributionTime: 0,
+                };
+            }
+
+            // Fallback to ITimeTask if no chain found
             const task = await ITimeTask.findOne({ userId: email });
             return {
                 userId: email,

@@ -93,6 +93,9 @@ export default function ITimePage() {
                         ...t,
                         id: t._id,
                     })));
+
+                    // If user has a specific image in their session/tasks, we can handle it here if needed
+                    // For now, the image is managed via /api/user/profile and updateSession
                 }
             } catch (error) {
                 console.error('Failed to fetch tasks:', error);

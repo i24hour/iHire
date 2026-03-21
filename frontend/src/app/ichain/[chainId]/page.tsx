@@ -6,12 +6,71 @@ import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { ChainNode } from '@/components/ichain/ChainNode';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useRef } from 'react';
 
 export default function ChainDetailPage({ params }: { params: Promise<{ chainId: string }> }) {
     const { chainId } = use(params);
-    const { data: session } = useSession();
+    const { data: session, update: updateSession } = useSession();
     const [chain, setChain] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Simple size check (2MB limit for Base64 storage)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Image size should be less than 2MB');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            const base64String = reader.result as string;
+            try {
+                const response = await fetch('/api/user/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64String }),
+                });
+
+                if (response.ok) {
+                    // Update local state to reflect new image immediately
+                    setChain((prevChain: any) => {
+                        if (!prevChain) return prevChain;
+                        const newMembers = prevChain.members.map((m: any) => {
+                            if (m.userId === session?.user?.email) {
+                                return { ...m, image: base64String };
+                            }
+                            return m;
+                        });
+                        return { ...prevChain, members: newMembers };
+                    });
+                    
+                    // Update session if possible to reflect in Sidebar
+                    if (updateSession) {
+                        await updateSession({
+                            ...session,
+                            user: {
+                                ...session?.user,
+                                image: base64String
+                            }
+                        });
+                    }
+                    
+                    alert('Profile image updated successfully!');
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update image');
+                }
+            } catch (error) {
+                console.error('Failed to upload image:', error);
+                alert('An error occurred during upload.');
+            }
+        };
+        reader.readAsDataURL(file);
+    };
 
     const fetchChain = async () => {
         try {
@@ -171,11 +230,20 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                 {/* Chain Visual View */}
                 <div className="flex-1 flex items-center justify-center overflow-x-auto py-12 px-4 scrollbar-hide">
                     <div className="flex items-center min-w-max gap-0">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            accept="image/*"
+                            className="hidden"
+                        />
                         {chain.members.map((member: any, index: number) => (
-                            <ChainNode 
-                                key={member.userId} 
-                                member={member} 
-                                isLast={index === chain.members.length - 1} 
+                            <ChainNode
+                                key={member.userId}
+                                member={member}
+                                isLast={index === chain.members.length - 1}
+                                isCurrentUser={member.userId === session?.user?.email}
+                                onImageClick={() => fileInputRef.current?.click()}
                             />
                         ))}
                     </div>
