@@ -17,6 +17,24 @@ export async function GET(
         if (!chain) {
             return NextResponse.json({ error: 'Chain not found' }, { status: 404 });
         }
+
+        const now = Date.now();
+        // Calculate live totalTime for Active status
+        if (chain.status === 'Active' && chain.lastStartedAt) {
+            chain.totalTime += Math.floor((now - chain.lastStartedAt) / 1000);
+            chain.lastStartedAt = now;
+        }
+
+        // Calculate live contributionTime for each working member
+        chain.members = chain.members.map((member: any) => {
+            if (member.isWorking && member.lastStartedAt) {
+                member.contributionTime += Math.floor((now - member.lastStartedAt) / 1000);
+                member.lastStartedAt = now;
+            }
+            return member;
+        });
+
+        // We don't save back during GET to avoid unnecessary writes, but we return calculated values
         return NextResponse.json({ chain });
     } catch (error) {
         console.error('Error fetching chain detail:', error);
@@ -64,12 +82,22 @@ export async function PUT(
                 if (member.lastStartedAt) {
                     member.contributionTime += Math.floor((now - member.lastStartedAt) / 1000);
                 }
+                member.lastStartedAt = undefined;
             } else {
                 // Was not working, now starting
                 member.lastStartedAt = now;
             }
             member.isWorking = isWorking;
         }
+
+        // Update other working members' contributionTime to now so it's persisted correctly
+        chain.members = chain.members.map((m: any, idx: number) => {
+            if (idx !== memberIndex && m.isWorking && m.lastStartedAt) {
+                m.contributionTime += Math.floor((now - m.lastStartedAt) / 1000);
+                m.lastStartedAt = now;
+            }
+            return m;
+        });
 
         // Update chain total time if it was active
         const currentlyActiveMembersCount = chain.members.filter((m: any) => m.isWorking).length;
@@ -95,6 +123,9 @@ export async function PUT(
                 } else {
                     chain.status = 'Idle';
                 }
+            } else {
+                 // Already Idle or just created
+                 chain.lastStartedAt = undefined;
             }
         }
 

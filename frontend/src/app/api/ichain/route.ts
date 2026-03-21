@@ -10,7 +10,17 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
     try {
         await connectDB();
-        const chains = await Chain.find().sort({ createdAt: -1 });
+        let chains = await Chain.find().sort({ createdAt: -1 });
+
+        const now = Date.now();
+        // Calculate live totalTime for Active status chains
+        chains = chains.map((chain: any) => {
+            if (chain.status === 'Active' && chain.lastStartedAt) {
+                chain.totalTime += Math.floor((now - chain.lastStartedAt) / 1000);
+            }
+            return chain;
+        });
+
         return NextResponse.json({ chains });
     } catch (error) {
         console.error('Error fetching chains:', error);

@@ -46,8 +46,48 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
 
     useEffect(() => {
         fetchChain();
-        const interval = setInterval(fetchChain, 2000); // More frequent polling for detail view
-        return () => clearInterval(interval);
+        const interval = setInterval(fetchChain, 5000); // Poll server every 5s for sync
+        
+        // Client-side ticker for smooth real-time update
+        const ticker = setInterval(() => {
+            setChain((prevChain: any) => {
+                if (!prevChain || prevChain.status !== 'Active') return prevChain;
+                
+                const now = Date.now();
+                const newChain = { ...prevChain };
+                
+                // Update totalTime
+                if (newChain.lastStartedAt) {
+                    const elapsed = Math.floor((now - newChain.lastStartedAt) / 1000);
+                    if (elapsed > 0) {
+                        newChain.totalTime += elapsed;
+                        newChain.lastStartedAt = now;
+                    }
+                }
+                
+                // Update members' contributionTime
+                newChain.members = newChain.members.map((member: any) => {
+                    if (member.isWorking && member.lastStartedAt) {
+                        const mElapsed = Math.floor((now - member.lastStartedAt) / 1000);
+                        if (mElapsed > 0) {
+                            return {
+                                ...member,
+                                contributionTime: member.contributionTime + mElapsed,
+                                lastStartedAt: now
+                            };
+                        }
+                    }
+                    return member;
+                });
+                
+                return newChain;
+            });
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+            clearInterval(ticker);
+        };
     }, [chainId]);
 
     if (isLoading) {
