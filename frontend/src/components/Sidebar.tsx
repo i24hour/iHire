@@ -10,6 +10,7 @@ const navItems = [
     { href: '/workers', label: 'WOrKers' },
     { href: '/info', label: 'Info' },
     { href: '/ideas', label: 'Ideas' },
+    { href: '/ichain', label: 'iChain' },
 ];
 
 export function Sidebar() {
