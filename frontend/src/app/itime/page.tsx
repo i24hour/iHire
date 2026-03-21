@@ -508,8 +508,7 @@ export default function ITimePage() {
                             ) : session ? (
                                 <div className="flex items-center gap-3">
                                     <div className="text-right">
-                                        <div className="text-sm font-medium text-white">{session.user?.name || session.user?.email}</div>
-                                        <div className="text-xs text-zinc-500">{session.user?.email}</div>
+                                        <div className="text-sm font-medium text-white">{session.user?.name || 'User'}</div>
                                     </div>
                                     {session.user?.image && (
                                         <Image

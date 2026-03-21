@@ -211,9 +211,6 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                 {userId.split('@')[0]}'s Tasks
                                 <span className="bg-black text-xs px-2 py-1 rounded text-zinc-400 font-normal">Read-only View</span>
                             </h1>
-                            <p className="text-gray-400 text-sm">
-                                {userId}
-                            </p>
                         </div>
                     </div>
                 </div>

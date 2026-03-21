@@ -111,7 +111,6 @@ export function Sidebar() {
                                 )}
                                 <div className="truncate pr-2">
                                     <div className="text-sm font-medium text-white truncate">{session.user?.name || 'User'}</div>
-                                    <div className="text-xs text-zinc-500 truncate">{session.user?.email}</div>
                                 </div>
                             </div>
                             <button onClick={() => signOut()} className="p-2 text-zinc-500 hover:text-white transition-colors shrink-0" title="Sign Out">
