@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
 import ITimeTask from '@/models/ITimeTask';
+import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,29 +56,14 @@ export async function POST(request: NextRequest) {
         // Add creator to the member list if not already there
         const allMemberEmails = [...new Set([...memberEmails, session.user.email])];
 
-        // Get unique users for the emails
-        // Since we don't have a formal User model, we'll try to find any chain they are already a member of to get their image
+        // Get unique users for the emails from our User model
         const members = await Promise.all(allMemberEmails.map(async (email: string) => {
-            // First try to find in existing chains
-            const existingChainWithUser = await Chain.findOne({ 'members.userId': email });
-            const existingMember = existingChainWithUser?.members.find((m: any) => m.userId === email);
-
-            if (existingMember?.image) {
-                return {
-                    userId: email,
-                    name: existingMember.name,
-                    image: existingMember.image,
-                    isWorking: false,
-                    contributionTime: 0,
-                };
-            }
-
-            // Fallback to ITimeTask if no chain found
-            const task = await ITimeTask.findOne({ userId: email });
+            const user = await User.findOne({ email }).lean() as any;
+            
             return {
                 userId: email,
-                name: task?.userName || email.split('@')[0],
-                image: task?.userImage,
+                name: user?.username || email.split('@')[0],
+                image: user?.image || null,
                 isWorking: false,
                 contributionTime: 0,
             };

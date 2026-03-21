@@ -11,6 +11,7 @@ const navItems = [
     { href: '/info', label: 'Info' },
     { href: '/ideas', label: 'Ideas' },
     { href: '/ichain', label: 'iChain' },
+    { href: '/settings', label: 'Settings' },
 ];
 
 export function Sidebar() {
@@ -18,10 +19,29 @@ export function Sidebar() {
     const router = useRouter();
     const { data: session, status } = useSession();
     const [isOpen, setIsOpen] = useState(false);
+    const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
 
     useEffect(() => {
         setIsOpen(false);
     }, [pathname]);
+
+    useEffect(() => {
+        if (session?.user?.email) {
+            fetchUserProfile();
+        }
+    }, [session]);
+
+    const fetchUserProfile = async () => {
+        try {
+            const res = await fetch('/api/user/settings');
+            const data = await res.json();
+            if (data.username) {
+                setUserProfile(prev => ({ ...prev, username: data.username }));
+            }
+        } catch (err) {
+            console.error('Error fetching profile in sidebar:', err);
+        }
+    };
 
     return (
         <>
@@ -103,14 +123,14 @@ export function Sidebar() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 overflow-hidden">
                                 {session.user?.image ? (
-                                    <img src={session.user.image} alt="" className="w-8 h-8 rounded-full border border-white/10 shrink-0" />
+                                    <img src={session.user.image} alt="" className="w-8 h-8 rounded-full border border-white/10 shrink-0 object-cover" />
                                 ) : (
                                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs text-white shrink-0">
-                                        {session.user?.name?.[0] || session.user?.email?.[0] || 'U'}
+                                        {(userProfile.username || session.user?.name || session.user?.email || 'U')[0].toUpperCase()}
                                     </div>
                                 )}
                                 <div className="truncate pr-2">
-                                    <div className="text-sm font-medium text-white truncate">{session.user?.name || 'User'}</div>
+                                    <div className="text-sm font-medium text-white truncate">{userProfile.username || session.user?.name || 'User'}</div>
                                 </div>
                             </div>
                             <button onClick={() => signOut()} className="p-2 text-zinc-500 hover:text-white transition-colors shrink-0" title="Sign Out">

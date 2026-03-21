@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
+import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,16 @@ export async function GET(request: NextRequest) {
 
         await connectDB();
 
+        // Fetch all users to map emails to usernames
+        const allUsers = await User.find().lean() as any[];
+        const emailToUserMap = new Map();
+        allUsers.forEach(u => {
+            emailToUserMap.set(u.email, {
+                username: u.username,
+                image: u.image
+            });
+        });
+
         // Fetch all raw tasks
         const allTasks = await ITimeTask.find().lean() as any[];
 
@@ -29,8 +40,11 @@ export async function GET(request: NextRequest) {
             const userId = task.userId;
 
             if (!userStatsMap.has(userId)) {
+                const userData = emailToUserMap.get(userId);
                 userStatsMap.set(userId, {
                     userId,
+                    username: userData?.username || userId.split('@')[0],
+                    image: userData?.image || null,
                     totalTasks: 0,
                     completedTasks: 0,
                     runningTasks: 0,
@@ -116,7 +130,7 @@ export async function GET(request: NextRequest) {
         // Sort by Rank Score descending
         workers.sort((a, b) => b.rankScore - a.rankScore);
 
-        return NextResponse.json({ workers });
+        return NextResponse.json({ workers, totalSignup: allUsers.length });
     } catch (error) {
         console.error('Error fetching workers:', error);
         return NextResponse.json({ error: 'Failed to fetch workers' }, { status: 500 });

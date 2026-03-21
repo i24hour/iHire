@@ -50,6 +50,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const router = useRouter(); // Moved this line here
 
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
+    const [userData, setUserData] = useState<{ username: string; image: string | null } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
@@ -64,6 +65,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                     ...t,
                     id: t._id,
                 })));
+                if (data.user) {
+                    setUserData(data.user);
+                }
             } else {
                 throw new Error('Failed to fetch tasks');
             }
@@ -208,8 +212,17 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                                 ← Back to Workers
                             </LiquidButton>
                             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                                {userId.split('@')[0]}'s Tasks
-                                <span className="bg-black text-xs px-2 py-1 rounded text-zinc-400 font-normal">Read-only View</span>
+                                <div className="flex items-center gap-3">
+                                    {userData?.image ? (
+                                        <img src={userData.image} alt="" className="w-10 h-10 rounded-full border border-white/10 shrink-0 object-cover" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-lg text-white shrink-0">
+                                            {(userData?.username || userId).charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <span>{(userData?.username || userId.split('@')[0])}'s Tasks</span>
+                                </div>
+                                <span className="bg-black text-xs px-2 py-1 rounded text-zinc-400 font-normal self-center">Read-only View</span>
                             </h1>
                         </div>
                     </div>

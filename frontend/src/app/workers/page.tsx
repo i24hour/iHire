@@ -9,6 +9,8 @@ import { getScoreAtTime } from '@/components/PerformanceChart';
 
 interface WorkerStats {
     userId: string;
+    username?: string;
+    image?: string;
     totalTasks: number;
     completedTasks: number;
     runningTasks?: number;
@@ -57,12 +59,16 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
                                     #{index + 1}
                                 </div>
 
-                                <div className="w-12 h-12 rounded-full bg-white/10 flex shrink-0 items-center justify-center text-white font-bold text-xl uppercase ring-1 ring-white/20 group-hover:bg-white/10 transition-colors">
-                                    {worker.userId.charAt(0)}
+                                <div className="w-12 h-12 rounded-full bg-white/10 flex shrink-0 items-center justify-center text-white font-bold text-xl uppercase ring-1 ring-white/20 group-hover:bg-white/10 transition-colors overflow-hidden">
+                                    {worker.image ? (
+                                        <img src={worker.image} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        worker.username?.charAt(0) || worker.userId.charAt(0)
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-[150px] overflow-hidden">
-                                    <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.userId}>
-                                        {worker.userId.split('@')[0]}
+                                    <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.username || worker.userId}>
+                                        {worker.username || worker.userId.split('@')[0]}
                                     </h3>
                                     <p className="text-xs text-zinc-500 truncate" title="Email hidden for privacy">
                                         {worker.userId.split('@')[0].slice(0, 3)}••••@•••.com
@@ -107,6 +113,7 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
 
 export default function WorkersPage() {
     const [workers, setWorkers] = useState<WorkerStats[]>([]);
+    const [totalSignup, setTotalSignup] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -120,6 +127,7 @@ export default function WorkersPage() {
             if (!response.ok) throw new Error('Failed to fetch workers');
             const data = await response.json();
             setWorkers(data.workers || []);
+            setTotalSignup(data.totalSignup || 0);
         } catch (err: any) {
             console.error('Error fetching workers:', err);
             setError(err.message || 'Error fetching data');
@@ -152,7 +160,7 @@ export default function WorkersPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-black border border-white/10 rounded-2xl p-6">
                             <h3 className="text-sm font-medium text-zinc-400 mb-2">Total Workers</h3>
-                            <p className="text-3xl font-semibold text-white">{workers.length}</p>
+                            <p className="text-3xl font-semibold text-white">{totalSignup || workers.length}</p>
                         </div>
                     </div>
 

@@ -114,10 +114,27 @@ export default function ITimePage() {
 
     const pauseMenuRef = useRef<HTMLDivElement>(null);
 
+    const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
+
     // Initial load
     useEffect(() => {
         fetchTasks();
-    }, [fetchTasks]);
+        if (session?.user?.email) {
+            fetchUserProfile();
+        }
+    }, [fetchTasks, session]);
+
+    const fetchUserProfile = async () => {
+        try {
+            const res = await fetch('/api/user/settings');
+            const data = await res.json();
+            if (data.username) {
+                setUserProfile(prev => ({ ...prev, username: data.username }));
+            }
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+        }
+    };
 
     // Click outside to close pause menu
     useEffect(() => {
@@ -508,15 +525,13 @@ export default function ITimePage() {
                             ) : session ? (
                                 <div className="flex items-center gap-3">
                                     <div className="text-right">
-                                        <div className="text-sm font-medium text-white">{session.user?.name || 'User'}</div>
+                                        <div className="text-sm font-medium text-white">{userProfile.username || session.user?.name || 'User'}</div>
                                     </div>
                                     {session.user?.image && (
-                                        <Image
+                                        <img
                                             src={session.user.image}
                                             alt="Profile"
-                                            width={40}
-                                            height={40}
-                                            className="rounded-full border-2 border-white/10"
+                                            className="rounded-full border-2 border-white/10 w-10 h-10 object-cover"
                                         />
                                     )}
                                     <LiquidButton

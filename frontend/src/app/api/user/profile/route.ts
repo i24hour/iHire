@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
-import ITimeTask from '@/models/ITimeTask';
+import User from '@/models/User';
 
 export async function POST(request: NextRequest) {
     try {
@@ -25,6 +25,13 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         const userEmail = session.user.email;
+
+        // Update or Create User document
+        await User.findOneAndUpdate(
+            { email: userEmail },
+            { $set: { image: image } },
+            { upsert: true }
+        );
 
         // Update all chains where this user is a member
         // MongoDB updateMany with array filters is powerful for this

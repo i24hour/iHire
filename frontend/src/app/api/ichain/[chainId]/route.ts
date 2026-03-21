@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
+import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,10 +14,16 @@ export async function GET(
     try {
         const { chainId } = await params;
         await connectDB();
-        const chain = await Chain.findById(chainId);
+        const chain = await Chain.findById(chainId).lean() as any;
         if (!chain) {
             return NextResponse.json({ error: 'Chain not found' }, { status: 404 });
         }
+
+        // Fetch latest user info (username, image) for all members
+        const memberEmails = chain.members.map((m: any) => m.userId);
+        const users = await User.find({ email: { $in: memberEmails } }).lean() as any[];
+        const emailToUserMap = new Map();
+        users.forEach(u => emailToUserMap.set(u.email, u));
 
         const now = Date.now();
         // Calculate live totalTime for Active status
@@ -25,8 +32,14 @@ export async function GET(
             chain.lastStartedAt = now;
         }
 
-        // Calculate live contributionTime for each working member
+        // Calculate live contributionTime and update user info for each member
         chain.members = chain.members.map((member: any) => {
+            const user = emailToUserMap.get(member.userId);
+            if (user) {
+                member.name = user.username || member.name;
+                member.image = user.image || member.image;
+            }
+
             if (member.isWorking && member.lastStartedAt) {
                 member.contributionTime += Math.floor((now - member.lastStartedAt) / 1000);
                 member.lastStartedAt = now;
