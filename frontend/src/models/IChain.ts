@@ -18,6 +18,7 @@ export interface IChain {
     burstAt?: number; // timestamp when chain burst
     whatsappLink?: string;
     members: IChainMember[];
+    createdBy?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -43,6 +44,7 @@ const ChainSchema = new mongoose.Schema({
     burstAt: { type: Number },
     whatsappLink: { type: String },
     members: [ChainMemberSchema],
+    createdBy: { type: String },
 }, {
     timestamps: true,
 });

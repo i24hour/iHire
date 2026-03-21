@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { useState } from 'react';
 
 interface ChainCardProps {
     chain: {
@@ -11,11 +13,38 @@ interface ChainCardProps {
         totalTime: number;
         members: any[];
         burstAt?: number;
+        createdBy?: string;
     };
+    onDelete?: (chainId: string) => void;
 }
 
-export function ChainCard({ chain }: ChainCardProps) {
+export function ChainCard({ chain, onDelete }: ChainCardProps) {
+    const { data: session } = useSession();
+    const [isDeleting, setIsDeleting] = useState(false);
     const activeMembers = chain.members.filter(m => m.isWorking).length;
+    
+    const canDelete = !chain.createdBy || chain.createdBy === session?.user?.email;
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!confirm('Are you sure you want to delete this chain?')) return;
+
+        setIsDeleting(true);
+        try {
+            const response = await fetch(`/api/ichain/${chain._id}`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                onDelete?.(chain._id);
+            }
+        } catch (error) {
+            console.error('Failed to delete chain:', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
     
     const statusColors = {
         Active: 'text-green-500 border-green-500/30 bg-green-500/10',
@@ -46,9 +75,23 @@ export function ChainCard({ chain }: ChainCardProps) {
                 <div className="relative z-10 space-y-4">
                     <div className="flex justify-between items-start">
                         <div>
-                            <h3 className="text-xl font-bold text-white group-hover:text-white/90 transition-colors">
-                                {chain.name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-xl font-bold text-white group-hover:text-white/90 transition-colors">
+                                    {chain.name}
+                                </h3>
+                                {canDelete && (
+                                    <button
+                                        onClick={handleDelete}
+                                        disabled={isDeleting}
+                                        className="p-1 text-zinc-500 hover:text-red-500 transition-colors"
+                                        title="Delete Chain"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                )}
+                            </div>
                             <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border mt-2 ${statusColors[chain.status]}`}>
                                 {chain.status}
                             </div>

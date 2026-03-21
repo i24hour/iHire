@@ -34,14 +34,18 @@ export async function POST(request: NextRequest) {
 
         await connectDB();
 
+        // Add creator to the member list if not already there
+        const allMemberEmails = [...new Set([...memberEmails, session.user.email])];
+
         // Get unique users for the emails
         // Since we don't have a formal User model, we'll look at ITimeTask to find names or just use emails
-        const members = await Promise.all(memberEmails.map(async (email: string) => {
+        const members = await Promise.all(allMemberEmails.map(async (email: string) => {
             // Try to find a task by this user to get their name
             const task = await ITimeTask.findOne({ userId: email });
             return {
                 userId: email,
-                name: email.split('@')[0],
+                name: task?.userName || email.split('@')[0],
+                image: task?.userImage,
                 isWorking: false,
                 contributionTime: 0,
             };
@@ -53,6 +57,7 @@ export async function POST(request: NextRequest) {
             members,
             status: 'Idle',
             totalTime: 0,
+            createdBy: session.user.email, // Optional: tracking who created it
         });
 
         return NextResponse.json({ chain }, { status: 201 });

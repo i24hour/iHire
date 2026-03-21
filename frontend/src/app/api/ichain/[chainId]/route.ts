@@ -105,3 +105,34 @@ export async function PUT(
         return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
     }
 }
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ chainId: string }> }
+) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { chainId } = await params;
+        await connectDB();
+
+        const chain = await Chain.findById(chainId);
+        if (!chain) {
+            return NextResponse.json({ error: 'Chain not found' }, { status: 404 });
+        }
+
+        // Only creator can delete, or if createdBy is not set, allow anyone for now (backward compatibility)
+        if (chain.createdBy && chain.createdBy !== session.user.email) {
+            return NextResponse.json({ error: 'Only the creator can delete this chain' }, { status: 403 });
+        }
+
+        await Chain.findByIdAndDelete(chainId);
+        return NextResponse.json({ message: 'Chain deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting chain:', error);
+        return NextResponse.json({ error: 'Failed to delete chain' }, { status: 500 });
+    }
+}
