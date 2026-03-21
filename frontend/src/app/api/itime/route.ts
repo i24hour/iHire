@@ -18,11 +18,13 @@ export async function GET(request: NextRequest) {
         await connectDB();
         
         // Auto-register/update the User in our collection
-        await User.findOneAndUpdate(
+        const user = await User.findOneAndUpdate(
             { email: session.user.email },
             { $setOnInsert: { email: session.user.email } },
-            { upsert: true }
+            { upsert: true, new: true }
         );
+
+        console.log(`[DEBUG_LOG] User auto-registered/checked: ${session.user.email}, count after this might change.`);
 
         const tasks = await ITimeTask.find({
             userId: session.user.email

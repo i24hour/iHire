@@ -20,8 +20,37 @@ export async function GET(request: NextRequest) {
 
         await connectDB();
 
+        // Fetch all raw tasks
+        const allTasks = await ITimeTask.find().lean() as any[];
+
         // Fetch all users to map emails to usernames
-        const allUsers = await User.find().lean() as any[];
+        let allUsers = await User.find().lean() as any[];
+        
+        // --- START LAZY REGISTRATION ---
+        // If some users are missing from the User collection but have tasks, 
+        // they won't be counted in totalSignup. Let's fix this once here.
+        const taskUserEmails = [...new Set(allTasks.map(t => t.userId))];
+        const existingUserEmails = new Set(allUsers.map(u => u.email));
+        
+        const missingEmails = taskUserEmails.filter(email => !existingUserEmails.has(email));
+        if (missingEmails.length > 0) {
+            console.log(`[DEBUG_LOG] Found ${missingEmails.length} missing users in User collection. Registering them now...`);
+            for (const email of missingEmails) {
+                try {
+                    await User.findOneAndUpdate(
+                        { email },
+                        { $setOnInsert: { email } },
+                        { upsert: true }
+                    );
+                } catch (e) {
+                    console.error(`Error lazy-registering user ${email}:`, e);
+                }
+            }
+            // Refresh allUsers list after lazy registration
+            allUsers = await User.find().lean() as any[];
+        }
+        // --- END LAZY REGISTRATION ---
+
         const emailToUserMap = new Map();
         allUsers.forEach(u => {
             emailToUserMap.set(u.email, {
@@ -29,9 +58,6 @@ export async function GET(request: NextRequest) {
                 image: u.image
             });
         });
-
-        // Fetch all raw tasks
-        const allTasks = await ITimeTask.find().lean() as any[];
 
         const now = Date.now();
         const userStatsMap = new Map<string, any>();
@@ -131,6 +157,7 @@ export async function GET(request: NextRequest) {
         workers.sort((a, b) => b.rankScore - a.rankScore);
 
         const totalSignup = await User.countDocuments();
+        console.log(`[DEBUG_LOG] API /api/workers - totalSignup count from DB: ${totalSignup}`);
         
         // Return only users that have tasks, or include all users in the ranking?
         // To maintain existing behavior of showing a list of workers with stats:
