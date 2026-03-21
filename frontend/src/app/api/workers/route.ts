@@ -130,7 +130,11 @@ export async function GET(request: NextRequest) {
         // Sort by Rank Score descending
         workers.sort((a, b) => b.rankScore - a.rankScore);
 
-        return NextResponse.json({ workers, totalSignup: allUsers.length });
+        const totalSignup = await User.countDocuments();
+        
+        // Return only users that have tasks, or include all users in the ranking?
+        // To maintain existing behavior of showing a list of workers with stats:
+        return NextResponse.json({ workers, totalSignup });
     } catch (error) {
         console.error('Error fetching workers:', error);
         return NextResponse.json({ error: 'Failed to fetch workers' }, { status: 500 });

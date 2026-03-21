@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
+import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,13 @@ export async function GET(request: NextRequest) {
         }
 
         await connectDB();
+        
+        // Auto-register/update the User in our collection
+        await User.findOneAndUpdate(
+            { email: session.user.email },
+            { $setOnInsert: { email: session.user.email } },
+            { upsert: true }
+        );
 
         const tasks = await ITimeTask.find({
             userId: session.user.email

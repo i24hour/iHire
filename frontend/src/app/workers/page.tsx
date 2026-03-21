@@ -160,7 +160,7 @@ export default function WorkersPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-black border border-white/10 rounded-2xl p-6">
                             <h3 className="text-sm font-medium text-zinc-400 mb-2">Total Workers</h3>
-                            <p className="text-3xl font-semibold text-white">{totalSignup || workers.length}</p>
+                            <p className="text-3xl font-semibold text-white">{totalSignup}</p>
                         </div>
                     </div>
 
