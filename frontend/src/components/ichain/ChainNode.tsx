@@ -28,18 +28,26 @@ export function ChainNode({ member, isLast, isCurrentUser, onImageClick }: Chain
     return (
         <div className="flex items-center">
             <div className="flex flex-col items-center gap-4 relative">
-                {/* Node representation with pulse animation if working */}
+                {/* Node representation with pulse and lift animation if working */}
                 <motion.div
                     animate={member.isWorking ? {
+                        y: -30,
                         boxShadow: [
                             "0 0 0 0px rgba(34, 197, 94, 0.4)",
                             "0 0 0 10px rgba(34, 197, 94, 0)",
                         ]
-                    } : {}}
-                    transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeOut"
+                    } : {
+                        y: 0
+                    }}
+                    transition={member.isWorking ? {
+                        y: { duration: 0.5, ease: "easeOut" },
+                        boxShadow: {
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeOut"
+                        }
+                    } : {
+                        y: { duration: 0.5, ease: "easeIn" }
                     }}
                     className={`relative w-24 h-24 md:w-32 md:h-32 rounded-full border-4 transition-all duration-500 flex items-center justify-center bg-black overflow-hidden ${
                         member.isWorking ? 'border-green-500' : 'border-red-500'
@@ -75,7 +83,7 @@ export function ChainNode({ member, isLast, isCurrentUser, onImageClick }: Chain
 
             {/* Connecting line */}
             {!isLast && (
-                <div className="w-16 md:w-32 h-1 bg-white/10 mx-2 -mt-16 md:-mt-24">
+                <div className="w-16 md:w-32 h-1 bg-white/10 mx-2 -mt-20 md:-mt-28">
                     <motion.div 
                         animate={member.isWorking ? { 
                             backgroundColor: ['rgba(255,255,255,0.1)', 'rgba(34, 197, 94, 0.5)', 'rgba(255,255,255,0.1)'] 
