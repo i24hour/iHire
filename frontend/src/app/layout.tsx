@@ -39,8 +39,13 @@ export const metadata: Metadata = {
   ],
   creator: "Infinwork",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png"
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" }
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180" }
+    ]
   },
   openGraph: {
     title: "Infinwork — AI Workspace for Builders",
@@ -69,6 +74,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
