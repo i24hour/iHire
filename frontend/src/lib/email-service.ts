@@ -94,7 +94,7 @@ export async function sendAssignmentEmail(data: AssignmentEmailData): Promise<{ 
     </div>
     
     <div class="footer">
-        <p>iHire - Multi-Agent Hiring Intelligence System</p>
+        <p>Infinwork - AI Workspace for Builders</p>
     </div>
 </body>
 </html>
@@ -102,7 +102,7 @@ export async function sendAssignmentEmail(data: AssignmentEmailData): Promise<{ 
 
     try {
         await transporter.sendMail({
-            from: `"iHire" <${process.env.GMAIL_USER}>`,
+            from: `"Infinwork" <${process.env.GMAIL_USER}>`,
             to: candidateEmail,
             subject: `Technical Assignment: ${assignmentTitle}`,
             html: htmlContent,

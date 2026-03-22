@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://infinwork.app
+
+# Sitemaps
+Sitemap: https://infinwork.app/sitemap.xml
