@@ -17,7 +17,18 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
     const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
     const [newMemberIdentifier, setNewMemberIdentifier] = useState('');
     const [isAddingMember, setIsAddingMember] = useState(false);
+    const [isLightTheme, setIsLightTheme] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const syncTheme = () => setIsLightTheme(root.getAttribute('data-theme') === 'light');
+
+        syncTheme();
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => observer.disconnect();
+    }, []);
 
     const handleAddMember = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -385,18 +396,21 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
 
                 {/* Add Member Modal */}
                 {isAddMemberModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-                            <h3 className="text-2xl font-bold text-white mb-6">Add Member</h3>
+                    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm ${isLightTheme ? 'bg-black/45' : 'bg-black/80'}`}>
+                        <div className={`border rounded-3xl p-8 w-full max-w-md shadow-2xl ${isLightTheme ? 'bg-white border-black/10' : 'bg-zinc-900 border-white/10'}`}>
+                            <h3 className={`text-2xl font-bold mb-6 ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>Add Member</h3>
                             <form onSubmit={handleAddMember} className="space-y-6">
                                 <div>
-                                    <label className="block text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-2">Member Email or Username</label>
+                                    <label className={`block text-[10px] uppercase tracking-widest font-bold mb-2 ${isLightTheme ? 'text-zinc-600' : 'text-zinc-500'}`}>Member Email or Username</label>
                                     <input
                                         type="text"
                                         value={newMemberIdentifier}
                                         onChange={(e) => setNewMemberIdentifier(e.target.value)}
                                         placeholder="e.g. priyanshu or member@example.com"
-                                        className="w-full bg-black/50 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-white/20 transition-all"
+                                        className={`w-full border rounded-2xl px-5 py-4 focus:outline-none transition-all ${isLightTheme
+                                            ? 'bg-zinc-50 border-zinc-300 text-zinc-900 placeholder:text-zinc-500 focus:border-zinc-400'
+                                            : 'bg-black/50 border-white/10 text-white placeholder:text-zinc-700 focus:border-white/20'
+                                            }`}
                                         required
                                         autoFocus
                                     />
@@ -405,14 +419,20 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                                     <button
                                         type="button"
                                         onClick={() => setIsAddMemberModalOpen(false)}
-                                        className="flex-1 px-6 py-4 rounded-2xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
+                                        className={`flex-1 px-6 py-4 rounded-2xl border font-bold transition-all ${isLightTheme
+                                            ? 'border-zinc-300 text-zinc-700 hover:bg-zinc-100'
+                                            : 'border-white/10 text-white hover:bg-white/5'
+                                            }`}
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={isAddingMember}
-                                        className="flex-1 px-6 py-4 rounded-2xl bg-white text-black font-bold hover:bg-zinc-200 disabled:opacity-50 transition-all"
+                                        className={`flex-1 px-6 py-4 rounded-2xl font-bold disabled:opacity-50 transition-all ${isLightTheme
+                                            ? 'bg-zinc-900 text-white hover:bg-zinc-700'
+                                            : 'bg-white text-black hover:bg-zinc-200'
+                                            }`}
                                     >
                                         {isAddingMember ? 'Adding...' : 'Add Member'}
                                     </button>
