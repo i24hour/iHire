@@ -13,7 +13,44 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
     const { data: session, update: updateSession } = useSession();
     const [chain, setChain] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+    const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
+    const [newMemberIdentifier, setNewMemberIdentifier] = useState('');
+    const [isAddingMember, setIsAddingMember] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleAddMember = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMemberIdentifier || !chain) return;
+
+        setIsAddingMember(true);
+        try {
+            const response = await fetch(`/api/ichain/${chainId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    newMemberIdentifier,
+                    parentId: selectedParentId 
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setChain(data.chain);
+                setIsAddMemberModalOpen(false);
+                setNewMemberIdentifier('');
+                alert('Member added successfully!');
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Failed to add member');
+            }
+        } catch (error) {
+            console.error('Failed to add member:', error);
+            alert('An error occurred while adding member');
+        } finally {
+            setIsAddingMember(false);
+        }
+    };
 
     const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -182,10 +219,67 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    // Recursive component to render the tree
+    const renderNodeTree = (parentId: string | null = null) => {
+        const children = chain.members.filter((m: any) => m.parentId === parentId || (!m.parentId && parentId === null && m.userId === chain.createdBy));
+        
+        // If it's the root call and we didn't find the creator by parentId, 
+        // handle cases where parentId might be missing or different for legacy data
+        const roots = parentId === null ? 
+            chain.members.filter((m: any) => !m.parentId || !chain.members.find((p: any) => p.userId === m.parentId)) :
+            chain.members.filter((m: any) => m.parentId === parentId);
+
+        return roots.map((node: any) => (
+            <ChainNode
+                key={node.userId}
+                member={node}
+                isCurrentUser={node.userId === session?.user?.email}
+                onImageClick={() => fileInputRef.current?.click()}
+                onAddMember={(pid) => {
+                    setSelectedParentId(pid);
+                    setIsAddMemberModalOpen(true);
+                }}
+            >
+                {/* Find actual children of this node */}
+                {chain.members.some((m: any) => m.parentId === node.userId) && (
+                    <div className="flex gap-16 mt-8">
+                        {chain.members
+                            .filter((m: any) => m.parentId === node.userId)
+                            .map((child: any) => renderNodeTree(node.userId))}
+                    </div>
+                )}
+            </ChainNode>
+        ));
+    };
+
+    // Correcting the recursive logic to avoid infinite loops and correctly map children
+    const renderChainTree = (parentId: string | null = null) => {
+        const membersAtThisLevel = parentId === null 
+            ? chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId))
+            : chain.members.filter((m: any) => m.parentId === parentId);
+
+        return membersAtThisLevel.map((member: any) => (
+            <ChainNode
+                key={member.userId}
+                member={member}
+                isCurrentUser={member.userId === session?.user?.email}
+                onImageClick={() => fileInputRef.current?.click()}
+                onAddMember={(pid) => {
+                    setSelectedParentId(pid);
+                    setIsAddMemberModalOpen(true);
+                }}
+            >
+                {chain.members.some((m: any) => m.parentId === member.userId) && (
+                    renderChainTree(member.userId)
+                )}
+            </ChainNode>
+        ));
+    };
+
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
-            <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full max-w-7xl mx-auto flex flex-col">
+            <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full max-w-7xl mx-auto flex flex-col overflow-hidden">
                 {/* Header Detail */}
                 <div className="flex flex-col sm:flex-row items-start justify-between gap-6 mb-12">
                     <div className="space-y-4">
@@ -227,9 +321,9 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                     </div>
                 </div>
 
-                {/* Chain Visual View */}
-                <div className="flex-1 flex items-center justify-center overflow-x-auto py-12 px-4 scrollbar-hide">
-                    <div className="flex items-center min-w-max gap-0">
+                {/* Chain Visual Tree View */}
+                <div className="flex-1 overflow-auto py-12 px-4 scrollbar-hide min-h-[500px]">
+                    <div className="flex justify-center min-w-max">
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -237,17 +331,48 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                             accept="image/*"
                             className="hidden"
                         />
-                        {chain.members.map((member: any, index: number) => (
-                            <ChainNode
-                                key={member.userId}
-                                member={member}
-                                isLast={index === chain.members.length - 1}
-                                isCurrentUser={member.userId === session?.user?.email}
-                                onImageClick={() => fileInputRef.current?.click()}
-                            />
-                        ))}
+                        {renderChainTree(null)}
                     </div>
                 </div>
+
+                {/* Add Member Modal */}
+                {isAddMemberModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="bg-zinc-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+                            <h3 className="text-2xl font-bold text-white mb-6">Add Member</h3>
+                            <form onSubmit={handleAddMember} className="space-y-6">
+                                <div>
+                                    <label className="block text-[10px] uppercase tracking-widest font-bold text-zinc-500 mb-2">Member Email or Username</label>
+                                    <input
+                                        type="text"
+                                        value={newMemberIdentifier}
+                                        onChange={(e) => setNewMemberIdentifier(e.target.value)}
+                                        placeholder="e.g. priyanshu or member@example.com"
+                                        className="w-full bg-black/50 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-white/20 transition-all"
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="flex gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddMemberModalOpen(false)}
+                                        className="flex-1 px-6 py-4 rounded-2xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isAddingMember}
+                                        className="flex-1 px-6 py-4 rounded-2xl bg-white text-black font-bold hover:bg-zinc-200 disabled:opacity-50 transition-all"
+                                    >
+                                        {isAddingMember ? 'Adding...' : 'Add Member'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 {/* Personal Control Section */}
                 <div className="mt-auto border-t border-white/10 pt-12 pb-8 flex flex-col items-center gap-6">

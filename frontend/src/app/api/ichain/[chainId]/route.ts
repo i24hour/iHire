@@ -67,7 +67,7 @@ export async function PUT(
 
         const { chainId } = await params;
         const body = await request.json();
-        const { isWorking } = body;
+        const { isWorking, newMemberIdentifier } = body;
 
         await connectDB();
 
@@ -76,20 +76,49 @@ export async function PUT(
             return NextResponse.json({ error: 'Chain not found' }, { status: 404 });
         }
 
-        if (chain.status === 'Burst') {
-            return NextResponse.json({ error: 'Chain has already burst' }, { status: 400 });
-        }
-
         const memberIndex = chain.members.findIndex((m: any) => m.userId === session.user?.email);
         if (memberIndex === -1) {
             return NextResponse.json({ error: 'Not a member of this chain' }, { status: 403 });
+        }
+
+        if (newMemberIdentifier) {
+            // Find the user to add
+            const userToAdd = await User.findOne({ 
+                $or: [
+                    { email: newMemberIdentifier },
+                    { username: newMemberIdentifier }
+                ] 
+            }).lean() as any;
+
+            const userId = userToAdd?.email || newMemberIdentifier;
+
+            // Check if already a member
+            if (chain.members.find((m: any) => m.userId === userId)) {
+                return NextResponse.json({ error: 'User is already a member of this chain' }, { status: 400 });
+            }
+
+            chain.members.push({
+                userId: userId,
+                name: userToAdd?.username || userId.split('@')[0],
+                image: userToAdd?.image || null,
+                isWorking: false,
+                contributionTime: 0,
+                parentId: session.user?.email, // Added by current member
+            });
+
+            await chain.save();
+            return NextResponse.json({ chain });
+        }
+
+        if (chain.status === 'Burst') {
+            return NextResponse.json({ error: 'Chain has already burst' }, { status: 400 });
         }
 
         const now = Date.now();
         const member = chain.members[memberIndex];
 
         // Calculation logic
-        if (member.isWorking !== isWorking) {
+        if (isWorking !== undefined && member.isWorking !== isWorking) {
             if (member.isWorking) {
                 // Was working, now stopping
                 if (member.lastStartedAt) {

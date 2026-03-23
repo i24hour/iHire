@@ -12,28 +12,28 @@ interface CreateChainModalProps {
 export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChainModalProps) {
     const [name, setName] = useState('');
     const [memberInput, setMemberInput] = useState('');
-    const [memberEmails, setMemberEmails] = useState<string[]>([]);
+    const [members, setMembers] = useState<string[]>([]);
     const [whatsappLink, setWhatsappLink] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
 
     const handleAddMember = () => {
-        if (memberInput && memberInput.includes('@')) {
-            if (!memberEmails.includes(memberInput)) {
-                setMemberEmails([...memberEmails, memberInput]);
+        if (memberInput) {
+            if (!members.includes(memberInput)) {
+                setMembers([...members, memberInput]);
             }
             setMemberInput('');
         }
     };
 
-    const removeMember = (email: string) => {
-        setMemberEmails(memberEmails.filter(e => e !== email));
+    const removeMember = (identifier: string) => {
+        setMembers(members.filter(m => m !== identifier));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || memberEmails.length === 0) return;
+        if (!name || members.length === 0) return;
 
         setIsSubmitting(true);
         try {
@@ -42,7 +42,7 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name,
-                    memberEmails,
+                    members,
                     whatsappLink,
                 }),
             });
@@ -53,7 +53,7 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                 onClose();
                 // Reset form
                 setName('');
-                setMemberEmails([]);
+                setMembers([]);
                 setWhatsappLink('');
             }
         } catch (error) {
@@ -92,24 +92,24 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Add Members (Email)</label>
+                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Add Members (Email or Username)</label>
                         <div className="flex gap-2">
                             <input
-                                type="email"
+                                type="text"
                                 value={memberInput}
                                 onChange={(e) => setMemberInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddMember())}
-                                placeholder="member@example.com"
+                                placeholder="priyanshu or member@example.com"
                                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/20 transition-colors"
                             />
                             <LiquidButton type="button" onClick={handleAddMember} size="sm" className="px-4">Add</LiquidButton>
                         </div>
                         
                         <div className="flex flex-wrap gap-2 mt-3">
-                            {memberEmails.map(email => (
-                                <div key={email} className="bg-white/10 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
-                                    <span>{email}</span>
-                                    <button type="button" onClick={() => removeMember(email)} className="text-zinc-400 hover:text-white">
+                            {members.map(identifier => (
+                                <div key={identifier} className="bg-white/10 text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
+                                    <span>{identifier}</span>
+                                    <button type="button" onClick={() => removeMember(identifier)} className="text-zinc-400 hover:text-white">
                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
                                 </div>

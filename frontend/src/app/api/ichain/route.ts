@@ -45,27 +45,35 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, memberEmails, whatsappLink } = body;
+        const { name, members: memberIdentifiers, whatsappLink } = body;
 
-        if (!name || !memberEmails || !Array.isArray(memberEmails)) {
+        if (!name || !memberIdentifiers || !Array.isArray(memberIdentifiers)) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         await connectDB();
 
-        // Add creator to the member list if not already there
-        const allMemberEmails = [...new Set([...memberEmails, session.user.email])];
+        // Add creator to the member list
+        const allMemberIdentifiers = [...new Set([...memberIdentifiers, session.user.email])];
 
-        // Get unique users for the emails from our User model
-        const members = await Promise.all(allMemberEmails.map(async (email: string) => {
-            const user = await User.findOne({ email }).lean() as any;
+        // Get unique users for the identifiers (email or username)
+        const members = await Promise.all(allMemberIdentifiers.map(async (identifier: string) => {
+            const user = await User.findOne({ 
+                $or: [
+                    { email: identifier },
+                    { username: identifier }
+                ] 
+            }).lean() as any;
             
+            const userId = user?.email || identifier; // Default to identifier if user not found in DB
+
             return {
-                userId: email,
-                name: user?.username || email.split('@')[0],
+                userId: userId,
+                name: user?.username || userId.split('@')[0],
                 image: user?.image || null,
                 isWorking: false,
                 contributionTime: 0,
+                parentId: userId === session.user?.email ? null : session.user?.email, // Creator is root
             };
         }));
 
