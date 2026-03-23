@@ -21,6 +21,8 @@ const UserSchema = new mongoose.Schema<IUser>({
         unique: true,
         sparse: true, // Allow multiple nulls if username not set yet
         index: true,
+        lowercase: true,
+        trim: true,
     },
     image: {
         type: String, // Base64 or URL

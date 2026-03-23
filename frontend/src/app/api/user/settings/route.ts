@@ -46,8 +46,9 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         // Check if username is already taken by someone else
+        const lowerUsername = username.trim().toLowerCase();
         const existingUser = await User.findOne({ 
-            username: { $regex: new RegExp(`^${username}$`, 'i') }, 
+            username: lowerUsername, 
             email: { $ne: session.user.email } 
         });
 
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         // Upsert the user document
         const updatedUser = await User.findOneAndUpdate(
             { email: session.user.email },
-            { $set: { username: username } },
+            { $set: { username: lowerUsername } },
             { new: true, upsert: true }
         );
 

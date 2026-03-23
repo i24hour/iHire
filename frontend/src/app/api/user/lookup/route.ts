@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const identifier = (searchParams.get('identifier') || '').trim();
+        const identifier = (searchParams.get('identifier') || '').trim().toLowerCase();
 
         if (!identifier) {
             return NextResponse.json({ exists: false, error: 'Identifier is required' }, { status: 400 });

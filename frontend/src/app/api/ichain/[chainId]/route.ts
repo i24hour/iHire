@@ -82,11 +82,12 @@ export async function PUT(
         }
 
         if (newMemberIdentifier) {
+            const memberIdToFind = newMemberIdentifier.trim().toLowerCase();
             // Find the user to add
             const userToAdd = await User.findOne({ 
                 $or: [
-                    { email: newMemberIdentifier },
-                    { username: newMemberIdentifier }
+                    { email: memberIdToFind },
+                    { username: memberIdToFind }
                 ] 
             }).lean() as any;
 
