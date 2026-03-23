@@ -21,15 +21,31 @@ export async function GET() {
         const results = [];
         
         for (const user of users) {
-            if (user.username && user.username !== user.username.toLowerCase()) {
+            const normalizedUsername = user.username?.trim().toLowerCase();
+            if (normalizedUsername && user.username !== normalizedUsername) {
                 const oldUsername = user.username;
-                user.username = user.username.toLowerCase();
+                const conflictingUser = await User.findOne({
+                    username: normalizedUsername,
+                    _id: { $ne: user._id }
+                }).lean();
+
+                if (conflictingUser) {
+                    results.push({
+                        old: oldUsername,
+                        new: normalizedUsername,
+                        status: 'error',
+                        error: 'Conflict: normalized username already exists'
+                    });
+                    continue;
+                }
+
+                user.username = normalizedUsername;
                 try {
                     await user.save();
                     results.push({ old: oldUsername, new: user.username, status: 'success' });
                     updatedCount++;
-                } catch (err) {
-                    results.push({ old: oldUsername, status: 'error', error: err.message });
+                } catch (err: any) {
+                    results.push({ old: oldUsername, status: 'error', error: err?.message || 'Failed to update username' });
                 }
             }
         }

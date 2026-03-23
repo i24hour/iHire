@@ -6,6 +6,9 @@ import Chain from '@/models/IChain';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const normalizeIdentifier = (value: string) => value.trim().toLowerCase();
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -53,20 +56,28 @@ export async function POST(request: NextRequest) {
 
         await connectDB();
 
-        // Add creator to the member list
-        const allMemberIdentifiers = [...new Set([...memberIdentifiers, session.user.email])];
+        // Add creator to the member list and normalize identifiers for case-insensitive matching
+        const allMemberIdentifiers = [...new Set(
+            [...memberIdentifiers, session.user.email]
+                .map((identifier: string) => normalizeIdentifier(identifier))
+                .filter(Boolean)
+        )];
 
         const membersFromDb = await User.find({
             $or: [
                 { email: { $in: allMemberIdentifiers } },
-                { username: { $in: allMemberIdentifiers } },
+                {
+                    $or: allMemberIdentifiers.map((identifier) => ({
+                        username: { $regex: `^${escapeRegex(identifier)}$`, $options: 'i' },
+                    })),
+                },
             ],
         }).lean() as any[];
 
         const resolvedIdentifiers = new Set<string>();
         membersFromDb.forEach((user) => {
-            if (user.email) resolvedIdentifiers.add(user.email);
-            if (user.username) resolvedIdentifiers.add(user.username);
+            if (user.email) resolvedIdentifiers.add(normalizeIdentifier(user.email));
+            if (user.username) resolvedIdentifiers.add(normalizeIdentifier(user.username));
         });
 
         const missingIdentifiers = allMemberIdentifiers.filter((identifier) => !resolvedIdentifiers.has(identifier));
@@ -81,7 +92,7 @@ export async function POST(request: NextRequest) {
             const user = await User.findOne({ 
                 $or: [
                     { email: identifier },
-                    { username: identifier }
+                    { username: { $regex: `^${escapeRegex(identifier)}$`, $options: 'i' } }
                 ] 
             }).lean() as any;
             

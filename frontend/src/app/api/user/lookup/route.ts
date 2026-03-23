@@ -4,6 +4,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -25,7 +27,7 @@ export async function GET(request: NextRequest) {
         const user = await User.findOne({
             $or: [
                 { email: identifier },
-                { username: identifier }
+                { username: { $regex: `^${escapeRegex(identifier)}$`, $options: 'i' } }
             ]
         }).lean() as any;
 

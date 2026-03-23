@@ -5,6 +5,8 @@ import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
 import User from '@/models/User';
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(
@@ -87,7 +89,7 @@ export async function PUT(
             const userToAdd = await User.findOne({ 
                 $or: [
                     { email: memberIdToFind },
-                    { username: memberIdToFind }
+                    { username: { $regex: `^${escapeRegex(memberIdToFind)}$`, $options: 'i' } }
                 ] 
             }).lean() as any;
 
