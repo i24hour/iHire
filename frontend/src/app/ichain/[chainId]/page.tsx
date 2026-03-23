@@ -297,7 +297,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
             <div className="relative flex flex-col items-center">
                 {/* Horizontal line connecting siblings/starters */}
                 {membersAtThisLevel.length > 1 && (
-                    <div className="absolute top-0 left-0 right-0 h-px bg-white/20" 
+                    <div className={`absolute top-0 left-0 right-0 h-0 border-t-2 border-dashed ${isLightTheme ? 'border-zinc-400/80' : 'border-white/45'}`}
                          style={{ 
                              left: `${100 / (membersAtThisLevel.length * 2)}%`, 
                              right: `${100 / (membersAtThisLevel.length * 2)}%` 
@@ -310,11 +310,11 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                         <div key={member.userId} className="relative flex flex-col items-center">
                             {/* Vertical line from sibling horizontal line to node (only if not at absolute top) */}
                             {parentId !== null && (
-                                <div className="w-px h-8 bg-white/20 mb-4" />
+                                <div className={`w-0 h-8 mb-4 border-l-2 border-dashed ${isLightTheme ? 'border-zinc-400/80' : 'border-white/45'}`} />
                             )}
                             {/* Special case: if we have multiple starters at level 0, we still want a small line connecting them to the horizontal line above */}
                             {parentId === null && membersAtThisLevel.length > 1 && (
-                                <div className="w-px h-8 bg-white/20 mb-4" />
+                                <div className={`w-0 h-8 mb-4 border-l-2 border-dashed ${isLightTheme ? 'border-zinc-400/80' : 'border-white/45'}`} />
                             )}
                             
                             <ChainNode

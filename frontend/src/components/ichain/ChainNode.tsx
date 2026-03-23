@@ -116,7 +116,7 @@ export function ChainNode({ member, isCurrentUser, onImageClick, onAddMember, ch
             {children && (
                 <div className="flex flex-col items-center">
                     {/* Vertical line from parent down to the split point */}
-                    <div className="w-px h-8 bg-white/20" />
+                    <div className={`w-0 h-8 border-l-2 border-dashed ${isLightTheme ? 'border-zinc-400/80' : 'border-white/45'}`} />
                     
                     {/* The horizontal line and the children */}
                     <div className="relative">
