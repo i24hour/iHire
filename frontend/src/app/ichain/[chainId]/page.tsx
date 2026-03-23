@@ -430,9 +430,10 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                                         type="submit"
                                         disabled={isAddingMember}
                                         className={`flex-1 px-6 py-4 rounded-2xl font-bold disabled:opacity-50 transition-all ${isLightTheme
-                                            ? 'bg-zinc-900 text-zinc-50 hover:bg-zinc-700'
+                                            ? 'bg-zinc-900 hover:bg-zinc-700'
                                             : 'bg-white text-black hover:bg-zinc-200'
                                             }`}
+                                        style={isLightTheme ? { color: '#f8fafc' } : undefined}
                                     >
                                         {isAddingMember ? 'Adding...' : 'Add Member'}
                                     </button>
