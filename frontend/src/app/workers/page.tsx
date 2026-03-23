@@ -7,6 +7,22 @@ import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { getScoreAtTime } from '@/components/PerformanceChart';
 
+function useIsLightTheme() {
+    const [isLightTheme, setIsLightTheme] = useState(false);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const syncTheme = () => setIsLightTheme(root.getAttribute('data-theme') === 'light');
+
+        syncTheme();
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => observer.disconnect();
+    }, []);
+
+    return isLightTheme;
+}
+
 interface WorkerStats {
     userId: string;
     username?: string;
@@ -20,6 +36,7 @@ interface WorkerStats {
 
 function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
     const [currentTime, setCurrentTime] = useState(() => Date.now());
+    const isLightTheme = useIsLightTheme();
 
     useEffect(() => {
         // If there are running tasks across the board, tick the timer
@@ -68,9 +85,10 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
                                 </div>
                                 <div className="flex-1 min-w-[150px] overflow-hidden">
                                     <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.username || worker.userId}>
+                                    <h3 className={`text-lg font-medium truncate ${isLightTheme ? 'text-zinc-900' : 'text-zinc-200'}`} title={worker.username || worker.userId}>
                                         {worker.username || worker.userId.split('@')[0]}
                                     </h3>
-                                    <p className="text-xs text-zinc-500 truncate" title="Email hidden for privacy">
+                                    <p className={`text-xs truncate ${isLightTheme ? 'text-zinc-700' : 'text-zinc-500'}`} title="Email hidden for privacy">
                                         {worker.userId.split('@')[0].slice(0, 3)}••••@•••.com
                                     </p>
                                 </div>
@@ -78,20 +96,20 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
 
                             <div className="flex flex-row flex-wrap justify-end gap-3 mt-auto md:ml-auto">
                                 <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[90px] flex-1 md:flex-none">
-                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500 mb-0.5">Total Tasks</span>
-                                    <span className="block text-2xl font-bold text-zinc-300 leading-none">
+                                    <span className={`block text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-500'}`}>Total Tasks</span>
+                                    <span className={`block text-2xl font-bold leading-none ${isLightTheme ? 'text-zinc-900' : 'text-zinc-300'}`}>
                                         {worker.totalTasks}
                                     </span>
                                 </div>
                                 <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[90px] flex-1 md:flex-none">
-                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Running</span>
-                                    <span className="block text-2xl font-bold text-white leading-none">
+                                    <span className={`block text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-400'}`}>Running</span>
+                                    <span className={`block text-2xl font-bold leading-none ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
                                         {worker.runningTasks || 0}
                                     </span>
                                 </div>
                                 <div className="bg-black rounded-xl px-4 py-2 border border-white/10 flex flex-col justify-center min-w-[90px] flex-1 md:flex-none">
-                                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-0.5">Completed</span>
-                                    <span className="block text-2xl font-bold text-white leading-none">
+                                    <span className={`block text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-400'}`}>Completed</span>
+                                    <span className={`block text-2xl font-bold leading-none ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
                                         {worker.completedTasks}
                                     </span>
                                 </div>
@@ -116,6 +134,7 @@ export default function WorkersPage() {
     const [totalSignup, setTotalSignup] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const isLightTheme = useIsLightTheme();
 
     useEffect(() => {
         fetchWorkers();
@@ -146,8 +165,8 @@ export default function WorkersPage() {
                     {/* Header Section */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Workers Directory</h1>
-                            <p className="text-zinc-400">Overview of all active users and their task statistics.</p>
+                            <h1 className={`text-3xl font-bold tracking-tight mb-2 ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>Workers Directory</h1>
+                            <p className={isLightTheme ? 'text-zinc-700' : 'text-zinc-400'}>Overview of all active users and their task statistics.</p>
                         </div>
                         <Link href="/itime">
                             <LiquidButton className="text-white">
@@ -159,8 +178,8 @@ export default function WorkersPage() {
                     {/* Dashboard Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-black border border-white/10 rounded-2xl p-6">
-                            <h3 className="text-sm font-medium text-zinc-400 mb-2">Total Workers</h3>
-                            <p className="text-3xl font-semibold text-white">{totalSignup}</p>
+                            <h3 className={`text-sm font-medium mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-400'}`}>Total Workers</h3>
+                            <p className={`text-3xl font-semibold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{totalSignup}</p>
                         </div>
                     </div>
 

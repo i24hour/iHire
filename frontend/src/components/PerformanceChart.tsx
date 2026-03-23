@@ -254,10 +254,23 @@ function snapToInterval(timestamp: number, interval: CandleInterval): number {
 export function PerformanceChart({ tasks }: PerformanceChartProps) {
     const [chartType, setChartType] = useState<ChartType>('line');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
+    const [isLightTheme, setIsLightTheme] = useState(false);
     const [referenceNow, setReferenceNow] = useState(() => Date.now());
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const syncTheme = () => {
+            setIsLightTheme(root.getAttribute('data-theme') === 'light');
+        };
+
+        syncTheme();
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         let timeoutId: number | undefined;
@@ -602,17 +615,21 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
 
                 <div className="flex items-center gap-3 flex-wrap">
                     {/* Chart Type Toggle */}
-                    <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
+                    <div className={`flex rounded-lg p-1 border ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-white/5 border-white/10'}`}>
                         <button
                             onClick={() => setChartType('line')}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${chartType === 'line' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-white'
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${chartType === 'line'
+                                ? (isLightTheme ? 'bg-white text-zinc-900 border border-black/10 shadow-sm' : 'bg-zinc-800 text-white shadow-md')
+                                : (isLightTheme ? 'text-zinc-600 hover:text-zinc-900' : 'text-zinc-500 hover:text-white')
                                 }`}
                         >
                             Line
                         </button>
                         <button
                             onClick={() => setChartType('candle')}
-                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${chartType === 'candle' ? 'bg-zinc-800 text-white shadow-md' : 'text-zinc-500 hover:text-white'
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${chartType === 'candle'
+                                ? (isLightTheme ? 'bg-white text-zinc-900 border border-black/10 shadow-sm' : 'bg-zinc-800 text-white shadow-md')
+                                : (isLightTheme ? 'text-zinc-600 hover:text-zinc-900' : 'text-zinc-500 hover:text-white')
                                 }`}
                         >
                             Candle
@@ -622,14 +639,14 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                     {/* Interval Selector (Candle Only) */}
                     {
                         chartType === 'candle' && (
-                            <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
+                            <div className={`flex rounded-lg p-1 border ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-white/5 border-white/10'}`}>
                                 {(['1m', '5m', '10m', '15m', '1h', '1d'] as CandleInterval[]).map((int) => (
                                     <button
                                         key={int}
                                         onClick={() => setIntervalVal(int)}
                                         className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${interval === int
-                                            ? 'bg-zinc-800 text-white shadow-md'
-                                            : 'text-zinc-500 hover:text-white'
+                                            ? (isLightTheme ? 'bg-white text-zinc-900 border border-black/10 shadow-sm' : 'bg-zinc-800 text-white shadow-md')
+                                            : (isLightTheme ? 'text-zinc-600 hover:text-zinc-900' : 'text-zinc-500 hover:text-white')
                                             }`}
                                     >
                                         {int}
