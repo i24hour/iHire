@@ -252,30 +252,47 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
         ));
     };
 
-    // Correcting the recursive logic to avoid infinite loops and correctly map children
-    const renderChainTree = (parentId: string | null = null) => {
+    const renderChainTree = (parentId: string | null = null, depth: number = 0) => {
         const membersAtThisLevel = parentId === null 
             ? chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId))
             : chain.members.filter((m: any) => m.parentId === parentId);
 
+        if (membersAtThisLevel.length === 0) return null;
+
         return (
-            <div className={`flex gap-16 ${parentId === null ? '' : 'mt-8'}`}>
-                {membersAtThisLevel.map((member: any) => (
-                    <ChainNode
-                        key={member.userId}
-                        member={member}
-                        isCurrentUser={member.userId === session?.user?.email}
-                        onImageClick={() => fileInputRef.current?.click()}
-                        onAddMember={(pid) => {
-                            setSelectedParentId(pid);
-                            setIsAddMemberModalOpen(true);
-                        }}
-                    >
-                        {chain.members.some((m: any) => m.parentId === member.userId) && (
-                            renderChainTree(member.userId)
-                        )}
-                    </ChainNode>
-                ))}
+            <div className="relative flex flex-col items-center">
+                {/* For nested levels, we might need a horizontal line connecting siblings */}
+                {depth > 0 && membersAtThisLevel.length > 1 && (
+                    <div className="absolute top-0 left-0 right-0 h-px bg-white/20" 
+                         style={{ 
+                             left: `${100 / (membersAtThisLevel.length * 2)}%`, 
+                             right: `${100 / (membersAtThisLevel.length * 2)}%` 
+                         }} 
+                    />
+                )}
+                
+                <div className="flex gap-12 md:gap-24">
+                    {membersAtThisLevel.map((member: any) => (
+                        <div key={member.userId} className="relative flex flex-col items-center">
+                            {/* Vertical line from sibling horizontal line to node */}
+                            {depth > 0 && (
+                                <div className="w-px h-8 bg-white/20 mb-4" />
+                            )}
+                            
+                            <ChainNode
+                                member={member}
+                                isCurrentUser={member.userId === session?.user?.email}
+                                onImageClick={() => fileInputRef.current?.click()}
+                                onAddMember={(pid) => {
+                                    setSelectedParentId(pid);
+                                    setIsAddMemberModalOpen(true);
+                                }}
+                            >
+                                {renderChainTree(member.userId, depth + 1)}
+                            </ChainNode>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     };
