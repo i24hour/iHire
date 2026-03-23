@@ -84,7 +84,6 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-[150px] overflow-hidden">
-                                    <h3 className="text-lg font-medium text-zinc-200 truncate" title={worker.username || worker.userId}>
                                     <h3 className={`text-lg font-medium truncate ${isLightTheme ? 'text-zinc-900' : 'text-zinc-200'}`} title={worker.username || worker.userId}>
                                         {worker.username || worker.userId.split('@')[0]}
                                     </h3>
