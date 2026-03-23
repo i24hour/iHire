@@ -75,6 +75,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(() => {
+              try {
+                const savedTheme = localStorage.getItem('app-theme');
+                if (savedTheme === 'light') {
+                  document.documentElement.setAttribute('data-theme', 'light');
+                } else {
+                  document.documentElement.removeAttribute('data-theme');
+                }
+              } catch {}
+            })();`,
+          }}
+        />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

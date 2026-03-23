@@ -20,6 +20,7 @@ export function Sidebar() {
     const { data: session, status } = useSession();
     const [isOpen, setIsOpen] = useState(false);
     const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
+    const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
     useEffect(() => {
         setIsOpen(false);
@@ -30,6 +31,21 @@ export function Sidebar() {
             fetchUserProfile();
         }
     }, [session]);
+
+    useEffect(() => {
+        const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('app-theme') : null;
+        setTheme(savedTheme === 'light' ? 'light' : 'dark');
+    }, []);
+
+    useEffect(() => {
+        if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            localStorage.setItem('app-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('app-theme', 'dark');
+        }
+    }, [theme]);
 
     const fetchUserProfile = async () => {
         try {
@@ -46,17 +62,34 @@ export function Sidebar() {
     return (
         <>
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-black border-b border-white/10 z-50 flex items-center justify-between px-4">
+            <div className={`md:hidden fixed top-0 left-0 right-0 h-16 border-b z-50 flex items-center justify-between px-4 ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'}`}>
                 <div className="flex items-center gap-1">
-                    <span className="text-xl font-semibold text-white tracking-tight">infinW</span>
-                    <div className="animate-spin-slow rounded-full h-5 w-5 border-t-2 border-b-2 border-white mt-0.5"></div>
-                    <span className="text-xl font-semibold text-white tracking-tight">rK</span>
+                    <span className={`text-xl font-semibold tracking-tight ${theme === 'light' ? 'text-black' : 'text-white'}`}>infinW</span>
+                    <div className={`animate-spin-slow rounded-full h-5 w-5 border-t-2 border-b-2 mt-0.5 ${theme === 'light' ? 'border-black' : 'border-white'}`}></div>
+                    <span className={`text-xl font-semibold tracking-tight ${theme === 'light' ? 'text-black' : 'text-white'}`}>rK</span>
                 </div>
-                <button onClick={() => setIsOpen(true)} className="p-2 -mr-2 text-zinc-400 hover:text-white">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                        className={`p-2 rounded-md transition-colors ${theme === 'light' ? 'text-zinc-600 hover:text-black hover:bg-black/5' : 'text-zinc-400 hover:text-white hover:bg-white/5'}`}
+                        title="Toggle Theme"
+                    >
+                        {theme === 'light' ? (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05 5.636 5.636m12.728 0L16.95 7.05M7.05 16.95l-1.414 1.414M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                            </svg>
+                        )}
+                    </button>
+                    <button onClick={() => setIsOpen(true)} className={`p-2 -mr-2 ${theme === 'light' ? 'text-zinc-500 hover:text-black' : 'text-zinc-400 hover:text-white'}`}>
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             {/* Mobile Overlay */}
@@ -64,10 +97,10 @@ export function Sidebar() {
                 <div className="md:hidden fixed inset-0 bg-black/80 z-[60]" onClick={() => setIsOpen(false)} />
             )}
 
-            <aside className={`fixed md:relative top-0 left-0 z-[70] h-[100dvh] w-64 bg-black border-r border-white/10 p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed md:relative top-0 left-0 z-[70] h-[100dvh] w-64 border-r p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
                 {/* Close Button Mobile */}
-                <button onClick={() => setIsOpen(false)} className="md:hidden absolute top-4 right-4 text-zinc-400 hover:text-white">
+                <button onClick={() => setIsOpen(false)} className={`md:hidden absolute top-4 right-4 ${theme === 'light' ? 'text-zinc-500 hover:text-black' : 'text-zinc-400 hover:text-white'}`}>
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -75,9 +108,9 @@ export function Sidebar() {
 
                 {/* Logo */}
                 <div className="mb-8 flex items-center gap-1">
-                    <span className="text-2xl font-semibold text-white tracking-tight">infinW</span>
-                    <div className="animate-spin-slow rounded-full h-6 w-6 border-t-2 border-b-2 border-white mt-0.5"></div>
-                    <span className="text-2xl font-semibold text-white tracking-tight">rK</span>
+                    <span className={`text-2xl font-semibold tracking-tight ${theme === 'light' ? 'text-black' : 'text-white'}`}>infinW</span>
+                    <div className={`animate-spin-slow rounded-full h-6 w-6 border-t-2 border-b-2 mt-0.5 ${theme === 'light' ? 'border-black' : 'border-white'}`}></div>
+                    <span className={`text-2xl font-semibold tracking-tight ${theme === 'light' ? 'text-black' : 'text-white'}`}>rK</span>
                 </div>
 
                 {/* Nav */}
@@ -90,7 +123,9 @@ export function Sidebar() {
                                 onClick={() => router.push(item.href)}
                                 className={`w-full justify-start text-left px-5 py-3 rounded-full transition-all duration-300 ${isActive
                                     ? 'shadow-[0_0_15px_rgba(255,255,255,0.3)] border border-white/20 text-white bg-white/5'
-                                    : 'text-zinc-400 border border-transparent hover:text-white hover:bg-black'
+                                    : theme === 'light'
+                                        ? 'text-zinc-600 border border-transparent hover:text-black hover:bg-black/5'
+                                        : 'text-zinc-400 border border-transparent hover:text-white hover:bg-black'
                                     }`}
                                 variant="default"
                             >
@@ -100,18 +135,21 @@ export function Sidebar() {
                     })}
                 </nav>
 
-                {/* Quick Stats */}
-                <div className="mt-auto p-4 bg-black rounded-lg border border-white/10">
-                    <h3 className="text-xs font-medium text-zinc-500 mb-3 uppercase tracking-wide">Quick Stats</h3>
-                    <div className="space-y-2.5">
-                        <div className="flex justify-between">
-                            <span className="text-zinc-500 text-sm">Total Candidates</span>
-                            <span className="text-zinc-300 font-medium text-sm">--</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-zinc-500 text-sm">Strong Yes</span>
-                            <span className="text-white font-medium text-sm">--</span>
-                        </div>
+                <div className="mt-auto mb-6">
+                    <div className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${theme === 'light' ? 'text-zinc-600' : 'text-zinc-500'}`}>Theme</div>
+                    <div className={`p-1 rounded-xl border flex ${theme === 'light' ? 'bg-zinc-100 border-zinc-200' : 'bg-black border-white/10'}`}>
+                        <button
+                            onClick={() => setTheme('light')}
+                            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${theme === 'light' ? 'bg-white text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        >
+                            Light
+                        </button>
+                        <button
+                            onClick={() => setTheme('dark')}
+                            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${theme === 'dark' ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                        >
+                            Dark
+                        </button>
                     </div>
                 </div>
 
