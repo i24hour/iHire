@@ -7,10 +7,12 @@ import { ChainNode } from '@/components/ichain/ChainNode';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function ChainDetailPage({ params }: { params: Promise<{ chainId: string }> }) {
     const { chainId } = use(params);
     const { data: session, update: updateSession } = useSession();
+    const router = useRouter();
     const [chain, setChain] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
@@ -245,7 +247,11 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                 key={node.userId}
                 member={node}
                 isCurrentUser={node.userId === session?.user?.email}
-                onImageClick={() => fileInputRef.current?.click()}
+                onNodeClick={() => {
+                    if (node.userId !== session?.user?.email) {
+                        router.push(`/workers/${encodeURIComponent(node.userId)}`);
+                    }
+                }}
                 onAddMember={(pid) => {
                     setSelectedParentId(pid);
                     setIsAddMemberModalOpen(true);
@@ -320,7 +326,11 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                             <ChainNode
                                 member={member}
                                 isCurrentUser={member.userId === session?.user?.email}
-                                onImageClick={() => fileInputRef.current?.click()}
+                                onNodeClick={() => {
+                                    if (member.userId !== session?.user?.email) {
+                                        router.push(`/workers/${encodeURIComponent(member.userId)}`);
+                                    }
+                                }}
                                 onAddMember={(pid) => {
                                     setSelectedParentId(pid);
                                     setIsAddMemberModalOpen(true);
