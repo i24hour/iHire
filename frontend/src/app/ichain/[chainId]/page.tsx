@@ -252,33 +252,32 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
         ));
     };
 
+    const getStarterMembers = () => {
+        const explicitStarters = chain.members.filter((m: any) => m.isStarter);
+        if (explicitStarters.length > 0) {
+            return explicitStarters;
+        }
+
+        const creator = chain.members.find((m: any) => m.userId === chain.createdBy) || chain.members[0];
+        if (!creator) {
+            return [];
+        }
+
+        const initialPartner = chain.members.find((m: any) => m.userId !== creator.userId && m.parentId === creator.userId)
+            || chain.members.find((m: any) => m.userId !== creator.userId);
+
+        return initialPartner ? [creator, initialPartner] : [creator];
+    };
+
     const renderChainTree = (parentId: string | null = null, depth: number = 0) => {
+        const starterMembers = getStarterMembers();
+        const starterIds = new Set(starterMembers.map((m: any) => m.userId));
         let membersAtThisLevel: any[] = [];
-        
+
         if (parentId === null) {
-            // "True Roots" (nodes with no parent in the chain members)
-            const realRoots = chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId));
-            
-            // "Initial Starters" (roots + their direct children) to be horizontal at the top
-            const directChildrenOfRoots = chain.members.filter((m: any) => 
-                realRoots.some(root => root.userId === m.parentId)
-            );
-            
-            membersAtThisLevel = [...realRoots, ...directChildrenOfRoots];
-            
-            // Deduplicate just in case
-            membersAtThisLevel = membersAtThisLevel.filter((v, i, a) => a.findIndex(t => t.userId === v.userId) === i);
+            membersAtThisLevel = starterMembers;
         } else {
-            // Find children but exclude them if they were already rendered as "Starters" at depth 0
-            const realRoots = chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId));
-            const isParentARealRoot = realRoots.some(root => root.userId === parentId);
-            
-            if (isParentARealRoot) {
-                // We already rendered the children of real roots at level 0
-                return null;
-            }
-            
-            membersAtThisLevel = chain.members.filter((m: any) => m.parentId === parentId);
+            membersAtThisLevel = chain.members.filter((m: any) => m.parentId === parentId && !starterIds.has(m.userId));
         }
 
         if (membersAtThisLevel.length === 0) return null;

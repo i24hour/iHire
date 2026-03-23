@@ -67,7 +67,7 @@ export async function PUT(
 
         const { chainId } = await params;
         const body = await request.json();
-        const { isWorking, newMemberIdentifier } = body;
+        const { isWorking, newMemberIdentifier, parentId } = body;
 
         await connectDB();
 
@@ -103,7 +103,8 @@ export async function PUT(
                 image: userToAdd?.image || null,
                 isWorking: false,
                 contributionTime: 0,
-                parentId: session.user?.email, // Added by current member
+                parentId: parentId || session.user?.email,
+                isStarter: false,
             });
 
             await chain.save();

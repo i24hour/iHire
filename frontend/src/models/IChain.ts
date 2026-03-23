@@ -8,6 +8,7 @@ export interface IChainMember {
     contributionTime: number; // total seconds
     lastStartedAt?: number; // timestamp
     parentId?: string; // userId of who added this member
+    isStarter?: boolean;
 }
 
 export interface IChain {
@@ -33,6 +34,7 @@ const ChainMemberSchema = new mongoose.Schema({
     contributionTime: { type: Number, default: 0 },
     lastStartedAt: { type: Number },
     parentId: { type: String },
+    isStarter: { type: Boolean, default: false },
 });
 
 const ChainSchema = new mongoose.Schema({

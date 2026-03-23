@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
                 isWorking: false,
                 contributionTime: 0,
                 parentId: userId === session.user?.email ? null : session.user?.email, // Creator is root
+                isStarter: true,
             };
         }));
 
