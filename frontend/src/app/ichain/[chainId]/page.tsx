@@ -247,6 +247,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                 key={node.userId}
                 member={node}
                 isCurrentUser={node.userId === session?.user?.email}
+                onImageClick={() => fileInputRef.current?.click()}
                 onNodeClick={() => {
                     if (node.userId !== session?.user?.email) {
                         router.push(`/workers/${encodeURIComponent(node.userId)}`);
@@ -326,6 +327,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                             <ChainNode
                                 member={member}
                                 isCurrentUser={member.userId === session?.user?.email}
+                                onImageClick={() => fileInputRef.current?.click()}
                                 onNodeClick={() => {
                                     if (member.userId !== session?.user?.email) {
                                         router.push(`/workers/${encodeURIComponent(member.userId)}`);
