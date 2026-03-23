@@ -253,16 +253,40 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
     };
 
     const renderChainTree = (parentId: string | null = null, depth: number = 0) => {
-        const membersAtThisLevel = parentId === null 
-            ? chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId))
-            : chain.members.filter((m: any) => m.parentId === parentId);
+        let membersAtThisLevel: any[] = [];
+        
+        if (parentId === null) {
+            // "True Roots" (nodes with no parent in the chain members)
+            const realRoots = chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId));
+            
+            // "Initial Starters" (roots + their direct children) to be horizontal at the top
+            const directChildrenOfRoots = chain.members.filter((m: any) => 
+                realRoots.some(root => root.userId === m.parentId)
+            );
+            
+            membersAtThisLevel = [...realRoots, ...directChildrenOfRoots];
+            
+            // Deduplicate just in case
+            membersAtThisLevel = membersAtThisLevel.filter((v, i, a) => a.findIndex(t => t.userId === v.userId) === i);
+        } else {
+            // Find children but exclude them if they were already rendered as "Starters" at depth 0
+            const realRoots = chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId));
+            const isParentARealRoot = realRoots.some(root => root.userId === parentId);
+            
+            if (isParentARealRoot) {
+                // We already rendered the children of real roots at level 0
+                return null;
+            }
+            
+            membersAtThisLevel = chain.members.filter((m: any) => m.parentId === parentId);
+        }
 
         if (membersAtThisLevel.length === 0) return null;
 
         return (
             <div className="relative flex flex-col items-center">
-                {/* For nested levels, we might need a horizontal line connecting siblings */}
-                {depth > 0 && membersAtThisLevel.length > 1 && (
+                {/* Horizontal line connecting siblings/starters */}
+                {membersAtThisLevel.length > 1 && (
                     <div className="absolute top-0 left-0 right-0 h-px bg-white/20" 
                          style={{ 
                              left: `${100 / (membersAtThisLevel.length * 2)}%`, 
@@ -274,8 +298,12 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                 <div className="flex gap-12 md:gap-24">
                     {membersAtThisLevel.map((member: any) => (
                         <div key={member.userId} className="relative flex flex-col items-center">
-                            {/* Vertical line from sibling horizontal line to node */}
-                            {depth > 0 && (
+                            {/* Vertical line from sibling horizontal line to node (only if not at absolute top) */}
+                            {parentId !== null && (
+                                <div className="w-px h-8 bg-white/20 mb-4" />
+                            )}
+                            {/* Special case: if we have multiple starters at level 0, we still want a small line connecting them to the horizontal line above */}
+                            {parentId === null && membersAtThisLevel.length > 1 && (
                                 <div className="w-px h-8 bg-white/20 mb-4" />
                             )}
                             
