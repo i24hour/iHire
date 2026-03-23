@@ -92,10 +92,12 @@ export function ChainNode({ member, isCurrentUser, onImageClick, onAddMember, ch
 
             {/* Connecting lines to children */}
             {children && (
-                <div className="relative flex flex-col items-center w-full">
-                    {/* Vertical line from parent to the horizontal line area */}
-                    <div className="w-px h-8 bg-white/10" />
-                    <div className="relative w-full">
+                <div className="flex flex-col items-center">
+                    {/* Vertical line from parent down to the split point */}
+                    <div className="w-px h-8 bg-white/20" />
+                    
+                    {/* The horizontal line and the children */}
+                    <div className="relative">
                         {children}
                     </div>
                 </div>
