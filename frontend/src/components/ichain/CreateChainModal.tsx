@@ -132,7 +132,7 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                         <LiquidButton 
                             type="submit" 
                             className="w-full py-4 text-white font-bold"
-                            disabled={isSubmitting || !name || memberEmails.length === 0}
+                            disabled={isSubmitting || !name || members.length === 0}
                         >
                             {isSubmitting ? 'Creating...' : 'Create Chain'}
                         </LiquidButton>
