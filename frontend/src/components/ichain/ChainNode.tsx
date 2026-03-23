@@ -76,26 +76,28 @@ export function ChainNode({ member, isCurrentUser, onImageClick, onAddMember, ch
                     <h4 className="text-white font-medium text-sm truncate">{member.name}</h4>
                     <p className="text-[10px] text-zinc-500 mt-0.5">{formatTime(member.contributionTime)}</p>
                     
-                    <button
-                        onClick={() => onAddMember?.(member.userId)}
-                        className="mt-2 p-1 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                        title="Add Member to this Node"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                    </button>
+                    {isCurrentUser && (
+                        <button
+                            onClick={() => onAddMember?.(member.userId)}
+                            className="mt-2 p-1 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                            title="Add Member to this Node"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Connecting lines to children */}
             {children && (
-                <div className="relative pt-8 flex gap-8">
-                    {/* Horizontal line connecting all children */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[calc(100%-4rem)] h-px bg-white/10" />
-                    {/* Vertical line from parent to the horizontal line */}
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-px h-8 bg-white/10" />
-                    {children}
+                <div className="relative flex flex-col items-center w-full">
+                    {/* Vertical line from parent to the horizontal line area */}
+                    <div className="w-px h-8 bg-white/10" />
+                    <div className="relative w-full">
+                        {children}
+                    </div>
                 </div>
             )}
         </div>

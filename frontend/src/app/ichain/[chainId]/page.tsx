@@ -258,22 +258,26 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
             ? chain.members.filter((m: any) => !m.parentId || !chain.members.some((p: any) => p.userId === m.parentId))
             : chain.members.filter((m: any) => m.parentId === parentId);
 
-        return membersAtThisLevel.map((member: any) => (
-            <ChainNode
-                key={member.userId}
-                member={member}
-                isCurrentUser={member.userId === session?.user?.email}
-                onImageClick={() => fileInputRef.current?.click()}
-                onAddMember={(pid) => {
-                    setSelectedParentId(pid);
-                    setIsAddMemberModalOpen(true);
-                }}
-            >
-                {chain.members.some((m: any) => m.parentId === member.userId) && (
-                    renderChainTree(member.userId)
-                )}
-            </ChainNode>
-        ));
+        return (
+            <div className={`flex gap-16 ${parentId === null ? '' : 'mt-8'}`}>
+                {membersAtThisLevel.map((member: any) => (
+                    <ChainNode
+                        key={member.userId}
+                        member={member}
+                        isCurrentUser={member.userId === session?.user?.email}
+                        onImageClick={() => fileInputRef.current?.click()}
+                        onAddMember={(pid) => {
+                            setSelectedParentId(pid);
+                            setIsAddMemberModalOpen(true);
+                        }}
+                    >
+                        {chain.members.some((m: any) => m.parentId === member.userId) && (
+                            renderChainTree(member.userId)
+                        )}
+                    </ChainNode>
+                ))}
+            </div>
+        );
     };
 
     return (
