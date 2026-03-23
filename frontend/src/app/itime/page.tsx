@@ -57,6 +57,17 @@ export default function ITimePage() {
     const [showSignInModal, setShowSignInModal] = useState(false);
     const [showPauseOptions, setShowPauseOptions] = useState<string | null>(null);
     const [scoreNow, setScoreNow] = useState<number>(() => Date.now());
+    const [isLightTheme, setIsLightTheme] = useState(false);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const syncTheme = () => setIsLightTheme(root.getAttribute('data-theme') === 'light');
+
+        syncTheme();
+        const observer = new MutationObserver(syncTheme);
+        observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => observer.disconnect();
+    }, []);
 
     const playAlertSound = () => {
         try {
@@ -556,23 +567,23 @@ export default function ITimePage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-                    <div className="bg-black  rounded-2xl border border-white/10 p-4 md:p-6">
-                        <div className="text-sm text-gray-400 mb-2">Total Tasks</div>
-                        <div className="text-2xl md:text-4xl font-bold text-white">{tasks.length}</div>
+                    <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
+                        <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-gray-400'}`}>Total Tasks</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{tasks.length}</div>
                     </div>
 
-                    <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
-                        <div className="text-sm text-zinc-300 mb-2">Running</div>
-                        <div className="text-2xl md:text-4xl font-bold text-white">{activeTasks}</div>
+                    <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
+                        <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Running</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{activeTasks}</div>
                     </div>
 
-                    <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
-                        <div className="text-sm text-zinc-300 mb-2">Completed</div>
-                        <div className="text-2xl md:text-4xl font-bold text-white">{completedTasks.length}</div>
+                    <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
+                        <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Completed</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{completedTasks.length}</div>
                     </div>
 
-                    <div className="bg-black  rounded-2xl border border-white/20 p-4 md:p-6">
-                        <div className="text-sm text-zinc-300 mb-2">Live Score</div>
+                    <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
+                        <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Live Score</div>
                         <div className="text-2xl md:text-4xl font-bold text-[#4CAF50]">{liveScore.toFixed(2)}</div>
                     </div>
                 </div>

@@ -402,29 +402,29 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         const chart = createChart(chartContainerRef.current, {
             layout: {
                 background: { type: ColorType.Solid, color: 'transparent' },
-                textColor: 'rgba(255, 255, 255, 0.5)',
+                textColor: isLightTheme ? 'rgba(24, 24, 27, 0.75)' : 'rgba(255, 255, 255, 0.5)',
                 fontFamily: "'Inter', -apple-system, sans-serif",
                 fontSize: 11,
             },
             grid: {
-                vertLines: { color: 'rgba(255, 255, 255, 0.04)' },
-                horzLines: { color: 'rgba(255, 255, 255, 0.04)' },
+                vertLines: { color: isLightTheme ? 'rgba(24, 24, 27, 0.06)' : 'rgba(255, 255, 255, 0.04)' },
+                horzLines: { color: isLightTheme ? 'rgba(24, 24, 27, 0.06)' : 'rgba(255, 255, 255, 0.04)' },
             },
             crosshair: {
                 vertLine: {
-                    color: 'rgba(255, 255, 255, 0.2)',
-                    labelBackgroundColor: '#333',
+                    color: isLightTheme ? 'rgba(24, 24, 27, 0.18)' : 'rgba(255, 255, 255, 0.2)',
+                    labelBackgroundColor: isLightTheme ? '#f4f4f5' : '#333',
                 },
                 horzLine: {
-                    color: 'rgba(255, 255, 255, 0.2)',
-                    labelBackgroundColor: '#333',
+                    color: isLightTheme ? 'rgba(24, 24, 27, 0.18)' : 'rgba(255, 255, 255, 0.2)',
+                    labelBackgroundColor: isLightTheme ? '#f4f4f5' : '#333',
                 },
             },
             rightPriceScale: {
-                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderColor: isLightTheme ? 'rgba(24, 24, 27, 0.12)' : 'rgba(255, 255, 255, 0.1)',
             },
             timeScale: {
-                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderColor: isLightTheme ? 'rgba(24, 24, 27, 0.12)' : 'rgba(255, 255, 255, 0.1)',
                 timeVisible: true,
                 secondsVisible: false,
                 tickMarkFormatter: (time: number) => {
@@ -553,7 +553,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             chartRef.current = null;
             seriesRef.current = null;
         };
-    }, [chartType, chartData, previousCloseValue]);
+    }, [chartType, chartData, previousCloseValue, isLightTheme]);
 
     // Live native update cycle (No React state changes triggered!)
     useEffect(() => {
