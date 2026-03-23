@@ -56,6 +56,26 @@ export async function POST(request: NextRequest) {
         // Add creator to the member list
         const allMemberIdentifiers = [...new Set([...memberIdentifiers, session.user.email])];
 
+        const membersFromDb = await User.find({
+            $or: [
+                { email: { $in: allMemberIdentifiers } },
+                { username: { $in: allMemberIdentifiers } },
+            ],
+        }).lean() as any[];
+
+        const resolvedIdentifiers = new Set<string>();
+        membersFromDb.forEach((user) => {
+            if (user.email) resolvedIdentifiers.add(user.email);
+            if (user.username) resolvedIdentifiers.add(user.username);
+        });
+
+        const missingIdentifiers = allMemberIdentifiers.filter((identifier) => !resolvedIdentifiers.has(identifier));
+        if (missingIdentifiers.length > 0) {
+            return NextResponse.json({
+                error: `User not found: ${missingIdentifiers.join(', ')}`,
+            }, { status: 400 });
+        }
+
         // Get unique users for the identifiers (email or username)
         const members = await Promise.all(allMemberIdentifiers.map(async (identifier: string) => {
             const user = await User.findOne({ 
@@ -65,7 +85,7 @@ export async function POST(request: NextRequest) {
                 ] 
             }).lean() as any;
             
-            const userId = user?.email || identifier; // Default to identifier if user not found in DB
+            const userId = user!.email;
 
             return {
                 userId: userId,

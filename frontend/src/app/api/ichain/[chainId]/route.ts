@@ -90,7 +90,11 @@ export async function PUT(
                 ] 
             }).lean() as any;
 
-            const userId = userToAdd?.email || newMemberIdentifier;
+            if (!userToAdd?.email) {
+                return NextResponse.json({ error: 'User not found in database' }, { status: 400 });
+            }
+
+            const userId = userToAdd.email;
 
             // Check if already a member
             if (chain.members.find((m: any) => m.userId === userId)) {

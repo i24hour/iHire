@@ -15,15 +15,38 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
     const [members, setMembers] = useState<string[]>([]);
     const [whatsappLink, setWhatsappLink] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCheckingMember, setIsCheckingMember] = useState(false);
+    const [memberError, setMemberError] = useState('');
 
     if (!isOpen) return null;
 
-    const handleAddMember = () => {
-        if (memberInput) {
-            if (!members.includes(memberInput)) {
-                setMembers([...members, memberInput]);
+    const handleAddMember = async () => {
+        const identifier = memberInput.trim();
+        if (!identifier) return;
+
+        setMemberError('');
+        if (members.includes(identifier)) {
+            setMemberError('Member already added.');
+            return;
+        }
+
+        setIsCheckingMember(true);
+        try {
+            const response = await fetch(`/api/user/lookup?identifier=${encodeURIComponent(identifier)}`);
+            const data = await response.json();
+
+            if (!response.ok || !data.exists) {
+                setMemberError('User not found in database.');
+                return;
             }
+
+            setMembers([...members, identifier]);
             setMemberInput('');
+        } catch (error) {
+            console.error('Error checking member:', error);
+            setMemberError('Unable to verify user right now.');
+        } finally {
+            setIsCheckingMember(false);
         }
     };
 
@@ -55,9 +78,14 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                 setName('');
                 setMembers([]);
                 setWhatsappLink('');
+                setMemberError('');
+            } else {
+                const data = await response.json();
+                setMemberError(data.error || 'Failed to create chain');
             }
         } catch (error) {
             console.error('Error creating chain:', error);
+            setMemberError('Failed to create chain. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -102,8 +130,13 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                                 placeholder="priyanshu or member@example.com"
                                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/20 transition-colors"
                             />
-                            <LiquidButton type="button" onClick={handleAddMember} size="sm" className="px-4">Add</LiquidButton>
+                            <LiquidButton type="button" onClick={handleAddMember} size="sm" className="px-4" disabled={isCheckingMember}>
+                                {isCheckingMember ? 'Checking...' : 'Add'}
+                            </LiquidButton>
                         </div>
+                        {memberError && (
+                            <p className="text-xs text-red-400 mt-2">{memberError}</p>
+                        )}
                         
                         <div className="flex flex-wrap gap-2 mt-3">
                             {members.map(identifier => (
@@ -132,7 +165,7 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                         <LiquidButton 
                             type="submit" 
                             className="w-full py-4 text-white font-bold"
-                            disabled={isSubmitting || !name || members.length === 0}
+                            disabled={isSubmitting || isCheckingMember || !name || members.length === 0}
                         >
                             {isSubmitting ? 'Creating...' : 'Create Chain'}
                         </LiquidButton>
