@@ -6,6 +6,51 @@ import Chain from '@/models/IChain';
 import User from '@/models/User';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const VISIT_WINDOW_MS = 3 * 60 * 60 * 1000;
+
+const enforceVisitWindow = (chain: any, now: number) => {
+    let hasTimedOutMember = false;
+    let earliestTimeoutAt = now;
+
+    chain.members = chain.members.map((member: any) => {
+        if (!member.isWorking || !member.lastStartedAt) return member;
+
+        const lastVisitAt = member.lastVisitAt || member.lastStartedAt;
+        const timeoutAt = lastVisitAt + VISIT_WINDOW_MS;
+        if (now <= timeoutAt) return member;
+
+        const contributedUntil = Math.max(member.lastStartedAt, timeoutAt);
+        const elapsed = Math.floor((contributedUntil - member.lastStartedAt) / 1000);
+        if (elapsed > 0) {
+            member.contributionTime += elapsed;
+        }
+
+        member.isWorking = false;
+        member.lastStartedAt = undefined;
+        hasTimedOutMember = true;
+        earliestTimeoutAt = Math.min(earliestTimeoutAt, timeoutAt);
+        return member;
+    });
+
+    if (hasTimedOutMember) {
+        const activeMembers = chain.members.filter((member: any) => member.isWorking).length;
+        if (activeMembers === 0 && chain.status === 'Active') {
+            if (chain.lastStartedAt) {
+                const chainElapsed = Math.floor((Math.max(chain.lastStartedAt, earliestTimeoutAt) - chain.lastStartedAt) / 1000);
+                if (chainElapsed > 0) {
+                    chain.totalTime += chainElapsed;
+                    if (chain.totalTime > (chain.maxTime || 0)) {
+                        chain.maxTime = chain.totalTime;
+                    }
+                }
+            }
+            chain.status = 'Idle';
+            chain.lastStartedAt = undefined;
+        }
+    }
+
+    return hasTimedOutMember;
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +59,38 @@ export async function GET(
     { params }: { params: Promise<{ chainId: string }> }
 ) {
     try {
+        const session = await getServerSession(authOptions);
         const { chainId } = await params;
         await connectDB();
-        const chain = await Chain.findById(chainId).lean() as any;
+        const chainDoc = await Chain.findById(chainId) as any;
+        const chain = chainDoc?.toObject?.() || chainDoc;
         if (!chain) {
             return NextResponse.json({ error: 'Chain not found' }, { status: 404 });
+        }
+
+        const now = Date.now();
+        let shouldPersist = false;
+
+        if (session?.user?.email && chainDoc?.members) {
+            const visitingMember = chainDoc.members.find((member: any) => member.userId === session.user?.email);
+            if (visitingMember && (!visitingMember.lastVisitAt || (now - visitingMember.lastVisitAt) > 60_000)) {
+                visitingMember.lastVisitAt = now;
+                shouldPersist = true;
+            }
+        }
+
+        if (chainDoc && enforceVisitWindow(chainDoc, now)) {
+            shouldPersist = true;
+        }
+
+        if (shouldPersist) {
+            await chainDoc.save();
+            const refreshed = chainDoc.toObject();
+            chain.status = refreshed.status;
+            chain.totalTime = refreshed.totalTime;
+            chain.maxTime = refreshed.maxTime;
+            chain.lastStartedAt = refreshed.lastStartedAt;
+            chain.members = refreshed.members;
         }
 
         // Fetch latest user info (username, image) for all members
@@ -27,7 +99,6 @@ export async function GET(
         const emailToUserMap = new Map();
         users.forEach(u => emailToUserMap.set(u.email, u));
 
-        const now = Date.now();
         // Calculate live totalTime for Active status
         if (chain.status === 'Active' && chain.lastStartedAt) {
             chain.totalTime += Math.floor((now - chain.lastStartedAt) / 1000);
@@ -110,6 +181,7 @@ export async function PUT(
                 image: userToAdd?.image || null,
                 isWorking: false,
                 contributionTime: 0,
+                lastVisitAt: Date.now(),
                 parentId: parentId || session.user?.email,
                 isStarter: false,
             });
@@ -123,6 +195,7 @@ export async function PUT(
         }
 
         const now = Date.now();
+        enforceVisitWindow(chain, now);
         const member = chain.members[memberIndex];
 
         // Calculation logic
@@ -138,6 +211,9 @@ export async function PUT(
                 member.lastStartedAt = now;
             }
             member.isWorking = isWorking;
+            if (isWorking) {
+                member.lastVisitAt = now;
+            }
         }
 
         // Update other working members' contributionTime to now so it's persisted correctly

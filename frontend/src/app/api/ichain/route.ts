@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
                 image: user?.image || null,
                 isWorking: false,
                 contributionTime: 0,
+                lastVisitAt: Date.now(),
                 parentId: userId === session.user?.email ? null : session.user?.email, // Creator is root
                 isStarter: true,
             };
