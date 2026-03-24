@@ -65,6 +65,108 @@ body {
   color: #0d0d0d;
 }
 
+:root[data-theme='light'] .landing-header {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-bottom-color: rgba(24, 24, 27, 0.1) !important;
+}
+
+:root[data-theme='light'] .landing-brand,
+:root[data-theme='light'] .landing-header-actions {
+  color: #111827 !important;
+}
+
+:root[data-theme='light'] .landing-brand-icon {
+  background-color: #111827 !important;
+}
+
+:root[data-theme='light'] .landing-brand-icon span {
+  color: #ffffff !important;
+}
+
+:root[data-theme='light'] .landing-directory-link {
+  color: #4b5563 !important;
+}
+
+:root[data-theme='light'] .landing-directory-link:hover {
+  color: #111827 !important;
+}
+
+:root[data-theme='light'] .landing-login-btn {
+  background-color: #111827 !important;
+  border-color: #111827 !important;
+  color: #f9fafb !important;
+}
+
+:root[data-theme='light'] .landing-hero-badge {
+  border-color: rgba(24, 24, 27, 0.12) !important;
+  background-color: rgba(17, 24, 39, 0.04) !important;
+  color: #4b5563 !important;
+}
+
+:root[data-theme='light'] .landing-hero-title {
+  background-image: linear-gradient(to right, #111827, #4b5563) !important;
+}
+
+:root[data-theme='light'] .landing-hero-description {
+  color: #4b5563 !important;
+}
+
+:root[data-theme='light'] .landing-primary-cta {
+  background-color: #111827 !important;
+  border-color: #111827 !important;
+  color: #f9fafb !important;
+}
+
+:root[data-theme='light'] .landing-secondary-cta {
+  background-color: #ffffff !important;
+  border-color: rgba(24, 24, 27, 0.14) !important;
+  color: #111827 !important;
+}
+
+:root[data-theme='light'] .landing-secondary-cta:hover {
+  background-color: #f3f4f6 !important;
+}
+
+:root[data-theme='light'] .landing-features {
+  border-top-color: rgba(24, 24, 27, 0.08) !important;
+}
+
+:root[data-theme='light'] .landing-features-title,
+:root[data-theme='light'] .landing-feature-card-title {
+  color: #111827 !important;
+}
+
+:root[data-theme='light'] .landing-features-subtitle,
+:root[data-theme='light'] .landing-feature-card-description {
+  color: #4b5563 !important;
+}
+
+:root[data-theme='light'] .landing-feature-card {
+  background-color: #ffffff !important;
+  border-color: rgba(24, 24, 27, 0.1) !important;
+}
+
+:root[data-theme='light'] .landing-feature-card:hover {
+  background-color: #f9fafb !important;
+}
+
+:root[data-theme='light'] .landing-footer {
+  background-color: #ffffff !important;
+  border-top-color: rgba(24, 24, 27, 0.1) !important;
+}
+
+:root[data-theme='light'] .landing-footer-content {
+  color: #6b7280 !important;
+}
+
+:root[data-theme='light'] .landing-footer-link {
+  color: #4b5563 !important;
+}
+
+:root[data-theme='light'] .landing-footer-link:hover {
+  color: #111827 !important;
+}
+
 /* Clean scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
