@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
 import User from '@/models/User';
+import { ensureUserHasDefaultUsername } from '@/lib/username';
 
 export async function POST(request: NextRequest) {
     try {
@@ -25,6 +26,8 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         const userEmail = session.user.email;
+
+        await ensureUserHasDefaultUsername(userEmail);
 
         // Update or Create User document
         await User.findOneAndUpdate(

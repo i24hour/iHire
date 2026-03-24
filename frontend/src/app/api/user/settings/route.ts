@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { ensureUserHasDefaultUsername } from '@/lib/username';
 
 export async function GET(request: NextRequest) {
     try {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
         }
 
         await connectDB();
-        const user = await User.findOne({ email: session.user.email });
+        const user = await ensureUserHasDefaultUsername(session.user.email);
 
         return NextResponse.json({ 
             username: user?.username || '', 

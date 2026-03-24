@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { buildDefaultUsernameFromEmail, getAvailableUsername } from '@/lib/username';
 
 export async function GET() {
     try {
@@ -15,31 +16,34 @@ export async function GET() {
         }
 
         await connectDB();
-        const users = await User.find({ username: { $exists: true, $ne: null } });
+        const users = await User.find({ email: { $exists: true, $ne: null } });
         
         let updatedCount = 0;
         const results = [];
         
         for (const user of users) {
-            const normalizedUsername = user.username?.trim().toLowerCase();
-            if (normalizedUsername && user.username !== normalizedUsername) {
-                const oldUsername = user.username;
+            const originalUsername = user.username;
+            const normalizedUsername = originalUsername?.trim().toLowerCase();
+            const fallbackUsername = buildDefaultUsernameFromEmail(user.email);
+            const targetBase = normalizedUsername || fallbackUsername;
+
+            if (!targetBase) {
+                continue;
+            }
+
+            const needsUpdate = !originalUsername || originalUsername !== targetBase;
+            if (needsUpdate) {
+                const oldUsername = originalUsername || '(empty)';
                 const conflictingUser = await User.findOne({
-                    username: normalizedUsername,
+                    username: targetBase,
                     _id: { $ne: user._id }
                 }).lean();
 
-                if (conflictingUser) {
-                    results.push({
-                        old: oldUsername,
-                        new: normalizedUsername,
-                        status: 'error',
-                        error: 'Conflict: normalized username already exists'
-                    });
-                    continue;
-                }
+                const finalUsername = conflictingUser
+                    ? await getAvailableUsername(targetBase, user.email)
+                    : targetBase;
 
-                user.username = normalizedUsername;
+                user.username = finalUsername;
                 try {
                     await user.save();
                     results.push({ old: oldUsername, new: user.username, status: 'success' });

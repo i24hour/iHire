@@ -1,6 +1,8 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import connectDB from '@/lib/mongodb';
+import { ensureUserHasDefaultUsername } from '@/lib/username';
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -41,6 +43,17 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
             }
+
+            if (token?.email) {
+                try {
+                    await connectDB();
+                    const profileName = (user as any)?.name || token.name || null;
+                    await ensureUserHasDefaultUsername(token.email, profileName);
+                } catch (error) {
+                    console.error('Failed to ensure default username during auth:', error);
+                }
+            }
+
             return token;
         }
     },
