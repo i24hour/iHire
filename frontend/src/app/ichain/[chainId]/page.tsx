@@ -380,7 +380,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                             )}
                         </div>
                         <p className="text-xs text-zinc-500 max-w-xl">
-                            Timer rule: har 3 ghante ke block mein chain page par kam se kam 1 visit zaroori hai. Visit miss hone par member ka running timer auto-pause ho jayega.
+                            Timer rule: har 3 ghante ke block mein chain page par kam se kam 1 visit zaroori hai. Visit miss hone par running member stop hoga; agar sab stop ho gaye toh chain auto-burst ho jayegi.
                         </p>
                     </div>
 

@@ -44,7 +44,8 @@ const enforceVisitWindow = (chain: any, now: number) => {
                     }
                 }
             }
-            chain.status = 'Idle';
+            chain.status = 'Burst';
+            chain.burstAt = earliestTimeoutAt;
             chain.lastStartedAt = undefined;
         }
     }
