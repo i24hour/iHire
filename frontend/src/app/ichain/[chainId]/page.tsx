@@ -253,7 +253,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                         router.push(`/workers/${encodeURIComponent(node.userId)}`);
                     }
                 }}
-                onAddMember={(pid) => {
+                onAddMember={chain.status === 'Burst' ? undefined : (pid) => {
                     setSelectedParentId(pid);
                     setIsAddMemberModalOpen(true);
                 }}
@@ -333,7 +333,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                                         router.push(`/workers/${encodeURIComponent(member.userId)}`);
                                     }
                                 }}
-                                onAddMember={(pid) => {
+                                onAddMember={chain.status === 'Burst' ? undefined : (pid) => {
                                     setSelectedParentId(pid);
                                     setIsAddMemberModalOpen(true);
                                 }}

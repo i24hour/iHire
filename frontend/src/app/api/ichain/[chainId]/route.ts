@@ -155,6 +155,10 @@ export async function PUT(
             return NextResponse.json({ error: 'Not a member of this chain' }, { status: 403 });
         }
 
+        if (chain.status === 'Burst' && newMemberIdentifier) {
+            return NextResponse.json({ error: 'Cannot add members to a burst chain' }, { status: 400 });
+        }
+
         if (newMemberIdentifier) {
             const memberIdToFind = newMemberIdentifier.trim().toLowerCase();
             // Find the user to add
