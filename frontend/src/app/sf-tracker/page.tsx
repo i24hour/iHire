@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Sidebar } from '@/components/Sidebar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import Link from 'next/link';
 
 interface SFTrackerItem {
     _id: string;
@@ -15,11 +16,23 @@ interface SFTrackerItem {
     createdAt: string;
 }
 
+interface SFLeaderboardUser {
+    userId: string;
+    username: string;
+    image: string | null;
+    totalTasks: number;
+    successTasks: number;
+    failureTasks: number;
+}
+
 export default function SFTrackerPage() {
     const { data: session } = useSession();
     const [targets, setTargets] = useState<SFTrackerItem[]>([]);
+    const [leaderboard, setLeaderboard] = useState<SFLeaderboardUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState<'my' | 'all'>('my');
     
     // Form State
     const [newTarget, setNewTarget] = useState('');
@@ -35,6 +48,27 @@ export default function SFTrackerPage() {
             fetchTargets();
         }
     }, [session]);
+
+    useEffect(() => {
+        if (activeTab === 'all' && leaderboard.length === 0) {
+            fetchLeaderboard();
+        }
+    }, [activeTab]);
+
+    const fetchLeaderboard = async () => {
+        setIsLeaderboardLoading(true);
+        try {
+            const res = await fetch('/api/sf-tracker/all');
+            const data = await res.json();
+            if (data.leaderboard) {
+                setLeaderboard(data.leaderboard);
+            }
+        } catch (error) {
+            console.error('Failed to fetch leaderboard:', error);
+        } finally {
+            setIsLeaderboardLoading(false);
+        }
+    };
 
     const fetchTargets = async () => {
         try {
@@ -150,8 +184,40 @@ export default function SFTrackerPage() {
                         </p>
                     </div>
 
-                    {/* Stats Dashboard */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Tab Navigation */}
+                    <div className="flex justify-center mb-8">
+                        <div className="bg-white/5 border border-white/10 p-1.5 rounded-full inline-flex relative shadow-lg">
+                            <button
+                                onClick={() => setActiveTab('my')}
+                                className={`relative z-10 px-8 py-2.5 rounded-full text-sm font-bold tracking-wide transition-colors ${activeTab === 'my' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}
+                            >
+                                My SF
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('all')}
+                                className={`relative z-10 px-8 py-2.5 rounded-full text-sm font-bold tracking-wide transition-colors ${activeTab === 'all' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}
+                            >
+                                All SF
+                            </button>
+                            <div 
+                                className="absolute top-1.5 bottom-1.5 w-[116px] bg-white rounded-full transition-transform duration-300 ease-out shadow-sm"
+                                style={{ transform: `translateX(${activeTab === 'all' ? '100%' : '0'})` }}
+                            />
+                        </div>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'my' ? (
+                            <motion.div 
+                                key="my-sf"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="space-y-12"
+                            >
+                                {/* Stats Dashboard */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                             <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Tasks</h3>
                             <p className="text-4xl font-bold text-white">{targets.length}</p>
@@ -299,6 +365,75 @@ export default function SFTrackerPage() {
                             </div>
                         </div>
                     )}
+                </motion.div>
+                ) : (
+                <motion.div
+                    key="all-sf"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                >
+                    <div className="flex items-center gap-3 mb-6">
+                        <h2 className="text-2xl font-bold text-white">Global Ranking</h2>
+                        <div className="px-2.5 py-0.5 rounded-full bg-white/10 text-xs font-bold text-zinc-300 border border-white/10">
+                            Sorted by Target Success Rate
+                        </div>
+                    </div>
+
+                    {isLeaderboardLoading ? (
+                        <div className="space-y-3">
+                            {[1, 2, 3].map(i => <div key={i} className="h-24 bg-white/5 rounded-2xl animate-pulse"></div>)}
+                        </div>
+                    ) : (
+                        leaderboard.map((user, index) => (
+                            <Link key={user.userId} href={`/sf-tracker/${encodeURIComponent(user.userId)}`}>
+                                <div className="group bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 rounded-2xl p-5 md:p-6 transition-all flex flex-col md:flex-row items-start md:items-center gap-6 relative shadow-lg overflow-hidden cursor-pointer transition-transform hover:-translate-y-1 mb-4">
+                                    {/* Rank Indicator */}
+                                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-black border border-white/10 text-zinc-400 font-bold shrink-0">
+                                        #{index + 1}
+                                    </div>
+
+                                    {/* User Profile */}
+                                    <div className="flex items-center gap-4 min-w-[200px]">
+                                        {user.image ? (
+                                            <img src={user.image} alt={user.username} className="w-12 h-12 rounded-full border border-white/10 object-cover shrink-0" />
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-lg font-bold text-white shrink-0">
+                                                {user.username?.[0]?.toUpperCase() || '?'}
+                                            </div>
+                                        )}
+                                        <div>
+                                            <div className="text-lg font-bold text-white group-hover:text-zinc-200 transition-colors">{user.username}</div>
+                                            <div className="text-xs text-zinc-500 truncate max-w-[150px]">{user.userId}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Metrics Row */}
+                                    <div className="flex flex-1 justify-end items-center gap-3 sm:gap-6 mt-2 md:mt-0 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-4 py-2 min-w-[100px] shrink-0">
+                                            <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Total Targets</span>
+                                            <span className="text-xl font-bold text-white">{user.totalTasks}</span>
+                                        </div>
+                                        <div className="flex flex-col border border-emerald-500/20 bg-emerald-500/5 rounded-xl px-4 py-2 min-w-[100px] shrink-0 relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-emerald-500/5 transition-opacity opacity-0 group-hover:opacity-100"></div>
+                                            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-500 mb-1 z-10">Success</span>
+                                            <span className="text-xl font-bold text-emerald-400 z-10">{user.successTasks}</span>
+                                        </div>
+                                        <div className="flex flex-col border border-red-500/20 bg-red-500/5 rounded-xl px-4 py-2 min-w-[100px] shrink-0 relative overflow-hidden">
+                                            <div className="absolute inset-0 bg-red-500/5 transition-opacity opacity-0 group-hover:opacity-100"></div>
+                                            <span className="text-[10px] uppercase font-bold tracking-widest text-red-500 mb-1 z-10">Failure</span>
+                                            <span className="text-xl font-bold text-red-400 z-10">{user.failureTasks}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))
+                    )}
+                </motion.div>
+                )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Failure Modal */}
