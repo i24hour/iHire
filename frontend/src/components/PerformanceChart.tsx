@@ -130,6 +130,7 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let completedTasks = 0;
     let runningTasksHours = 0;
     let completedTasksHours = 0;
+    let totalPenaltyPoints = 0;
 
     for (const task of tasks) {
         // Only count tasks that existed at time t
@@ -215,6 +216,17 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
         } else {
             runningTasksHours += taskHours;
         }
+
+        // Penalty Logic: Deduct 10 points for every 2 hours of inactivity/pause
+        const evalEndTime = isCompletedByT ? actualCompletedAt! : t;
+        const totalTaskLifespanMs = evalEndTime - taskStartTime;
+        const activeMsFromHours = taskHours * 1000 * 3600;
+        const inactiveMs = totalTaskLifespanMs - activeMsFromHours;
+        
+        if (inactiveMs > 0) {
+            const inactiveHours = inactiveMs / (1000 * 3600);
+            totalPenaltyPoints += Math.floor(inactiveHours / 2) * 10;
+        }
     }
 
     if (totalTasks === 0 || completedTasks === 0) return 0;
@@ -226,8 +238,9 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     const speedScore = 1 / clampedAvgTime;
     const volumeBonus = Math.log10(completedTasks + 1) * 2;
     const score = completionRate * speedScore * volumeBonus * 1000;
+    const finalScore = Math.max(0, score - totalPenaltyPoints);
 
-    return Math.round(score * 100) / 100;
+    return Math.round(finalScore * 100) / 100;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
