@@ -141,11 +141,11 @@ export default function IChainPage() {
                                     {displayChains.map((chain, index) => (
                                         <div 
                                             key={chain._id} 
-                                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#111] border border-white/10 rounded-2xl p-5 hover:bg-[#1a1a1a] transition-colors cursor-pointer gap-4" 
+                                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-black border border-white/10 rounded-2xl p-5 hover:bg-white/5 transition-colors cursor-pointer gap-4" 
                                             onClick={() => router.push(`/ichain/${chain._id}`)}
                                         >
                                             <div className="flex items-center gap-4">
-                                                <span className="text-2xl font-bold text-zinc-600 w-8">#{index + 1}</span>
+                                                <span className="text-2xl font-bold text-zinc-500 w-8">#{index + 1}</span>
                                                 <div>
                                                     <h3 className="text-xl font-bold text-white">{chain.name}</h3>
                                                     <p className="text-sm text-zinc-400">
@@ -155,7 +155,7 @@ export default function IChainPage() {
                                             </div>
                                             <div className="text-left sm:text-right">
                                                 <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Max Time</p>
-                                                <p className="text-2xl font-mono text-white tracking-widest bg-black px-4 py-2 rounded-lg border border-white/5 inline-block">
+                                                <p className="text-2xl font-mono text-white tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/10 inline-block">
                                                     {formatTime(chain.maxTime || chain.totalTime || 0)}
                                                 </p>
                                             </div>
