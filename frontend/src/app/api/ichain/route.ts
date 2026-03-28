@@ -26,6 +26,15 @@ export async function GET(request: NextRequest) {
                 if (liveTotalTime > (chain.maxTime || 0)) {
                     chain.maxTime = liveTotalTime;
                 }
+            } else if (chain.status === 'Idle' && chain.totalTime > 0) {
+                // Auto-repair bugged legacy chains that paused into 'Idle' instead of 'Burst'
+                chain.status = 'Burst';
+                if (!chain.maxTime) chain.maxTime = chain.totalTime;
+                // Fire and forget background fix
+                Chain.updateOne(
+                    { _id: chain._id }, 
+                    { $set: { status: 'Burst', maxTime: chain.maxTime } }
+                ).catch(console.error);
             }
             return chain;
         });
