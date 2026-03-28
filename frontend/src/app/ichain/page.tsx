@@ -107,9 +107,10 @@ export default function IChainPage() {
                                 ))}
                             </div>
                         ) : (() => {
-                            const myChains = chains.filter(chain => 
-                                chain.members.some((m: any) => m.userId === session?.user?.email)
-                            );
+                            const myChains = chains
+                                .filter(chain => chain.members.some((m: any) => m.userId === session?.user?.email))
+                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                                
                             const displayChains = activeTab === 'my' ? myChains : chains;
 
                             if (displayChains.length === 0) {
@@ -127,11 +128,10 @@ export default function IChainPage() {
 
                             return activeTab === 'my' ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {displayChains.map((chain, index) => (
+                                    {displayChains.map((chain) => (
                                         <ChainCard 
                                             key={chain._id} 
                                             chain={chain} 
-                                            rank={chains.findIndex(c => c._id === chain._id) + 1}
                                             onDelete={handleChainDeleted}
                                         />
                                     ))}
