@@ -1,15 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { CreateChainModal } from '@/components/ichain/CreateChainModal';
 import { ChainCard } from '@/components/ichain/ChainCard';
 
 export default function IChainPage() {
+    const { data: session } = useSession();
+    const router = useRouter();
     const [chains, setChains] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'my' | 'all'>('my');
+
+    const formatTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
 
     const fetchChains = async () => {
         try {
@@ -64,10 +76,29 @@ export default function IChainPage() {
 
                     {/* Active Chains List */}
                     <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-semibold text-white">Active Chains</h2>
-                            <div className="h-px flex-1 bg-white/10"></div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-xl font-semibold text-white">Active Chains</h2>
+                            </div>
+                            
+                            {/* Tab Toggle */}
+                            <div className="flex bg-white/5 border border-white/10 rounded-full p-1 w-fit mt-2 sm:mt-0">
+                                <button
+                                    onClick={() => setActiveTab('my')}
+                                    className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'my' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'}`}
+                                >
+                                    My Chains
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('all')}
+                                    className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${activeTab === 'all' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'}`}
+                                >
+                                    All Chains
+                                </button>
+                            </div>
                         </div>
+                        
+                        <div className="h-px w-full bg-white/10 hidden sm:block"></div>
 
                         {isLoading ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -75,29 +106,64 @@ export default function IChainPage() {
                                     <div key={i} className="bg-white/5 border border-white/10 rounded-2xl h-48 animate-pulse"></div>
                                 ))}
                             </div>
-                        ) : chains.length === 0 ? (
-                            <div className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center space-y-4">
-                                <p className="text-zinc-500 text-lg">No chains found. Start a productivity chain with your team!</p>
-                                <LiquidButton 
-                                    onClick={() => setIsModalOpen(true)}
-                                    variant="ghost"
-                                    className="text-white border border-white/20"
-                                >
-                                    Create Your First Chain
-                                </LiquidButton>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {chains.map((chain, index) => (
-                                    <ChainCard 
-                                        key={chain._id} 
-                                        chain={chain} 
-                                        rank={index + 1}
-                                        onDelete={handleChainDeleted}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        ) : (() => {
+                            const myChains = chains.filter(chain => 
+                                chain.members.some((m: any) => m.userId === session?.user?.email)
+                            );
+                            const displayChains = activeTab === 'my' ? myChains : chains;
+
+                            if (displayChains.length === 0) {
+                                return (
+                                    <div className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center space-y-4">
+                                        <p className="text-zinc-500 text-lg">
+                                            {activeTab === 'my' ? "You aren't in any chains. Join one or start your own!" : "No chains found. Start a productivity chain with your team!"}
+                                        </p>
+                                        <LiquidButton onClick={() => setIsModalOpen(true)} variant="ghost" className="text-white border border-white/20">
+                                            Create Your First Chain
+                                        </LiquidButton>
+                                    </div>
+                                );
+                            }
+
+                            return activeTab === 'my' ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {displayChains.map((chain, index) => (
+                                        <ChainCard 
+                                            key={chain._id} 
+                                            chain={chain} 
+                                            rank={chains.findIndex(c => c._id === chain._id) + 1}
+                                            onDelete={handleChainDeleted}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {displayChains.map((chain, index) => (
+                                        <div 
+                                            key={chain._id} 
+                                            className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#111] border border-white/10 rounded-2xl p-5 hover:bg-[#1a1a1a] transition-colors cursor-pointer gap-4" 
+                                            onClick={() => router.push(`/ichain/${chain._id}`)}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <span className="text-2xl font-bold text-zinc-600 w-8">#{index + 1}</span>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white">{chain.name}</h3>
+                                                    <p className="text-sm text-zinc-400">
+                                                        {chain.members.length} Members • Status: {chain.status === 'Burst' ? <span className="text-red-500 font-medium tracking-wide">Burst</span> : chain.status === 'Active' ? <span className="text-emerald-500 font-medium tracking-wide">Active</span> : <span className="text-amber-500 font-medium tracking-wide">Idle</span>}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-left sm:text-right">
+                                                <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Max Time</p>
+                                                <p className="text-2xl font-mono text-white tracking-widest bg-black px-4 py-2 rounded-lg border border-white/5 inline-block">
+                                                    {formatTime(chain.maxTime || chain.totalTime || 0)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
 
