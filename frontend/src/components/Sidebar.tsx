@@ -11,6 +11,7 @@ const navItems = [
     { href: '/info', label: 'Rules' },
     { href: '/ideas', label: 'Ideas' },
     { href: '/ichain', label: 'iChain' },
+    { href: '/sf-tracker', label: 'SF Tracker' },
     { href: '/settings', label: 'Settings' },
 ];
 
