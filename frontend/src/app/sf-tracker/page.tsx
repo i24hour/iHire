@@ -238,7 +238,7 @@ export default function SFTrackerPage() {
                                                 <h3 className="text-xl font-bold text-white mb-3">{target.target}</h3>
                                                 <div className="bg-white/5 border border-white/10 rounded-lg p-3">
                                                     <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-1">Success Condition</span>
-                                                    <p className="text-sm text-zinc-300 leading-snug">{target.successCondition}</p>
+                                                    <p className="text-sm text-zinc-400 leading-snug">{target.successCondition}</p>
                                                 </div>
                                             </div>
 
@@ -285,7 +285,7 @@ export default function SFTrackerPage() {
                                         {target.status === 'Failure' && target.failureReason && (
                                             <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-3">
                                                 <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-1">Reason for Failure</span>
-                                                <p className="text-sm text-zinc-300 italic">"{target.failureReason}"</p>
+                                                <p className="text-sm text-zinc-400 italic">"{target.failureReason}"</p>
                                             </div>
                                         )}
                                         {target.status === 'Success' && (
