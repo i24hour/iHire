@@ -150,12 +150,26 @@ export default function SFTrackerPage() {
                         </p>
                     </div>
 
+                    {/* Stats Dashboard */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                            <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Tasks</h3>
+                            <p className="text-4xl font-bold text-white">{targets.length}</p>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                            <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Success</h3>
+                            <p className="text-4xl font-bold text-white">{targets.filter(t => t.status === 'Success').length}</p>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                            <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Failure</h3>
+                            <p className="text-4xl font-bold text-white">{targets.filter(t => t.status === 'Failure').length}</p>
+                        </div>
+                    </div>
+
                     {/* Creation Form */}
-                    <div className="bg-black border border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-opacity group-hover:opacity-100 opacity-50"></div>
-                        
-                        <h2 className="text-xl font-semibold text-white mb-6 relative z-10">Add New Target</h2>
-                        <form onSubmit={handleCreateTarget} className="space-y-5 relative z-10">
+                    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
+                        <h2 className="text-xl font-semibold text-white mb-6">Add New Target</h2>
+                        <form onSubmit={handleCreateTarget} className="space-y-5">
                             <div>
                                 <label className="block text-sm font-medium text-zinc-400 mb-2">Target / Goal</label>
                                 <input 
@@ -163,18 +177,18 @@ export default function SFTrackerPage() {
                                     value={newTarget}
                                     onChange={(e) => setNewTarget(e.target.value)}
                                     placeholder="e.g. Master React Hooks"
-                                    className="w-full bg-white/5 border border-white/10 text-white placeholder-zinc-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all font-medium"
+                                    className="w-full bg-black border border-white/10 text-white placeholder-zinc-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all font-medium"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-zinc-400 mb-2">Success Condition <span className="text-emerald-500 text-xs">(Strict milestone)</span></label>
+                                <label className="block text-sm font-medium text-zinc-400 mb-2">Success Condition <span className="text-zinc-500 text-xs">(Strict milestone)</span></label>
                                 <input 
                                     type="text"
                                     value={newCondition}
                                     onChange={(e) => setNewCondition(e.target.value)}
                                     placeholder="e.g. Build 3 custom hooks without looking at docs and integrate them into a proj"
-                                    className="w-full bg-white/5 border border-emerald-500/20 text-emerald-400 placeholder-emerald-900/50 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all font-medium"
+                                    className="w-full bg-black border border-white/10 text-white placeholder-zinc-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all font-medium"
                                     required
                                 />
                             </div>
@@ -222,23 +236,23 @@ export default function SFTrackerPage() {
                                             
                                             <div className="pr-6 relative z-10 mb-6">
                                                 <h3 className="text-xl font-bold text-white mb-3">{target.target}</h3>
-                                                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
-                                                    <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-500 block mb-1">Success Condition</span>
-                                                    <p className="text-sm text-emerald-400/90 leading-snug">{target.successCondition}</p>
+                                                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-1">Success Condition</span>
+                                                    <p className="text-sm text-zinc-300 leading-snug">{target.successCondition}</p>
                                                 </div>
                                             </div>
 
                                             <div className="flex gap-3 relative z-10 mt-auto">
                                                 <button 
                                                     onClick={() => handleMarkSuccess(target._id)}
-                                                    className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-500 font-bold py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
                                                 >
                                                     <span className="text-xl">S</span>
                                                     <span className="text-xs uppercase tracking-wider">Success</span>
                                                 </button>
                                                 <button 
                                                     onClick={() => handleMarkFailureClick(target._id)}
-                                                    className="flex-1 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-500 font-bold py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
                                                 >
                                                     <span className="text-xl">F</span>
                                                     <span className="text-xs uppercase tracking-wider">Failure</span>
@@ -269,8 +283,8 @@ export default function SFTrackerPage() {
                                         </div>
                                         
                                         {target.status === 'Failure' && target.failureReason && (
-                                            <div className="mt-3 bg-red-500/5 border border-red-500/10 rounded-lg p-3">
-                                                <span className="text-[10px] uppercase font-bold tracking-widest text-red-400 block mb-1">Reason for Failure</span>
+                                            <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-3">
+                                                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-1">Reason for Failure</span>
                                                 <p className="text-sm text-zinc-300 italic">"{target.failureReason}"</p>
                                             </div>
                                         )}
@@ -304,7 +318,6 @@ export default function SFTrackerPage() {
                                 exit={{ opacity: 0, scale: 0.95, y: -20 }} 
                                 className="relative w-full max-w-md bg-black border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl overflow-hidden"
                             >
-                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-orange-600"></div>
                                 <h3 className="text-2xl font-bold text-white mb-2">Acknowledge Failure</h3>
                                 <p className="text-zinc-400 text-sm mb-6">Why did you fail to meet the success condition? Be brutal. No excuses.</p>
                                 
@@ -312,21 +325,21 @@ export default function SFTrackerPage() {
                                     value={failureReason}
                                     onChange={(e) => setFailureReason(e.target.value)}
                                     placeholder="e.g. Got distracted by YouTube, procrastinated instead of reading documentation."
-                                    className="w-full bg-red-500/5 border border-red-500/20 text-white placeholder-red-900/40 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/40 transition-all h-32 resize-none mb-6"
+                                    className="w-full bg-white/5 border border-white/10 text-white placeholder-zinc-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all h-32 resize-none mb-6"
                                     autoFocus
                                 />
 
                                 <div className="flex gap-3">
                                     <button 
                                         onClick={() => setFailureModalOpen(false)}
-                                        className="flex-1 py-3 px-4 rounded-xl font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+                                        className="flex-1 py-3 px-4 rounded-xl font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors border border-transparent"
                                     >
                                         Cancel
                                     </button>
                                     <button 
                                         onClick={submitFailure}
                                         disabled={isSubmitting || !failureReason.trim()}
-                                        className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
                                         {isSubmitting ? 'Logging...' : 'Submit Failure'}
                                     </button>
