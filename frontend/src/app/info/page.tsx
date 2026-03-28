@@ -14,13 +14,13 @@ export default function InfoPage() {
                     </div>
 
                     {/* Formula Section */}
-                    <div className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 md:p-8 relative overflow-hidden">
+                    <div className="bg-black border border-white/10 rounded-2xl p-6 md:p-8 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                         <h2 className="text-xl font-semibold text-white mb-6 relative z-10 flex items-center gap-2">
                             <span className="text-blue-400">📈</span> Performance Score Formula
                         </h2>
                         
-                        <div className="bg-black/80 rounded-xl p-5 border border-white/5 font-mono text-sm md:text-base text-zinc-300 mb-8 relative z-10 overflow-x-auto">
+                        <div className="bg-white/5 rounded-xl p-5 border border-white/10 font-mono text-sm md:text-base text-zinc-400 mb-8 relative z-10 overflow-x-auto">
                             Score = Completion_Rate × Speed_Score × Volume_Bonus × 1000
                         </div>
 
@@ -54,18 +54,18 @@ export default function InfoPage() {
                     </div>
 
                     {/* Penalty Section */}
-                    <div className="bg-[#110505] border border-red-500/20 rounded-2xl p-6 md:p-8 relative overflow-hidden">
+                    <div className="bg-black border border-red-500/20 rounded-2xl p-6 md:p-8 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-                        <h2 className="text-xl font-semibold text-red-400 mb-4 relative z-10 flex items-center gap-2">
+                        <h2 className="text-xl font-semibold text-red-500 mb-4 relative z-10 flex items-center gap-2">
                             <span>⚠️</span> Continuous Inactivity Penalty
                         </h2>
                         
-                        <p className="text-zinc-300 text-sm leading-relaxed mb-6 relative z-10">
+                        <p className="text-zinc-400 text-sm leading-relaxed mb-6 relative z-10">
                             The system enforces strict discipline. If you abandon your workflow and the global timer remains inactive for extended periods, your earned score will be heavily taxed.
                         </p>
 
                         <div className="bg-red-500/10 rounded-xl p-5 border border-red-500/20 relative z-10">
-                            <ul className="space-y-3 text-sm text-zinc-300">
+                            <ul className="space-y-3 text-sm text-zinc-400">
                                 <li className="flex items-start gap-3">
                                     <span className="text-red-500 mt-0.5">▪</span>
                                     <span>If the timer is stopped continuously for <strong>2 hours</strong>, you lose <strong>10 points</strong>.</span>
@@ -83,25 +83,25 @@ export default function InfoPage() {
                     </div>
 
                     {/* Japanese Chunking Technique Info */}
-                    <div className="bg-[#050f0a] border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="bg-black border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                         <div className="flex flex-col sm:flex-row gap-5 items-start relative z-10">
                             <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl shrink-0">
                                 🎯
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-emerald-400 mb-2 tracking-tight">
+                                <h3 className="text-lg font-semibold text-emerald-500 mb-2 tracking-tight">
                                     Pro Tip: The Japanese Chunking Technique
                                 </h3>
-                                <p className="text-zinc-300 text-sm leading-relaxed mb-4">
+                                <p className="text-zinc-400 text-sm leading-relaxed mb-4">
                                     Targets ko hmesha chunks mein todo! This is a Japanese technique to break large targets into smaller, manageable chunks. Start the timer for each chunk. Target jaldi achieve hoga aur score zyada badhega.
                                 </p>
-                                <div className="bg-black/50 rounded-xl p-4 border border-emerald-500/10">
+                                <div className="bg-white/5 rounded-xl p-4 border border-emerald-500/20">
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="text-xs font-bold uppercase tracking-wider text-emerald-500">Example</span>
                                     </div>
                                     <p className="text-sm text-zinc-400 leading-relaxed">
-                                        <strong className="text-zinc-200">Organic Chemistry:</strong> Agar aaj ka target 80 questions hai, toh usko ek sath na karke, <strong className="text-emerald-300">20-20 questions ke chunks</strong> bana kar timer set karo. Target jaldi hoga and score zyada badhega!
+                                        <strong className="text-white">Organic Chemistry:</strong> Agar aaj ka target 80 questions hai, toh usko ek sath na karke, <strong className="text-emerald-500">20-20 questions ke chunks</strong> bana kar timer set karo. Target jaldi hoga and score zyada badhega!
                                     </p>
                                 </div>
                             </div>
