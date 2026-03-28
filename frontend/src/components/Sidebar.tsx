@@ -98,7 +98,7 @@ export function Sidebar() {
                 <div className="md:hidden fixed inset-0 bg-black/80 z-[60]" onClick={() => setIsOpen(false)} />
             )}
 
-            <aside className={`fixed md:relative top-0 left-0 z-[70] h-[100dvh] w-64 border-r p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed md:sticky top-0 left-0 z-[70] h-[100dvh] w-64 border-r p-6 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 overflow-y-auto ${theme === 'light' ? 'bg-white border-black/10' : 'bg-black border-white/10'} ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
                 {/* Close Button Mobile */}
                 <button onClick={() => setIsOpen(false)} className={`md:hidden absolute top-4 right-4 ${theme === 'light' ? 'text-zinc-500 hover:text-black' : 'text-zinc-400 hover:text-white'}`}>
