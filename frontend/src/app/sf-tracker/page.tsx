@@ -217,20 +217,38 @@ export default function SFTrackerPage() {
                                 className="space-y-12"
                             >
                                 {/* Stats Dashboard */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                            <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Tasks</h3>
-                            <p className="text-4xl font-bold text-white">{targets.length}</p>
-                        </div>
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                            <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Success</h3>
-                            <p className="text-4xl font-bold text-white">{targets.filter(t => t.status === 'Success').length}</p>
-                        </div>
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                            <h3 className="text-zinc-500 text-sm font-medium mb-2">Total Failure</h3>
-                            <p className="text-4xl font-bold text-white">{targets.filter(t => t.status === 'Failure').length}</p>
-                        </div>
-                    </div>
+                                <div className="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-4 relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-50 transition-opacity group-hover:opacity-70" />
+                                    <div className="relative z-10 flex-1 text-center md:text-left">
+                                        <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-[0.2em] mb-1">Execution Momentum</h3>
+                                        <p className="text-3xl font-black text-white">Execution Metrics</p>
+                                    </div>
+                                    <div className="relative z-10 flex items-center gap-2 sm:gap-6 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                                        <div className="flex-1 md:flex-none flex flex-col items-center md:items-start min-w-[80px]">
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Targets</span>
+                                            </div>
+                                            <p className="text-3xl font-black text-white">{targets.length}</p>
+                                        </div>
+                                        <div className="w-px h-10 bg-white/10 hidden sm:block" />
+                                        <div className="flex-1 md:flex-none flex flex-col items-center md:items-start min-w-[80px]">
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Success</span>
+                                            </div>
+                                            <p className="text-3xl font-black text-emerald-400">{targets.filter(t => t.status === 'Success').length}</p>
+                                        </div>
+                                        <div className="w-px h-10 bg-white/10 hidden sm:block" />
+                                        <div className="flex-1 md:flex-none flex flex-col items-center md:items-start min-w-[80px]">
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Failure</span>
+                                            </div>
+                                            <p className="text-3xl font-black text-rose-400">{targets.filter(t => t.status === 'Failure').length}</p>
+                                        </div>
+                                    </div>
+                                </div>
 
                     {/* Creation Form */}
                     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
@@ -300,28 +318,28 @@ export default function SFTrackerPage() {
                                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                             </button>
                                             
-                                            <div className="pr-6 relative z-10 mb-6">
-                                                <h3 className="text-xl font-bold text-white mb-3">{target.target}</h3>
-                                                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-                                                    <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-1">Success Condition</span>
-                                                    <p className="text-sm text-zinc-400 leading-snug">{target.successCondition}</p>
+                                            <div className="pr-6 relative z-10 mb-6 flex-1">
+                                                <h3 className="text-xl font-black text-white mb-4 leading-tight group-hover:text-blue-400 transition-colors">{target.target}</h3>
+                                                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 group-hover:bg-white/10 transition-colors">
+                                                    <span className="text-[9px] uppercase font-black tracking-[0.15em] text-zinc-500 block mb-2">Success Condition</span>
+                                                    <p className="text-sm text-zinc-300 leading-relaxed">{target.successCondition}</p>
                                                 </div>
                                             </div>
 
-                                            <div className="flex gap-3 relative z-10 mt-auto">
+                                            <div className="flex gap-3 relative z-10 mt-auto pt-4 border-t border-white/5">
                                                 <button 
                                                     onClick={() => handleMarkSuccess(target._id)}
-                                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                                                    className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(16,185,129,0.2)] flex items-center justify-center gap-2"
                                                 >
-                                                    <span className="text-xl">S</span>
-                                                    <span className="text-xs uppercase tracking-wider">Success</span>
+                                                    <span className="text-lg">S</span>
+                                                    <span>Success</span>
                                                 </button>
                                                 <button 
                                                     onClick={() => handleMarkFailureClick(target._id)}
-                                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                                                    className="flex-1 bg-rose-500 hover:bg-rose-400 text-black text-[10px] font-black uppercase tracking-widest py-3 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(244,63,94,0.2)] flex items-center justify-center gap-2"
                                                 >
-                                                    <span className="text-xl">F</span>
-                                                    <span className="text-xs uppercase tracking-wider">Failure</span>
+                                                    <span className="text-lg">F</span>
+                                                    <span>Failure</span>
                                                 </button>
                                             </div>
                                         </motion.div>
@@ -337,27 +355,28 @@ export default function SFTrackerPage() {
                             <h2 className="text-xl font-bold text-white">Execution History</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {historyTargets.map(target => (
-                                    <div key={target._id} className="bg-white/5 border border-white/5 rounded-xl p-5 hover:bg-white/10 transition-colors relative group">
+                                    <div key={target._id} className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 hover:bg-white/[0.06] transition-all relative group overflow-hidden">
+                                        <div className={`absolute top-0 left-0 w-1 h-full ${target.status === 'Success' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                                         <button onClick={() => handleDelete(target._id)} className="absolute top-4 right-4 text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" title="Delete">
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
-                                        <div className="flex justify-between items-start mb-2 pr-6">
-                                            <h3 className="font-semibold text-white">{target.target}</h3>
-                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${target.status === 'Success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="font-bold text-lg text-white pr-6">{target.target}</h3>
+                                            <span className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${target.status === 'Success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                                                 {target.status}
                                             </span>
                                         </div>
                                         
                                         {target.status === 'Failure' && target.failureReason && (
-                                            <div className="mt-3 bg-white/5 border border-white/10 rounded-lg p-3">
-                                                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-1">Reason for Failure</span>
+                                            <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl p-4">
+                                                <span className="text-[9px] uppercase font-black tracking-widest text-rose-500/60 block mb-1">Reason for Failure</span>
                                                 <p className="text-sm text-zinc-400 italic">"{target.failureReason}"</p>
                                             </div>
                                         )}
                                         {target.status === 'Success' && (
-                                            <div className="mt-3">
-                                                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 block mb-1">Condition Met</span>
-                                                <p className="text-xs text-zinc-400">{target.successCondition}</p>
+                                            <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4">
+                                                <span className="text-[9px] uppercase font-black tracking-widest text-emerald-500/60 block mb-1">Execution Milestone Met</span>
+                                                <p className="text-sm text-zinc-400">{target.successCondition}</p>
                                             </div>
                                         )}
                                     </div>
@@ -411,18 +430,18 @@ export default function SFTrackerPage() {
                                     </div>
 
                                     {/* Metrics Row */}
-                                    <div className="grid grid-cols-3 md:flex md:flex-1 md:justify-end items-center gap-2 sm:gap-3 mt-4 md:mt-0 w-full md:w-auto">
-                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-2 sm:px-4 py-2 min-w-[80px] sm:min-w-[100px] shrink-0 text-center md:text-left">
-                                            <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Targets</span>
-                                            <span className="text-lg sm:text-xl font-bold text-white">{user.totalTasks}</span>
+                                    <div className="flex flex-wrap md:flex-nowrap md:flex-1 md:justify-end items-center gap-3 sm:gap-4 mt-4 md:mt-0 w-full md:w-auto">
+                                        <div className="flex-1 md:flex-none flex flex-col items-center md:items-start bg-white/[0.03] border border-white/5 rounded-2xl px-4 py-3 min-w-[90px] transition-colors group-hover:bg-white/[0.06]">
+                                            <span className="text-[9px] uppercase font-black tracking-[0.15em] text-zinc-500 mb-1">Targets</span>
+                                            <span className="text-xl font-black text-white">{user.totalTasks}</span>
                                         </div>
-                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-2 sm:px-4 py-2 min-w-[80px] sm:min-w-[100px] shrink-0 text-center md:text-left">
-                                            <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Success</span>
-                                            <span className="text-lg sm:text-xl font-bold text-white">{user.successTasks}</span>
+                                        <div className="flex-1 md:flex-none flex flex-col items-center md:items-start bg-emerald-500/5 border border-emerald-500/10 rounded-2xl px-4 py-3 min-w-[90px] transition-colors group-hover:bg-emerald-500/10">
+                                            <span className="text-[9px] uppercase font-black tracking-[0.15em] text-emerald-500/60 mb-1">Success</span>
+                                            <span className="text-xl font-black text-emerald-400">{user.successTasks}</span>
                                         </div>
-                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-2 sm:px-4 py-2 min-w-[80px] sm:min-w-[100px] shrink-0 text-center md:text-left">
-                                            <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Failure</span>
-                                            <span className="text-lg sm:text-xl font-bold text-white">{user.failureTasks}</span>
+                                        <div className="flex-1 md:flex-none flex flex-col items-center md:items-start bg-rose-500/5 border border-rose-500/10 rounded-2xl px-4 py-3 min-w-[90px] transition-colors group-hover:bg-rose-500/10">
+                                            <span className="text-[9px] uppercase font-black tracking-[0.15em] text-rose-500/60 mb-1">Failure</span>
+                                            <span className="text-xl font-black text-rose-400">{user.failureTasks}</span>
                                         </div>
                                     </div>
                                 </div>
