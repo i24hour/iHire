@@ -251,8 +251,8 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
         if (ev.type === 'start') {
             if (currentActiveCount === 0) {
                 const gapMs = ev.time - lastActiveEndTime;
-                if (gapMs >= 2 * 3600 * 1000) {
-                    totalPenaltyPoints += Math.floor(gapMs / (2 * 3600 * 1000)) * 10;
+                if (gapMs > 0) {
+                    totalPenaltyPoints += (gapMs / (2 * 3600 * 1000)) * 10;
                 }
             }
             currentActiveCount++;
@@ -266,8 +266,8 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
     if (currentActiveCount === 0 && earliestGlobalStart !== Infinity && lastActiveEndTime < t) {
         const gapMs = t - lastActiveEndTime;
-        if (gapMs >= 2 * 3600 * 1000) {
-            totalPenaltyPoints += Math.floor(gapMs / (2 * 3600 * 1000)) * 10;
+        if (gapMs > 0) {
+            totalPenaltyPoints += (gapMs / (2 * 3600 * 1000)) * 10;
         }
     }
 
