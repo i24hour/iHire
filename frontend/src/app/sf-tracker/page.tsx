@@ -411,20 +411,18 @@ export default function SFTrackerPage() {
                                     </div>
 
                                     {/* Metrics Row */}
-                                    <div className="flex flex-1 justify-end items-center gap-3 sm:gap-6 mt-2 md:mt-0 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-4 py-2 min-w-[100px] shrink-0">
-                                            <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Total Targets</span>
-                                            <span className="text-xl font-bold text-white">{user.totalTasks}</span>
+                                    <div className="grid grid-cols-3 md:flex md:flex-1 md:justify-end items-center gap-2 sm:gap-3 mt-4 md:mt-0 w-full md:w-auto">
+                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-2 sm:px-4 py-2 min-w-[80px] sm:min-w-[100px] shrink-0 text-center md:text-left">
+                                            <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Targets</span>
+                                            <span className="text-lg sm:text-xl font-bold text-white">{user.totalTasks}</span>
                                         </div>
-                                        <div className="flex flex-col border border-emerald-500/20 bg-emerald-500/5 rounded-xl px-4 py-2 min-w-[100px] shrink-0 relative overflow-hidden">
-                                            <div className="absolute inset-0 bg-emerald-500/5 transition-opacity opacity-0 group-hover:opacity-100"></div>
-                                            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-500 mb-1 z-10">Success</span>
-                                            <span className="text-xl font-bold text-emerald-400 z-10">{user.successTasks}</span>
+                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-2 sm:px-4 py-2 min-w-[80px] sm:min-w-[100px] shrink-0 text-center md:text-left">
+                                            <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Success</span>
+                                            <span className="text-lg sm:text-xl font-bold text-white">{user.successTasks}</span>
                                         </div>
-                                        <div className="flex flex-col border border-red-500/20 bg-red-500/5 rounded-xl px-4 py-2 min-w-[100px] shrink-0 relative overflow-hidden">
-                                            <div className="absolute inset-0 bg-red-500/5 transition-opacity opacity-0 group-hover:opacity-100"></div>
-                                            <span className="text-[10px] uppercase font-bold tracking-widest text-red-500 mb-1 z-10">Failure</span>
-                                            <span className="text-xl font-bold text-red-400 z-10">{user.failureTasks}</span>
+                                        <div className="flex flex-col border border-white/10 bg-black/40 rounded-xl px-2 sm:px-4 py-2 min-w-[80px] sm:min-w-[100px] shrink-0 text-center md:text-left">
+                                            <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-1">Failure</span>
+                                            <span className="text-lg sm:text-xl font-bold text-white">{user.failureTasks}</span>
                                         </div>
                                     </div>
                                 </div>

@@ -245,7 +245,7 @@ export async function PUT(
             }
         } else {
             // No one is working
-            if (chain.status === 'Active' || chain.totalTime > 0) {
+            if (chain.status === 'Active') {
                 if (chain.lastStartedAt) {
                     chain.totalTime += Math.floor((now - chain.lastStartedAt) / 1000);
                 }
@@ -256,13 +256,16 @@ export async function PUT(
                     chain.maxTime = chain.totalTime;
                 }
 
-                // If everyone stopped or the chain was auto-paused, it bursts
-                chain.status = 'Burst';
-                chain.burstAt = now;
+                // If the last person just stopped, the chain bursts
+                if (isWorking === false) {
+                    chain.status = 'Burst';
+                    chain.burstAt = now;
+                } else {
+                    chain.status = 'Idle';
+                }
             } else {
                  // Already Idle or just created
                  chain.lastStartedAt = undefined;
-                 chain.status = 'Idle';
             }
         }
 
