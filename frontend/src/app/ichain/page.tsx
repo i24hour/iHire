@@ -147,7 +147,23 @@ export default function IChainPage() {
                                             <div className="flex items-center gap-4">
                                                 <span className="text-2xl font-bold text-zinc-500 w-8">#{index + 1}</span>
                                                 <div>
-                                                    <h3 className="text-xl font-bold text-white">{chain.name}</h3>
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="text-xl font-bold text-white">{chain.name}</h3>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                navigator.clipboard.writeText(`${window.location.origin}/ichain/${chain._id}`);
+                                                                alert('Invite link copied to clipboard!');
+                                                            }}
+                                                            className="p-1 text-zinc-500 hover:text-white transition-colors"
+                                                            title="Copy Invite Link"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                     <p className="text-sm text-zinc-400">
                                                         {chain.members.length} Members • Status: {chain.status === 'Burst' ? <span className="text-red-500 font-medium tracking-wide">Burst</span> : chain.status === 'Active' ? <span className="text-emerald-500 font-medium tracking-wide">Active</span> : <span className="text-amber-500 font-medium tracking-wide">Idle</span>}
                                                     </p>

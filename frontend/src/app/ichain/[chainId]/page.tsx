@@ -20,6 +20,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
     const [newMemberIdentifier, setNewMemberIdentifier] = useState('');
     const [isAddingMember, setIsAddingMember] = useState(false);
     const [isLightTheme, setIsLightTheme] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -31,6 +32,13 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
         observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
         return () => observer.disconnect();
     }, []);
+
+    const handleShare = () => {
+        const url = `${window.location.origin}/ichain/${chainId}`;
+        navigator.clipboard.writeText(url);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
     const handleAddMember = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -358,7 +366,24 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                             Back to iChains
                         </Link>
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">{chain.name}</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">{chain.name}</h1>
+                            <button
+                                onClick={handleShare}
+                                className="p-2 text-zinc-500 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                                title="Share Chain Invite Link"
+                            >
+                                {isCopied ? (
+                                    <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
                         <div className="flex items-center gap-4">
                             <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border ${
                                 chain.status === 'Active' ? 'text-green-500 border-green-500/30 bg-green-500/10' :
