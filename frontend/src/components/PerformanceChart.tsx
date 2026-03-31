@@ -130,11 +130,17 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let completedTasks = 0;
     let runningTasksHours = 0;
     let completedTasksHours = 0;
+    let earliestGlobalStart = Infinity;
+
+    // Collect all active intervals across tasks for idle-time calculation
+    const allIntervals: { start: number; end: number }[] = [];
 
     for (const task of tasks) {
         // Only count tasks that existed at time t
         const taskStartTime = task.events?.[0]?.timestamp ?? task.startTime;
         if (!taskStartTime || taskStartTime > t) continue;
+
+        if (taskStartTime < earliestGlobalStart) earliestGlobalStart = taskStartTime;
 
         totalTasks++;
 
@@ -164,11 +170,14 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             if (task.startTime && task.startTime <= t) {
                 if (isCompletedByT) {
                     taskHours = (actualCompletedAt! - task.startTime) / (1000 * 3600);
+                    allIntervals.push({ start: task.startTime, end: actualCompletedAt! });
                 } else {
                     if (!task.completed && !task.enabled) {
                         taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
+                        allIntervals.push({ start: task.startTime, end: task.startTime + task.pausedElapsed * 1000 });
                     } else {
                         taskHours = (t - task.startTime) / (1000 * 3600);
+                        allIntervals.push({ start: task.startTime, end: t });
                     }
                 }
             }
@@ -186,14 +195,15 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             for (const ev of syntheticEvents) {
                 if (ev.timestamp > t) break;
                 if (ev.type === 'start') {
-                    if (!isRunning) { 
-                        isRunning = true; 
-                        lastStartTime = ev.timestamp; 
+                    if (!isRunning) {
+                        isRunning = true;
+                        lastStartTime = ev.timestamp;
                     }
                 } else if (ev.type === 'pause' || ev.type === 'complete') {
-                    if (isRunning) { 
-                        taskActiveMs += (ev.timestamp - lastStartTime); 
-                        isRunning = false; 
+                    if (isRunning) {
+                        taskActiveMs += (ev.timestamp - lastStartTime);
+                        allIntervals.push({ start: lastStartTime, end: ev.timestamp });
+                        isRunning = false;
                     }
                 }
             }
@@ -201,6 +211,7 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             // Only add ongoing time if it's currently running AND not completed by time t
             if (isRunning && !isCompletedByT && lastStartTime <= t) {
                 taskActiveMs += (t - lastStartTime);
+                allIntervals.push({ start: lastStartTime, end: t });
             }
 
             // Fallback for migrated tasks missing initial start events
@@ -221,6 +232,28 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
     if (totalTasks === 0 || completedTasks === 0) return 0;
 
+    // --- Idle penalty: 0.001 pts/sec where no task is active ---
+    // Merge overlapping intervals to get total unique active ms
+    allIntervals.sort((a, b) => a.start - b.start);
+    let totalActiveMs = 0;
+    let mergeStart = -1, mergeEnd = -1;
+    for (const iv of allIntervals) {
+        if (mergeStart === -1) {
+            mergeStart = iv.start; mergeEnd = iv.end;
+        } else if (iv.start <= mergeEnd) {
+            mergeEnd = Math.max(mergeEnd, iv.end);
+        } else {
+            totalActiveMs += mergeEnd - mergeStart;
+            mergeStart = iv.start; mergeEnd = iv.end;
+        }
+    }
+    if (mergeStart !== -1) totalActiveMs += mergeEnd - mergeStart;
+
+    const totalElapsedMs = earliestGlobalStart !== Infinity ? t - earliestGlobalStart : 0;
+    const idleSeconds = Math.max(0, (totalElapsedMs - totalActiveMs) / 1000);
+    const idlePenalty = idleSeconds * 0.001;
+    // ---
+
     const completionRate = completedTasks / totalTasks;
     const totalTimeHours = completedTasksHours + runningTasksHours;
     const avgTimePerTask = totalTimeHours / completedTasks;
@@ -229,7 +262,7 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     const volumeBonus = Math.log10(completedTasks + 1) * 2;
     const score = completionRate * speedScore * volumeBonus * 1000;
 
-    return Math.round(score * 100) / 100;
+    return Math.round(Math.max(0, score - idlePenalty) * 100) / 100;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
