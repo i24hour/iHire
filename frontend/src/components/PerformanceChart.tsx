@@ -130,17 +130,11 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     let completedTasks = 0;
     let runningTasksHours = 0;
     let completedTasksHours = 0;
-    let earliestGlobalStart = Infinity;
-    const mergedEvents: { time: number, type: 'start' | 'stop' }[] = [];
 
     for (const task of tasks) {
         // Only count tasks that existed at time t
         const taskStartTime = task.events?.[0]?.timestamp ?? task.startTime;
         if (!taskStartTime || taskStartTime > t) continue;
-
-        if (taskStartTime < earliestGlobalStart) {
-            earliestGlobalStart = taskStartTime;
-        }
 
         totalTasks++;
 
@@ -170,20 +164,11 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             if (task.startTime && task.startTime <= t) {
                 if (isCompletedByT) {
                     taskHours = (actualCompletedAt! - task.startTime) / (1000 * 3600);
-                    mergedEvents.push({ time: task.startTime, type: 'start' });
-                    mergedEvents.push({ time: actualCompletedAt!, type: 'stop' });
                 } else {
-                    // It's still running at time t
                     if (!task.completed && !task.enabled) {
-                        // Paused legacy task
                         taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
-                        mergedEvents.push({ time: task.startTime, type: 'start' });
-                        mergedEvents.push({ time: task.startTime + (task.pausedElapsed * 1000), type: 'stop' });
                     } else {
-                        // Running legacy task (or completed in reality, but actively running at time t)
                         taskHours = (t - task.startTime) / (1000 * 3600);
-                        mergedEvents.push({ time: task.startTime, type: 'start' });
-                        mergedEvents.push({ time: t, type: 'stop' });
                     }
                 }
             }
@@ -204,13 +189,11 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
                     if (!isRunning) { 
                         isRunning = true; 
                         lastStartTime = ev.timestamp; 
-                        mergedEvents.push({ time: ev.timestamp, type: 'start' });
                     }
                 } else if (ev.type === 'pause' || ev.type === 'complete') {
                     if (isRunning) { 
                         taskActiveMs += (ev.timestamp - lastStartTime); 
                         isRunning = false; 
-                        mergedEvents.push({ time: ev.timestamp, type: 'stop' });
                     }
                 }
             }
@@ -218,7 +201,6 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             // Only add ongoing time if it's currently running AND not completed by time t
             if (isRunning && !isCompletedByT && lastStartTime <= t) {
                 taskActiveMs += (t - lastStartTime);
-                mergedEvents.push({ time: t, type: 'stop' });
             }
 
             // Fallback for migrated tasks missing initial start events
@@ -229,7 +211,6 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
             taskHours = taskActiveMs / (1000 * 3600);
         }
 
-        // Total time = completed task hours + active time accumulated on incomplete tasks.
         if (isCompletedByT) {
             completedTasks++;
             completedTasksHours += taskHours;
@@ -240,37 +221,6 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
     if (totalTasks === 0 || completedTasks === 0) return 0;
 
-    // Penalty Logic: Deduct 10 points for every continuous 2-hour gap where NO task is running.
-    mergedEvents.sort((a, b) => a.time - b.time);
-
-    let currentActiveCount = 0;
-    let lastActiveEndTime = earliestGlobalStart !== Infinity ? earliestGlobalStart : t; 
-    let totalPenaltyPoints = 0;
-
-    for (const ev of mergedEvents) {
-        if (ev.type === 'start') {
-            if (currentActiveCount === 0) {
-                const gapMs = ev.time - lastActiveEndTime;
-                if (gapMs > 0) {
-                    totalPenaltyPoints += (gapMs / (2 * 3600 * 1000)) * 10;
-                }
-            }
-            currentActiveCount++;
-        } else {
-            currentActiveCount = Math.max(0, currentActiveCount - 1);
-            if (currentActiveCount === 0) {
-                lastActiveEndTime = ev.time;
-            }
-        }
-    }
-
-    if (currentActiveCount === 0 && earliestGlobalStart !== Infinity && lastActiveEndTime < t) {
-        const gapMs = t - lastActiveEndTime;
-        if (gapMs > 0) {
-            totalPenaltyPoints += (gapMs / (2 * 3600 * 1000)) * 10;
-        }
-    }
-
     const completionRate = completedTasks / totalTasks;
     const totalTimeHours = completedTasksHours + runningTasksHours;
     const avgTimePerTask = totalTimeHours / completedTasks;
@@ -278,9 +228,8 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     const speedScore = 1 / clampedAvgTime;
     const volumeBonus = Math.log10(completedTasks + 1) * 2;
     const score = completionRate * speedScore * volumeBonus * 1000;
-    const finalScore = Math.max(0, score - totalPenaltyPoints);
 
-    return Math.round(finalScore * 100) / 100;
+    return Math.round(score * 100) / 100;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
