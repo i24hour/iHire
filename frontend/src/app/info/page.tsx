@@ -54,29 +54,29 @@ export default function InfoPage() {
                     </div>
 
                     {/* Penalty Section */}
-                    <div className="bg-black border border-red-500/20 rounded-2xl p-6 md:p-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
-                        <h2 className="text-xl font-semibold text-red-500 mb-4 relative z-10 flex items-center gap-2">
-                            <span>⚠️</span> Continuous Inactivity Penalty
+                    <div className="bg-black border border-white/10 rounded-2xl p-6 md:p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                        <h2 className="text-xl font-semibold text-white mb-4 relative z-10 flex items-center gap-2">
+                            <span>⏱️</span> Idle Penalty
                         </h2>
-                        
+
                         <p className="text-zinc-400 text-sm leading-relaxed mb-6 relative z-10">
-                            The system enforces strict discipline. If you abandon your workflow and the global timer remains inactive for extended periods, your earned score will be heavily taxed.
+                            Your score bleeds in real-time whenever no task is actively running. Every second of idle time costs you points — there are no safe pauses.
                         </p>
 
-                        <div className="bg-red-500/10 rounded-xl p-5 border border-red-500/20 relative z-10">
+                        <div className="bg-white/5 rounded-xl p-5 border border-white/10 relative z-10">
                             <ul className="space-y-3 text-sm text-zinc-400">
                                 <li className="flex items-start gap-3">
-                                    <span className="text-red-500 mt-0.5">▪</span>
-                                    <span>If the timer is stopped continuously for <strong>2 hours</strong>, you lose <strong>10 points</strong>.</span>
+                                    <span className="text-white mt-0.5">▪</span>
+                                    <span>For every <strong className="text-white">1 second</strong> no task is running, <strong className="text-white">0.001 points</strong> are deducted from your score.</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <span className="text-red-500 mt-0.5">▪</span>
-                                    <span>The penalty applies to <strong>each continuous 2-hour gap</strong> (e.g., a 4-hour continuous gap deducts 20 points).</span>
+                                    <span className="text-white mt-0.5">▪</span>
+                                    <span>This equals <strong className="text-white">3.6 points/hour</strong> of idle time — the decay is continuous and visible live on your score.</span>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <span className="text-red-500 mt-0.5">▪</span>
-                                    <span>If you start a task before the 2-hour threshold is crossed, the continuous gap resets. Short breaks are safe.</span>
+                                    <span className="text-white mt-0.5">▪</span>
+                                    <span>Start any task to immediately stop the deduction. Multiple overlapping tasks are counted as a single active window — no double protection.</span>
                                 </li>
                             </ul>
                         </div>
