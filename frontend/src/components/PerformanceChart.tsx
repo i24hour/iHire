@@ -233,24 +233,37 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     if (totalTasks === 0 || completedTasks === 0) return 0;
 
     // --- Idle penalty: 0.001 pts/sec where no task is active ---
-    // Merge overlapping intervals to get total unique active ms
-    allIntervals.sort((a, b) => a.start - b.start);
-    let totalActiveMs = 0;
+    // Window = today only (IST midnight → t), so historical inactivity doesn't accumulate forever.
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+    const nowIst = new Date(t + IST_OFFSET_MS);
+    const todayMidnightIst = Date.UTC(
+        nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate(), 0, 0, 0, 0
+    ) - IST_OFFSET_MS; // back to UTC ms
+
+    const penaltyWindowStart = Math.max(todayMidnightIst, earliestGlobalStart !== Infinity ? earliestGlobalStart : t);
+
+    // Merge overlapping intervals clipped to today's window
+    const todayIntervals = allIntervals
+        .map(iv => ({ start: Math.max(iv.start, penaltyWindowStart), end: Math.min(iv.end, t) }))
+        .filter(iv => iv.end > iv.start)
+        .sort((a, b) => a.start - b.start);
+
+    let totalActiveMsToday = 0;
     let mergeStart = -1, mergeEnd = -1;
-    for (const iv of allIntervals) {
+    for (const iv of todayIntervals) {
         if (mergeStart === -1) {
             mergeStart = iv.start; mergeEnd = iv.end;
         } else if (iv.start <= mergeEnd) {
             mergeEnd = Math.max(mergeEnd, iv.end);
         } else {
-            totalActiveMs += mergeEnd - mergeStart;
+            totalActiveMsToday += mergeEnd - mergeStart;
             mergeStart = iv.start; mergeEnd = iv.end;
         }
     }
-    if (mergeStart !== -1) totalActiveMs += mergeEnd - mergeStart;
+    if (mergeStart !== -1) totalActiveMsToday += mergeEnd - mergeStart;
 
-    const totalElapsedMs = earliestGlobalStart !== Infinity ? t - earliestGlobalStart : 0;
-    const idleSeconds = Math.max(0, (totalElapsedMs - totalActiveMs) / 1000);
+    const totalElapsedMsToday = penaltyWindowStart < t ? t - penaltyWindowStart : 0;
+    const idleSeconds = Math.max(0, (totalElapsedMsToday - totalActiveMsToday) / 1000);
     const idlePenalty = idleSeconds * 0.001;
     // ---
 
