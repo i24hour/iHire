@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
 
         await connectDB();
 
-        // Fetch all raw tasks (only public ones to match individual profiles)
-        const allTasks = await ITimeTask.find({ isPublic: { $ne: false } }).lean() as any[];
+        // Fetch all tasks (public + private) so score matches personal iTime view
+        const allTasks = await ITimeTask.find({}).lean() as any[];
 
         // Fetch all users to map emails to usernames
         let allUsers = await User.find().lean() as any[];
