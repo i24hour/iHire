@@ -125,64 +125,45 @@ function getFocusedCandleRange(candles: CandlestickData[], referenceValue?: numb
  * - Completing a task adds to completed count and completed task hours
  * - Edge cases: no tasks or no completed tasks => score = 0
  */
-export function getScoreAtTime(tasks: ChartTask[], t: number): number {
+function computeBaseScore(tasks: ChartTask[], t: number): number {
     let totalTasks = 0;
     let completedTasks = 0;
     let runningTasksHours = 0;
     let completedTasksHours = 0;
-    let earliestGlobalStart = Infinity;
-
-    // Collect all active intervals across tasks for idle-time calculation
-    const allIntervals: { start: number; end: number }[] = [];
 
     for (const task of tasks) {
-        // Only count tasks that existed at time t
         const taskStartTime = task.events?.[0]?.timestamp ?? task.startTime;
         if (!taskStartTime || taskStartTime > t) continue;
 
-        if (taskStartTime < earliestGlobalStart) earliestGlobalStart = taskStartTime;
-
         totalTasks++;
 
-        // Figure out exact completion timestamp. Older persisted tasks may only have a complete event.
         let actualCompletedAt = task.completedAt;
         if (!actualCompletedAt && task.events?.length) {
-            const completionEvent = [...task.events]
-                .reverse()
-                .find((event) => event.type === 'complete');
+            const completionEvent = [...task.events].reverse().find((event) => event.type === 'complete');
             if (completionEvent) {
                 actualCompletedAt = completionEvent.timestamp;
             }
         }
         if (task.completed && !actualCompletedAt && (!task.events || task.events.length === 0)) {
-            // Legacy task fallback: theoretical end time
             actualCompletedAt = task.startTime + (task.pausedElapsed * 1000);
         }
 
-        // Check if completed strictly by time t
         const isCompletedByT = !!(task.completed && actualCompletedAt && actualCompletedAt <= t);
 
-        // Calculate its accumulated active time up to t
         let taskHours = 0;
-
         if (!task.events || task.events.length === 0) {
-            // Legacy task with no events
             if (task.startTime && task.startTime <= t) {
                 if (isCompletedByT) {
                     taskHours = (actualCompletedAt! - task.startTime) / (1000 * 3600);
-                    allIntervals.push({ start: task.startTime, end: actualCompletedAt! });
                 } else {
                     if (!task.completed && !task.enabled) {
                         taskHours = (task.pausedElapsed * 1000) / (1000 * 3600);
-                        allIntervals.push({ start: task.startTime, end: task.startTime + task.pausedElapsed * 1000 });
                     } else {
                         taskHours = (t - task.startTime) / (1000 * 3600);
-                        allIntervals.push({ start: task.startTime, end: t });
                     }
                 }
             }
         } else {
-            // Modern task: Event-based calculation (strips out pause times)
             const syntheticEvents = [...task.events];
             if (syntheticEvents[0].type !== 'start' && task.startTime && task.startTime < syntheticEvents[0].timestamp) {
                 syntheticEvents.unshift({ type: 'start', timestamp: task.startTime });
@@ -202,19 +183,15 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
                 } else if (ev.type === 'pause' || ev.type === 'complete') {
                     if (isRunning) {
                         taskActiveMs += (ev.timestamp - lastStartTime);
-                        allIntervals.push({ start: lastStartTime, end: ev.timestamp });
                         isRunning = false;
                     }
                 }
             }
 
-            // Only add ongoing time if it's currently running AND not completed by time t
             if (isRunning && !isCompletedByT && lastStartTime <= t) {
                 taskActiveMs += (t - lastStartTime);
-                allIntervals.push({ start: lastStartTime, end: t });
             }
 
-            // Fallback for migrated tasks missing initial start events
             if (task.pausedElapsed > 0 && syntheticEvents.length > 0 && lastStartTime === 0) {
                 taskActiveMs += (task.pausedElapsed * 1000);
             }
@@ -232,50 +209,135 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
 
     if (totalTasks === 0 || completedTasks === 0) return 0;
 
-    // --- Idle penalty: 0.001 pts/sec where no task is active ---
-    // Window = today only (IST midnight → t), so historical inactivity doesn't accumulate forever.
-    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-    const nowIst = new Date(t + IST_OFFSET_MS);
-    const todayMidnightIst = Date.UTC(
-        nowIst.getUTCFullYear(), nowIst.getUTCMonth(), nowIst.getUTCDate(), 0, 0, 0, 0
-    ) - IST_OFFSET_MS; // back to UTC ms
-
-    const penaltyWindowStart = Math.max(todayMidnightIst, earliestGlobalStart !== Infinity ? earliestGlobalStart : t);
-
-    // Merge overlapping intervals clipped to today's window
-    const todayIntervals = allIntervals
-        .map(iv => ({ start: Math.max(iv.start, penaltyWindowStart), end: Math.min(iv.end, t) }))
-        .filter(iv => iv.end > iv.start)
-        .sort((a, b) => a.start - b.start);
-
-    let totalActiveMsToday = 0;
-    let mergeStart = -1, mergeEnd = -1;
-    for (const iv of todayIntervals) {
-        if (mergeStart === -1) {
-            mergeStart = iv.start; mergeEnd = iv.end;
-        } else if (iv.start <= mergeEnd) {
-            mergeEnd = Math.max(mergeEnd, iv.end);
-        } else {
-            totalActiveMsToday += mergeEnd - mergeStart;
-            mergeStart = iv.start; mergeEnd = iv.end;
-        }
-    }
-    if (mergeStart !== -1) totalActiveMsToday += mergeEnd - mergeStart;
-
-    const totalElapsedMsToday = penaltyWindowStart < t ? t - penaltyWindowStart : 0;
-    const idleSeconds = Math.max(0, (totalElapsedMsToday - totalActiveMsToday) / 1000);
-    const idlePenalty = idleSeconds * 0.001;
-    // ---
-
     const completionRate = completedTasks / totalTasks;
     const totalTimeHours = completedTasksHours + runningTasksHours;
     const avgTimePerTask = totalTimeHours / completedTasks;
     const clampedAvgTime = Math.max(avgTimePerTask, 0.5);
     const speedScore = 1 / clampedAvgTime;
     const volumeBonus = Math.log10(completedTasks + 1) * 2;
-    const score = completionRate * speedScore * volumeBonus * 1000;
+    return completionRate * speedScore * volumeBonus * 1000;
+}
 
-    return Math.round(Math.max(0, score - idlePenalty) * 100) / 100;
+function getAllActiveIntervals(tasks: ChartTask[], t: number) {
+    const allIntervals: { start: number; end: number }[] = [];
+    for (const task of tasks) {
+        const taskStartTime = task.events?.[0]?.timestamp ?? task.startTime;
+        if (!taskStartTime || taskStartTime > t) continue;
+
+        let actualCompletedAt = task.completedAt;
+        if (!actualCompletedAt && task.events?.length) {
+            const completionEvent = [...task.events].reverse().find((event) => event.type === 'complete');
+            if (completionEvent) {
+                actualCompletedAt = completionEvent.timestamp;
+            }
+        }
+        if (task.completed && !actualCompletedAt && (!task.events || task.events.length === 0)) {
+            actualCompletedAt = task.startTime + (task.pausedElapsed * 1000);
+        }
+
+        const isCompletedByT = !!(task.completed && actualCompletedAt && actualCompletedAt <= t);
+
+        if (!task.events || task.events.length === 0) {
+            if (task.startTime && task.startTime <= t) {
+                if (isCompletedByT) {
+                    allIntervals.push({ start: task.startTime, end: actualCompletedAt! });
+                } else {
+                    if (!task.completed && !task.enabled) {
+                        allIntervals.push({ start: task.startTime, end: task.startTime + task.pausedElapsed * 1000 });
+                    } else {
+                        allIntervals.push({ start: task.startTime, end: t });
+                    }
+                }
+            }
+        } else {
+            const syntheticEvents = [...task.events];
+            if (syntheticEvents[0].type !== 'start' && task.startTime && task.startTime < syntheticEvents[0].timestamp) {
+                syntheticEvents.unshift({ type: 'start', timestamp: task.startTime });
+            }
+
+            let isRunning = false;
+            let lastStartTime = 0;
+
+            for (const ev of syntheticEvents) {
+                if (ev.timestamp > t) break;
+                if (ev.type === 'start') {
+                    if (!isRunning) {
+                        isRunning = true;
+                        lastStartTime = ev.timestamp;
+                    }
+                } else if (ev.type === 'pause' || ev.type === 'complete') {
+                    if (isRunning) {
+                        allIntervals.push({ start: lastStartTime, end: ev.timestamp });
+                        isRunning = false;
+                    }
+                }
+            }
+
+            if (isRunning && !isCompletedByT && lastStartTime <= t) {
+                allIntervals.push({ start: lastStartTime, end: t });
+            }
+        }
+    }
+    return allIntervals;
+}
+
+export function getScoreAtTime(tasks: ChartTask[], t: number): number {
+    const allIntervals = getAllActiveIntervals(tasks, t);
+    allIntervals.sort((a, b) => a.start - b.start);
+
+    // Merge active intervals
+    const mergedActive: { start: number; end: number }[] = [];
+    for (const iv of allIntervals) {
+        if (mergedActive.length === 0) {
+            mergedActive.push({ ...iv });
+        } else {
+            const last = mergedActive[mergedActive.length - 1];
+            if (iv.start <= last.end) {
+                last.end = Math.max(last.end, iv.end);
+            } else {
+                mergedActive.push({ ...iv });
+            }
+        }
+    }
+
+    // Fixed Continuous Penalty rule: only applies from April 1, 2026 IST onwards.
+    const IST_OFFSET_MS = 5.5 * 3600 * 1000;
+    const APRIL_1_2026_IST = Date.UTC(2026, 3, 1, 0, 0, 0, 0) - IST_OFFSET_MS;
+    const penaltyWindowStart = APRIL_1_2026_IST; // Constant date window start!
+
+    // Find strictly idle periods within the penalty window (penaltyWindowStart -> t)
+    const idleIntervals: { start: number; end: number }[] = [];
+    let currentT = penaltyWindowStart;
+
+    for (const active of mergedActive) {
+        if (active.end <= penaltyWindowStart) continue;
+        if (active.start > currentT) {
+            idleIntervals.push({ start: currentT, end: Math.min(active.start, t) });
+        }
+        currentT = Math.max(currentT, active.end);
+        if (currentT >= t) break;
+    }
+    if (currentT < t) {
+        idleIntervals.push({ start: currentT, end: t });
+    }
+
+    // Accumulate penalty iteratively, locking penalty if the "visible score" goes to 0
+    let p_accum = 0;
+    for (const idle of idleIntervals) {
+        // Base score remains exactly constant during an idle period
+        const s = computeBaseScore(tasks, idle.start);
+        const v = Math.max(0, s - p_accum);
+
+        const rawPenalty = ((idle.end - idle.start) / 1000) * 0.001;
+        
+        // This is the crucial logic: penalty can only drain existing points!
+        // Once `v` drops to 0, `actualPenalty` is capped. Debt doesn't climb endlessly.
+        const actualPenalty = Math.min(rawPenalty, v);
+        p_accum += actualPenalty;
+    }
+
+    const finalBaseScore = computeBaseScore(tasks, t);
+    return Math.round(Math.max(0, finalBaseScore - p_accum) * 100) / 100;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
