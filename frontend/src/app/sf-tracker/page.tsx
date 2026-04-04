@@ -425,7 +425,6 @@ export default function SFTrackerPage() {
                                         )}
                                         <div>
                                             <div className="text-lg font-bold text-white group-hover:text-zinc-200 transition-colors">{user.username}</div>
-                                            <div className="text-xs text-zinc-500 truncate max-w-[150px]">{user.userId}</div>
                                         </div>
                                     </div>
 
