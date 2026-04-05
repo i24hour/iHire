@@ -9,11 +9,18 @@ export interface ITimeTask {
     pausedElapsed: number;
     enabled: boolean;
     completed: boolean;
+    completedAt?: number;
     milestones: Array<{
         text: string;
         timestamp: number;
     }>;
+    events?: Array<{
+        type: 'start' | 'pause' | 'complete';
+        timestamp: number;
+    }>;
     targetTime?: number;
+    autoResumeAt?: number;
+    isPublic?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -48,12 +55,26 @@ const ITimeTaskSchema = new mongoose.Schema<ITimeTask>({
         type: Boolean,
         default: false,
     },
+    completedAt: {
+        type: Number,
+    },
     milestones: [{
         text: String,
         timestamp: Number,
     }],
+    events: [{
+        type: { type: String, enum: ['start', 'pause', 'complete'] },
+        timestamp: Number,
+    }],
     targetTime: {
         type: Number,
+    },
+    autoResumeAt: {
+        type: Number,
+    },
+    isPublic: {
+        type: Boolean,
+        default: true,
     },
 }, {
     timestamps: true,
