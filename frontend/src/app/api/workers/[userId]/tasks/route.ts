@@ -28,8 +28,7 @@ export async function GET(
         const user = await User.findOne({ email: targetUserId }).lean() as any;
 
         const tasks = await ITimeTask.find({
-            userId: targetUserId,
-            isPublic: { $ne: false } // Default is true, so we only filter out explicit false
+            userId: targetUserId
         }).sort({ createdAt: -1 });
 
         return NextResponse.json({ 
