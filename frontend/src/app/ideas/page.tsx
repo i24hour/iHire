@@ -22,8 +22,18 @@ interface Reply {
     createdBy: string;
     username?: string;
     isPublic: boolean;
+    imageUrl?: string;
     createdAt: string;
 }
+
+const MAX_REPLY_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_REPLY_IMAGE_TYPES = new Set([
+    'image/png',
+    'image/jpeg',
+    'image/jpg',
+    'image/webp',
+    'image/gif',
+]);
 
 export default function IdeasPage() {
     const { data: session } = useSession();
@@ -42,7 +52,10 @@ export default function IdeasPage() {
     const [newReply, setNewReply] = useState('');
     const [replyIsPublic, setReplyIsPublic] = useState(true);
     const [sendingReply, setSendingReply] = useState(false);
+    const [togglingReplyId, setTogglingReplyId] = useState<string | null>(null);
+    const [replyImage, setReplyImage] = useState<string | null>(null);
     const titleRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         fetchIdeas();
@@ -77,22 +90,72 @@ export default function IdeasPage() {
         }
     };
 
+    const resetReplyComposer = () => {
+        setNewReply('');
+        setReplyImage(null);
+        setReplyIsPublic(true);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!ALLOWED_REPLY_IMAGE_TYPES.has(file.type)) {
+            alert('Only PNG, JPG, WEBP, and GIF images are supported');
+            e.target.value = '';
+            return;
+        }
+
+        if (file.size > MAX_REPLY_IMAGE_BYTES) {
+            alert('Image too large (max 2MB)');
+            e.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onerror = () => {
+            alert('Failed to read the selected image');
+            setReplyImage(null);
+        };
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                setReplyImage(reader.result);
+            }
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    };
+
     const handleSendReply = async () => {
-        if (!newReply.trim() || !selectedIdeaId || sendingReply) return;
+        const trimmedReply = newReply.trim();
+        if ((!trimmedReply && !replyImage) || !selectedIdeaId || sendingReply) return;
+
         setSendingReply(true);
         try {
             const res = await fetch(`/api/ideas/${selectedIdeaId}/replies`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: newReply.trim(), isPublic: replyIsPublic }),
+                body: JSON.stringify({ 
+                    content: trimmedReply,
+                    isPublic: replyIsPublic,
+                    imageUrl: replyImage
+                }),
             });
-            if (!res.ok) throw new Error('Failed');
-            const data = await res.json();
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => null);
+                throw new Error(data?.error || 'Failed to send reply');
+            }
+
             // Fetch updated list of replies to include the new one (and its correct formatting/username)
-            fetchReplies(selectedIdeaId);
-            setNewReply('');
+            await fetchReplies(selectedIdeaId);
+            resetReplyComposer();
         } catch (err) {
             console.error('Failed to send reply:', err);
+            alert(err instanceof Error ? err.message : 'Failed to send reply');
         } finally {
             setSendingReply(false);
         }
@@ -141,6 +204,34 @@ export default function IdeasPage() {
             await fetch(`/api/ideas/${ideaId}`, { method: 'DELETE' });
         } catch {
             fetchIdeas();
+        }
+    };
+
+    const closeReplyModal = () => {
+        setSelectedIdeaId(null);
+        resetReplyComposer();
+    };
+
+    const handleToggleReplyVisibility = async (reply: Reply) => {
+        if (togglingReplyId) return;
+        setTogglingReplyId(reply._id);
+        
+        // Optimistic update
+        setReplies(prev => prev.map(r => r._id === reply._id ? { ...r, isPublic: !r.isPublic } : r));
+        
+        try {
+            const res = await fetch(`/api/replies/${reply._id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isPublic: !reply.isPublic }),
+            });
+            if (!res.ok) throw new Error('Failed');
+        } catch (err) {
+            console.error('Failed to toggle reply visibility:', err);
+            // Revert on error
+            setReplies(prev => prev.map(r => r._id === reply._id ? { ...r, isPublic: reply.isPublic } : r));
+        } finally {
+            setTogglingReplyId(null);
         }
     };
 
@@ -296,6 +387,7 @@ export default function IdeasPage() {
                                             className="group bg-black border border-white/10 hover:border-white/20 rounded-2xl p-5 transition-all cursor-pointer"
                                             onClick={() => {
                                                 setSelectedIdeaId(idea._id);
+                                                resetReplyComposer();
                                                 fetchReplies(idea._id);
                                             }}
                                         >
@@ -383,7 +475,7 @@ export default function IdeasPage() {
                                 <div className="p-6 border-b border-white/10 flex items-center justify-between">
                                     <h2 className="text-xl font-bold text-white">Discussion</h2>
                                     <button 
-                                        onClick={() => setSelectedIdeaId(null)}
+                                        onClick={closeReplyModal}
                                         className="text-zinc-500 hover:text-white p-2"
                                     >
                                         ✕
@@ -460,16 +552,30 @@ export default function IdeasPage() {
                                                                     {new Date(reply.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                                                 </span>
                                                             </div>
-                                                            {!reply.isPublic && (
-                                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-500 flex items-center gap-1">
-                                                                    <span className="w-1 h-1 bg-zinc-600 rounded-full" />
-                                                                    Private
-                                                                </span>
+                                                            
+                                                            {/* Reply visibility toggle for owner */}
+                                                            <button
+                                                                onClick={() => reply.createdBy === myEmail && handleToggleReplyVisibility(reply)}
+                                                                disabled={reply.createdBy !== myEmail || togglingReplyId === reply._id}
+                                                                className={`text-[9px] px-1.5 py-0.5 rounded transition-all duration-200 flex items-center gap-1 border ${
+                                                                    reply.isPublic 
+                                                                        ? 'bg-[#4CAF50]/5 border-[#4CAF50]/20 text-[#4CAF50]/70' 
+                                                                        : 'bg-zinc-900 border-white/5 text-zinc-500'
+                                                                } ${reply.createdBy === myEmail ? 'cursor-pointer hover:bg-white/5' : 'cursor-default'}`}
+                                                            >
+                                                                <span className={`w-1 h-1 rounded-full ${reply.isPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'}`} />
+                                                                {reply.isPublic ? 'Public' : 'Private'}
+                                                                {reply.createdBy === myEmail && <span className="ml-0.5 opacity-50">✎</span>}
+                                                            </button>
+                                                        </div>
+                                                        <div className="text-zinc-400 text-sm leading-relaxed bg-white/[0.02] hover:bg-white/[0.04] p-3.5 rounded-2xl border border-white/[0.04] transition-colors group-hover:border-white/10">
+                                                            {reply.content && <p>{reply.content}</p>}
+                                                            {reply.imageUrl && (
+                                                                <div className={`${reply.content ? 'mt-3' : ''} rounded-xl overflow-hidden border border-white/10 max-w-sm`}>
+                                                                    <img src={reply.imageUrl} alt="attached" className="w-full h-auto object-cover max-h-60" />
+                                                                </div>
                                                             )}
                                                         </div>
-                                                        <p className="text-zinc-400 text-sm leading-relaxed bg-white/[0.02] hover:bg-white/[0.04] p-3.5 rounded-2xl border border-white/[0.04] transition-colors group-hover:border-white/10">
-                                                            {reply.content}
-                                                        </p>
                                                     </div>
                                                 </div>
                                             ))
@@ -481,13 +587,49 @@ export default function IdeasPage() {
                                 <div className="p-6 border-t border-white/10 bg-black/50">
                                     {session ? (
                                         <div className="space-y-4">
-                                            <textarea
-                                                value={newReply}
-                                                onChange={e => setNewReply(e.target.value)}
-                                                placeholder="Write a reply..."
-                                                rows={3}
-                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-white/25 transition-colors resize-none"
-                                            />
+                                            <div className="relative">
+                                                <textarea
+                                                    value={newReply}
+                                                    onChange={e => setNewReply(e.target.value)}
+                                                    placeholder="Write a reply..."
+                                                    rows={3}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-white/25 transition-colors resize-none"
+                                                />
+                                                <div className="absolute right-3 bottom-3 flex items-center gap-2">
+                                                    <input 
+                                                        type="file" 
+                                                        ref={fileInputRef} 
+                                                        onChange={handleImageChange} 
+                                                        accept="image/*" 
+                                                        className="hidden" 
+                                                    />
+                                                    <button 
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors"
+                                                        title="Attach image"
+                                                    >
+                                                        🖼️
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {replyImage && (
+                                                <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-white/20 group">
+                                                    <img src={replyImage} alt="Preview" className="w-full h-full object-cover" />
+                                                    <button 
+                                                        onClick={() => {
+                                                            setReplyImage(null);
+                                                            if (fileInputRef.current) {
+                                                                fileInputRef.current.value = '';
+                                                            }
+                                                        }}
+                                                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <span className="text-white text-xs font-bold">✕</span>
+                                                    </button>
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center justify-between">
                                                 <button
                                                     onClick={() => setReplyIsPublic(p => !p)}
@@ -502,7 +644,7 @@ export default function IdeasPage() {
                                                 </button>
                                                 <LiquidButton
                                                     onClick={handleSendReply}
-                                                    disabled={!newReply.trim() || sendingReply}
+                                                    disabled={(!newReply.trim() && !replyImage) || sendingReply}
                                                     className="text-white h-9 text-xs"
                                                 >
                                                     {sendingReply ? 'Sending...' : 'Post Reply'}

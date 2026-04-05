@@ -6,6 +6,7 @@ export interface IReply {
     content: string;
     createdBy: string; // userId (email)
     isPublic: boolean; // public vs private
+    imageUrl?: string; // base64 or URL
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -19,7 +20,8 @@ const ReplySchema = new mongoose.Schema<IReply>({
     },
     content: {
         type: String,
-        required: true,
+        required: false,
+        default: '',
         trim: true,
     },
     createdBy: {
@@ -30,6 +32,10 @@ const ReplySchema = new mongoose.Schema<IReply>({
     isPublic: {
         type: Boolean,
         default: true,
+    },
+    imageUrl: {
+        type: String,
+        required: false,
     },
 }, {
     timestamps: true,

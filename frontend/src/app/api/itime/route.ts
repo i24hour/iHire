@@ -1,33 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
-import User from '@/models/User';
-
-export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-
+        const session = await getServerSession();
+        
         if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         await connectDB();
         
-        // Auto-register/update the User in our collection
-        const user = await User.findOneAndUpdate(
-            { email: session.user.email },
-            { $setOnInsert: { email: session.user.email } },
-            { upsert: true, new: true }
-        );
-
-        console.log(`[DEBUG_LOG] User auto-registered/checked: ${session.user.email}, count after this might change.`);
-
-        const tasks = await ITimeTask.find({
-            userId: session.user.email
+        const tasks = await ITimeTask.find({ 
+            userId: session.user.email 
         }).sort({ createdAt: -1 });
 
         return NextResponse.json({ tasks });
@@ -39,16 +26,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-
+        const session = await getServerSession();
+        
         if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const body = await request.json();
-
+        
         await connectDB();
-
+        
         const task = await ITimeTask.create({
             ...body,
             userId: session.user.email,
@@ -63,8 +50,8 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-
+        const session = await getServerSession();
+        
         if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -73,7 +60,7 @@ export async function PUT(request: NextRequest) {
         const { _id, ...updates } = body;
 
         await connectDB();
-
+        
         const task = await ITimeTask.findOneAndUpdate(
             { _id, userId: session.user.email },
             updates,
@@ -93,8 +80,8 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-
+        const session = await getServerSession();
+        
         if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
@@ -107,7 +94,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         await connectDB();
-
+        
         const task = await ITimeTask.findOneAndDelete({
             _id: id,
             userId: session.user.email,

@@ -8,6 +8,34 @@ import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
+const MAX_REPLY_IMAGE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_DATA_URL = /^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+
+function normalizeReplyImage(imageUrl: unknown): { imageUrl?: string; error?: string } {
+    if (imageUrl == null || imageUrl === '') {
+        return {};
+    }
+
+    if (typeof imageUrl !== 'string') {
+        return { error: 'Invalid image payload' };
+    }
+
+    const normalizedImageUrl = imageUrl.trim();
+
+    if (!ALLOWED_IMAGE_DATA_URL.test(normalizedImageUrl)) {
+        return { error: 'Only PNG, JPG, WEBP, and GIF images are supported' };
+    }
+
+    const base64Payload = normalizedImageUrl.split(',')[1] ?? '';
+    const imageBytes = Buffer.byteLength(base64Payload, 'base64');
+
+    if (imageBytes > MAX_REPLY_IMAGE_BYTES) {
+        return { error: 'Image too large (max 2MB)' };
+    }
+
+    return { imageUrl: normalizedImageUrl };
+}
+
 // GET /api/ideas/[ideaId]/replies
 // Rules:
 // - Public replies: everyone can see if the idea is public or they are the idea owner
@@ -80,10 +108,24 @@ export async function POST(
 
         const { ideaId } = await params;
         const body = await request.json();
-        const { content, isPublic } = body;
+        const { content, isPublic, imageUrl } = body;
+        const trimmedContent = typeof content === 'string' ? content.trim() : '';
 
-        if (!content || typeof content !== 'string' || content.trim().length === 0) {
-            return NextResponse.json({ error: 'Reply content is required' }, { status: 400 });
+        if (typeof content !== 'undefined' && typeof content !== 'string') {
+            return NextResponse.json({ error: 'Reply content must be a string' }, { status: 400 });
+        }
+
+        if (typeof isPublic !== 'undefined' && typeof isPublic !== 'boolean') {
+            return NextResponse.json({ error: 'isPublic must be a boolean' }, { status: 400 });
+        }
+
+        const { imageUrl: normalizedImageUrl, error: imageError } = normalizeReplyImage(imageUrl);
+        if (imageError) {
+            return NextResponse.json({ error: imageError }, { status: 400 });
+        }
+
+        if (!trimmedContent && !normalizedImageUrl) {
+            return NextResponse.json({ error: 'Reply content or image is required' }, { status: 400 });
         }
 
         await connectDB();
@@ -95,9 +137,10 @@ export async function POST(
 
         const reply = await Reply.create({
             ideaId,
-            content: content.trim(),
+            content: trimmedContent,
             createdBy: session.user.email,
             isPublic: isPublic !== false, // default true
+            imageUrl: normalizedImageUrl,
         });
 
         return NextResponse.json({ reply }, { status: 201 });
