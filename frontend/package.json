@@ -7,10 +7,18 @@
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cap:sync": "npx cap sync android",
+    "cap:open:android": "npx cap open android",
+    "cap:copy": "npx cap copy android",
+    "cap:run:android": "npx cap run android",
+    "cap:build:debug": "cd android && ./gradlew assembleDebug",
+    "cap:build:aab": "cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@auth/core": "^0.34.3",
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@supabase/supabase-js": "^2.91.1",
     "class-variance-authority": "^0.7.1",
@@ -32,6 +40,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.4",

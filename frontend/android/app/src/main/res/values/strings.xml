@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">infinWORK</string>
+    <string name="title_activity_main">infinWORK</string>
+    <string name="package_name">app.infinwork.mobile</string>
+    <string name="custom_url_scheme">app.infinwork.mobile</string>
+</resources>
