@@ -15,6 +15,16 @@ interface Idea {
     createdAt: string;
 }
 
+interface Reply {
+    _id: string;
+    ideaId: string;
+    content: string;
+    createdBy: string;
+    username?: string;
+    isPublic: boolean;
+    createdAt: string;
+}
+
 export default function IdeasPage() {
     const { data: session } = useSession();
     const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -26,6 +36,12 @@ export default function IdeasPage() {
     const [saving, setSaving] = useState(false);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'mine' | 'public'>('all');
+    const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
+    const [replies, setReplies] = useState<Reply[]>([]);
+    const [loadingReplies, setLoadingReplies] = useState(false);
+    const [newReply, setNewReply] = useState('');
+    const [replyIsPublic, setReplyIsPublic] = useState(true);
+    const [sendingReply, setSendingReply] = useState(false);
     const titleRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -45,6 +61,40 @@ export default function IdeasPage() {
             console.error('Failed to fetch ideas:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchReplies = async (ideaId: string) => {
+        setLoadingReplies(true);
+        try {
+            const res = await fetch(`/api/ideas/${ideaId}/replies`);
+            const data = await res.json();
+            if (data.replies) setReplies(data.replies);
+        } catch (err) {
+            console.error('Failed to fetch replies:', err);
+        } finally {
+            setLoadingReplies(false);
+        }
+    };
+
+    const handleSendReply = async () => {
+        if (!newReply.trim() || !selectedIdeaId || sendingReply) return;
+        setSendingReply(true);
+        try {
+            const res = await fetch(`/api/ideas/${selectedIdeaId}/replies`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newReply.trim(), isPublic: replyIsPublic }),
+            });
+            if (!res.ok) throw new Error('Failed');
+            const data = await res.json();
+            // Fetch updated list of replies to include the new one (and its correct formatting/username)
+            fetchReplies(selectedIdeaId);
+            setNewReply('');
+        } catch (err) {
+            console.error('Failed to send reply:', err);
+        } finally {
+            setSendingReply(false);
         }
     };
 
@@ -241,7 +291,11 @@ export default function IdeasPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, x: -12 }}
                                             transition={{ duration: 0.15 }}
-                                            className="group bg-black border border-white/10 hover:border-white/20 rounded-2xl p-5 transition-all"
+                                            className="group bg-black border border-white/10 hover:border-white/20 rounded-2xl p-5 transition-all cursor-pointer"
+                                            onClick={() => {
+                                                setSelectedIdeaId(idea._id);
+                                                fetchReplies(idea._id);
+                                            }}
                                         >
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1 min-w-0">
@@ -259,7 +313,10 @@ export default function IdeasPage() {
                                                 <div className="flex flex-col items-end gap-2 shrink-0">
                                                     {/* Visibility badge — clickable for owner */}
                                                     <button
-                                                        onClick={() => isOwner && handleToggleVisibility(idea)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            isOwner && handleToggleVisibility(idea);
+                                                        }}
                                                         disabled={!isOwner || togglingId === idea._id}
                                                         title={isOwner ? `Click to make ${idea.isPublic ? 'private' : 'public'}` : undefined}
                                                         className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${
@@ -274,7 +331,10 @@ export default function IdeasPage() {
 
                                                     {isOwner && (
                                                         <button
-                                                            onClick={() => handleDelete(idea._id)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(idea._id);
+                                                            }}
                                                             className="text-xs text-zinc-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                                                         >
                                                             Delete
@@ -284,14 +344,20 @@ export default function IdeasPage() {
                                             </div>
 
                                             {/* Footer */}
-                                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-white/[0.06]">
-                                                <span className="text-xs text-zinc-700">
-                                                    {idea.createdBy.split('@')[0]}
-                                                </span>
-                                                <span className="text-zinc-800">·</span>
-                                                <span className="text-xs text-zinc-700">
-                                                    {new Date(idea.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                </span>
+                                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.06]">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs text-zinc-700">
+                                                        {idea.createdBy.split('@')[0]}
+                                                    </span>
+                                                    <span className="text-zinc-800">·</span>
+                                                    <span className="text-xs text-zinc-700">
+                                                        {new Date(idea.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+                                                    <span className="text-[11px] font-medium">Discuss</span>
+                                                </div>
                                             </div>
                                         </motion.div>
                                     );
@@ -300,6 +366,107 @@ export default function IdeasPage() {
                         </div>
                     )}
                 </div>
+
+                {/* Reply Modal */}
+                <AnimatePresence>
+                    {selectedIdeaId && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-zinc-950 border border-white/10 rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+                            >
+                                {/* Modal Header */}
+                                <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                                    <h2 className="text-xl font-bold text-white">Discussion</h2>
+                                    <button 
+                                        onClick={() => setSelectedIdeaId(null)}
+                                        className="text-zinc-500 hover:text-white p-2"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                {/* Modal Body (Replies List) */}
+                                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                    {loadingReplies ? (
+                                        <div className="flex justify-center py-10">
+                                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/40" />
+                                        </div>
+                                    ) : replies.length === 0 ? (
+                                        <div className="text-center py-10 text-zinc-600 italic">
+                                            No replies yet. Be the first to reply!
+                                        </div>
+                                    ) : (
+                                        replies.map(reply => (
+                                            <div key={reply._id} className="flex flex-col gap-1">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-semibold text-white">
+                                                            @{reply.username || reply.createdBy.split('@')[0]}
+                                                        </span>
+                                                        <span className="text-[10px] text-zinc-700">
+                                                            {new Date(reply.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                        </span>
+                                                    </div>
+                                                    {!reply.isPublic && (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-500 flex items-center gap-1">
+                                                            <span className="w-1 h-1 bg-zinc-600 rounded-full" />
+                                                            Private
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-zinc-400 text-sm leading-relaxed bg-white/[0.03] p-3 rounded-xl border border-white/[0.05]">
+                                                    {reply.content}
+                                                </p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Modal Footer (Reply Input) */}
+                                <div className="p-6 border-t border-white/10 bg-black/50">
+                                    {session ? (
+                                        <div className="space-y-4">
+                                            <textarea
+                                                value={newReply}
+                                                onChange={e => setNewReply(e.target.value)}
+                                                placeholder="Write a reply..."
+                                                rows={3}
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-white/25 transition-colors resize-none"
+                                            />
+                                            <div className="flex items-center justify-between">
+                                                <button
+                                                    onClick={() => setReplyIsPublic(p => !p)}
+                                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+                                                        replyIsPublic
+                                                            ? 'bg-[#4CAF50]/10 border-[#4CAF50]/30 text-[#4CAF50]'
+                                                            : 'bg-white/5 border-white/10 text-zinc-400'
+                                                    }`}
+                                                >
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${replyIsPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'}`} />
+                                                    {replyIsPublic ? 'Public Reply' : 'Private Reply'}
+                                                </button>
+                                                <LiquidButton
+                                                    onClick={handleSendReply}
+                                                    disabled={!newReply.trim() || sendingReply}
+                                                    className="text-white h-9 text-xs"
+                                                >
+                                                    {sendingReply ? 'Sending...' : 'Post Reply'}
+                                                </LiquidButton>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-zinc-600 text-sm">
+                                            Please sign in to reply.
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </main>
         </div>
     );
