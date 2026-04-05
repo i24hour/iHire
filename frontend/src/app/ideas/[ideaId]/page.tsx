@@ -157,7 +157,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                         </Link>
                     </div>
 
-                    <div className="bg-zinc-950 border border-white/10 rounded-3xl w-full flex flex-col overflow-hidden shadow-2xl">
+                    <div className="bg-black border border-white/10 rounded-3xl w-full flex flex-col overflow-hidden shadow-2xl">
                         {/* Discussion Body */}
                         <div className="flex-1 p-6 sm:p-8">
                             {/* Idea Header */}
@@ -221,7 +221,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                             <div className="absolute left-6 top-[-30px] bottom-0 w-[1px] bg-white/10 z-0" />
                                             <div className="absolute left-6 top-6 w-6 h-[1px] bg-white/10 z-0" />
                                             {index === replies.length - 1 && (
-                                                <div className="absolute left-6 top-6 bottom-0 w-[2px] bg-zinc-950 z-10" />
+                                                <div className="absolute left-6 top-6 bottom-0 w-[2px] bg-black z-10" />
                                             )}
 
                                             <div className="relative z-10 space-y-2.5">
@@ -272,7 +272,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                         </div>
 
                         {/* Reply Input Box */}
-                        <div className="p-6 sm:p-8 bg-zinc-900/50 border-t border-white/[0.05]">
+                        <div className="p-6 sm:p-8 bg-black border-t border-white/[0.05]">
                             {session ? (
                                 <div className="space-y-4">
                                     <div className="relative">
@@ -281,7 +281,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                             onChange={e => setNewReply(e.target.value)}
                                             placeholder="Write a reply..."
                                             rows={3}
-                                            className="w-full bg-black/50 border border-white/10 rounded-2xl px-5 py-4 text-[15px] text-white placeholder-zinc-500 outline-none focus:border-white/25 focus:bg-white/[0.02] transition-colors resize-none shadow-inner"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-[15px] text-white placeholder-zinc-500 outline-none focus:border-white/25 focus:bg-white/5 transition-colors resize-none shadow-inner"
                                         />
                                         <div className="absolute right-3 bottom-3 flex items-center gap-2">
                                             <input 
@@ -338,7 +338,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center bg-black/40 p-6 rounded-2xl border border-white/5 text-zinc-500 text-sm">
+                                <div className="text-center bg-white/5 p-6 rounded-2xl border border-white/5 text-zinc-500 text-sm">
                                     Please sign in to join the discussion.
                                 </div>
                             )}
