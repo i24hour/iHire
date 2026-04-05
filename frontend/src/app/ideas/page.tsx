@@ -156,6 +156,8 @@ export default function IdeasPage() {
     const publicCount = ideas.filter(i => i.isPublic).length;
     const privateCount = ideas.filter(i => !i.isPublic && i.createdBy === myEmail).length;
 
+    const selectedIdea = ideas.find(i => i._id === selectedIdeaId);
+
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
@@ -388,41 +390,91 @@ export default function IdeasPage() {
                                     </button>
                                 </div>
 
-                                {/* Modal Body (Replies List) */}
-                                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                                    {loadingReplies ? (
-                                        <div className="flex justify-center py-10">
-                                            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/40" />
-                                        </div>
-                                    ) : replies.length === 0 ? (
-                                        <div className="text-center py-10 text-zinc-600 italic">
-                                            No replies yet. Be the first to reply!
-                                        </div>
-                                    ) : (
-                                        replies.map(reply => (
-                                            <div key={reply._id} className="flex flex-col gap-1">
-                                                <div className="flex items-center justify-between">
+                                {/* Modal Body (Idea + Replies List) */}
+                                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                                    {/* Original Idea Section (The Root of the Tree) */}
+                                    {selectedIdea && (
+                                        <div className="relative mb-8 group">
+                                            {/* Tree connecting line starting from here */}
+                                            {replies.length > 0 && (
+                                                <div className="absolute left-6 top-14 bottom-[-32px] w-[1px] bg-gradient-to-b from-white/20 to-transparent z-0" />
+                                            )}
+                                            
+                                            <div className="relative z-10 flex gap-4">
+                                                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 group-hover:border-white/30 transition-colors">
+                                                    <span className="text-xl">💡</span>
+                                                </div>
+                                                <div className="flex-1 space-y-2">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-semibold text-white">
-                                                            @{reply.username || reply.createdBy.split('@')[0]}
+                                                        <span className="text-sm font-bold text-white">
+                                                            @{selectedIdea.createdBy.split('@')[0]}
                                                         </span>
-                                                        <span className="text-[10px] text-zinc-700">
-                                                            {new Date(reply.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                        <span className="text-[10px] text-zinc-600">
+                                                            {new Date(selectedIdea.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                                         </span>
+                                                        {selectedIdea.isPublic ? (
+                                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20">Public</span>
+                                                        ) : (
+                                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zinc-900 text-zinc-500 border border-white/5">Private</span>
+                                                        )}
                                                     </div>
-                                                    {!reply.isPublic && (
-                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-500 flex items-center gap-1">
-                                                            <span className="w-1 h-1 bg-zinc-600 rounded-full" />
-                                                            Private
-                                                        </span>
+                                                    <h3 className="text-lg font-semibold text-white leading-tight">
+                                                        {selectedIdea.title}
+                                                    </h3>
+                                                    {selectedIdea.details && (
+                                                        <p className="text-sm text-zinc-400 leading-relaxed bg-white/[0.03] p-4 rounded-2xl border border-white/[0.05] shadow-sm">
+                                                            {selectedIdea.details}
+                                                        </p>
                                                     )}
                                                 </div>
-                                                <p className="text-zinc-400 text-sm leading-relaxed bg-white/[0.03] p-3 rounded-xl border border-white/[0.05]">
-                                                    {reply.content}
-                                                </p>
                                             </div>
-                                        ))
+                                        </div>
                                     )}
+
+                                    <div className="space-y-6">
+                                        {loadingReplies ? (
+                                            <div className="flex justify-center py-10">
+                                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/40" />
+                                            </div>
+                                        ) : replies.length === 0 ? (
+                                            <div className="text-center py-10 text-zinc-600 italic border-t border-white/[0.05] mt-4">
+                                                No replies yet. Be the first to reply!
+                                            </div>
+                                        ) : (
+                                            replies.map((reply, index) => (
+                                                <div key={reply._id} className="relative pl-14 group">
+                                                    {/* Tree branch line */}
+                                                    <div className="absolute left-6 top-[-24px] bottom-0 w-[1px] bg-white/10 z-0" />
+                                                    <div className="absolute left-6 top-6 w-6 h-[1px] bg-white/10 z-0" />
+                                                    {index === replies.length - 1 && (
+                                                        <div className="absolute left-6 top-6 bottom-0 w-[2px] bg-zinc-950 z-10" />
+                                                    )}
+
+                                                    <div className="relative z-10 space-y-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-semibold text-zinc-200">
+                                                                    @{reply.username || reply.createdBy.split('@')[0]}
+                                                                </span>
+                                                                <span className="text-[10px] text-zinc-700 font-medium">
+                                                                    {new Date(reply.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                                </span>
+                                                            </div>
+                                                            {!reply.isPublic && (
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-500 flex items-center gap-1">
+                                                                    <span className="w-1 h-1 bg-zinc-600 rounded-full" />
+                                                                    Private
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-zinc-400 text-sm leading-relaxed bg-white/[0.02] hover:bg-white/[0.04] p-3.5 rounded-2xl border border-white/[0.04] transition-colors group-hover:border-white/10">
+                                                            {reply.content}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Modal Footer (Reply Input) */}
