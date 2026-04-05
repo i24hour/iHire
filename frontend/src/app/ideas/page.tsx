@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface Idea {
     _id: string;
@@ -15,28 +16,9 @@ interface Idea {
     createdAt: string;
 }
 
-interface Reply {
-    _id: string;
-    ideaId: string;
-    content: string;
-    createdBy: string;
-    username?: string;
-    isPublic: boolean;
-    imageUrl?: string;
-    createdAt: string;
-}
-
-const MAX_REPLY_IMAGE_BYTES = 2 * 1024 * 1024;
-const ALLOWED_REPLY_IMAGE_TYPES = new Set([
-    'image/png',
-    'image/jpeg',
-    'image/jpg',
-    'image/webp',
-    'image/gif',
-]);
-
 export default function IdeasPage() {
     const { data: session } = useSession();
+    const router = useRouter();
     const [ideas, setIdeas] = useState<Idea[]>([]);
     const [loading, setLoading] = useState(true);
     const [formOpen, setFormOpen] = useState(false);
@@ -46,15 +28,7 @@ export default function IdeasPage() {
     const [saving, setSaving] = useState(false);
     const [togglingId, setTogglingId] = useState<string | null>(null);
     const [filter, setFilter] = useState<'all' | 'mine' | 'public'>('all');
-    const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
-    const [replies, setReplies] = useState<Reply[]>([]);
-    const [loadingReplies, setLoadingReplies] = useState(false);
-    const [newReply, setNewReply] = useState('');
-    const [replyIsPublic, setReplyIsPublic] = useState(true);
-    const [sendingReply, setSendingReply] = useState(false);
-    const [replyImage, setReplyImage] = useState<string | null>(null);
     const titleRef = useRef<HTMLInputElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         fetchIdeas();
@@ -73,90 +47,6 @@ export default function IdeasPage() {
             console.error('Failed to fetch ideas:', err);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const fetchReplies = async (ideaId: string) => {
-        setLoadingReplies(true);
-        try {
-            const res = await fetch(`/api/ideas/${ideaId}/replies`);
-            const data = await res.json();
-            if (data.replies) setReplies(data.replies);
-        } catch (err) {
-            console.error('Failed to fetch replies:', err);
-        } finally {
-            setLoadingReplies(false);
-        }
-    };
-
-    const resetReplyComposer = () => {
-        setNewReply('');
-        setReplyImage(null);
-        setReplyIsPublic(true);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (!ALLOWED_REPLY_IMAGE_TYPES.has(file.type)) {
-            alert('Only PNG, JPG, WEBP, and GIF images are supported');
-            e.target.value = '';
-            return;
-        }
-
-        if (file.size > MAX_REPLY_IMAGE_BYTES) {
-            alert('Image too large (max 2MB)');
-            e.target.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onerror = () => {
-            alert('Failed to read the selected image');
-            setReplyImage(null);
-        };
-        reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-                setReplyImage(reader.result);
-            }
-        };
-        reader.readAsDataURL(file);
-        e.target.value = '';
-    };
-
-    const handleSendReply = async () => {
-        const trimmedReply = newReply.trim();
-        if ((!trimmedReply && !replyImage) || !selectedIdeaId || sendingReply) return;
-
-        setSendingReply(true);
-        try {
-            const res = await fetch(`/api/ideas/${selectedIdeaId}/replies`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    content: trimmedReply,
-                    isPublic: replyIsPublic,
-                    imageUrl: replyImage
-                }),
-            });
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => null);
-                throw new Error(data?.error || 'Failed to send reply');
-            }
-
-            // Fetch updated list of replies to include the new one (and its correct formatting/username)
-            await fetchReplies(selectedIdeaId);
-            resetReplyComposer();
-        } catch (err) {
-            console.error('Failed to send reply:', err);
-            alert(err instanceof Error ? err.message : 'Failed to send reply');
-        } finally {
-            setSendingReply(false);
         }
     };
 
@@ -206,11 +96,6 @@ export default function IdeasPage() {
         }
     };
 
-    const closeReplyModal = () => {
-        setSelectedIdeaId(null);
-        resetReplyComposer();
-    };
-
     const myEmail = session?.user?.email;
 
     const filteredIdeas = ideas.filter(idea => {
@@ -222,8 +107,6 @@ export default function IdeasPage() {
     const myIdeasCount = ideas.filter(i => i.createdBy === myEmail).length;
     const publicCount = ideas.filter(i => i.isPublic).length;
     const privateCount = ideas.filter(i => !i.isPublic && i.createdBy === myEmail).length;
-
-    const selectedIdea = ideas.find(i => i._id === selectedIdeaId);
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
@@ -361,11 +244,7 @@ export default function IdeasPage() {
                                             exit={{ opacity: 0, x: -12 }}
                                             transition={{ duration: 0.15 }}
                                             className="group bg-black border border-white/10 hover:border-white/20 rounded-2xl p-5 transition-all cursor-pointer"
-                                            onClick={() => {
-                                                setSelectedIdeaId(idea._id);
-                                                resetReplyComposer();
-                                                fetchReplies(idea._id);
-                                            }}
+                                            onClick={() => router.push(`/ideas/${idea._id}`)}
                                         >
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1 min-w-0">
@@ -436,199 +315,6 @@ export default function IdeasPage() {
                         </div>
                     )}
                 </div>
-
-                {/* Reply Modal */}
-                <AnimatePresence>
-                    {selectedIdeaId && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="bg-zinc-950 border border-white/10 rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
-                            >
-                                {/* Modal Header */}
-                                <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                                    <h2 className="text-xl font-bold text-white">Discussion</h2>
-                                    <button 
-                                        onClick={closeReplyModal}
-                                        className="text-zinc-500 hover:text-white p-2"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-
-                                {/* Modal Body (Idea + Replies List) */}
-                                <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-                                    {/* Original Idea Section (The Root of the Tree) */}
-                                    {selectedIdea && (
-                                        <div className="relative mb-8 group">
-                                            {/* Tree connecting line starting from here */}
-                                            {replies.length > 0 && (
-                                                <div className="absolute left-6 top-14 bottom-[-32px] w-[1px] bg-gradient-to-b from-white/20 to-transparent z-0" />
-                                            )}
-                                            
-                                            <div className="relative z-10 flex gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 group-hover:border-white/30 transition-colors">
-                                                    <span className="text-xl">💡</span>
-                                                </div>
-                                                <div className="flex-1 space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-bold text-white">
-                                                            @{selectedIdea.createdBy.split('@')[0]}
-                                                        </span>
-                                                        <span className="text-[10px] text-zinc-600">
-                                                            {new Date(selectedIdea.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                                        </span>
-                                                        {selectedIdea.isPublic ? (
-                                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20">Public</span>
-                                                        ) : (
-                                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zinc-900 text-zinc-500 border border-white/5">Private</span>
-                                                        )}
-                                                    </div>
-                                                    <h3 className="text-lg font-semibold text-white leading-tight">
-                                                        {selectedIdea.title}
-                                                    </h3>
-                                                    {selectedIdea.details && (
-                                                        <p className="text-sm text-zinc-400 leading-relaxed bg-white/[0.03] p-4 rounded-2xl border border-white/[0.05] shadow-sm">
-                                                            {selectedIdea.details}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-6">
-                                        {loadingReplies ? (
-                                            <div className="flex justify-center py-10">
-                                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/40" />
-                                            </div>
-                                        ) : replies.length === 0 ? (
-                                            <div className="text-center py-10 text-zinc-600 italic border-t border-white/[0.05] mt-4">
-                                                No replies yet. Be the first to reply!
-                                            </div>
-                                        ) : (
-                                            replies.map((reply, index) => (
-                                                <div key={reply._id} className="relative pl-14 group">
-                                                    {/* Tree branch line */}
-                                                    <div className="absolute left-6 top-[-24px] bottom-0 w-[1px] bg-white/10 z-0" />
-                                                    <div className="absolute left-6 top-6 w-6 h-[1px] bg-white/10 z-0" />
-                                                    {index === replies.length - 1 && (
-                                                        <div className="absolute left-6 top-6 bottom-0 w-[2px] bg-zinc-950 z-10" />
-                                                    )}
-
-                                                    <div className="relative z-10 space-y-2">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-semibold text-zinc-200">
-                                                                    @{reply.username || reply.createdBy.split('@')[0]}
-                                                                </span>
-                                                                <span className="text-[10px] text-zinc-700 font-medium">
-                                                                    {new Date(reply.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                                                </span>
-                                                            </div>
-
-                                                            {!reply.isPublic && (
-                                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-500 flex items-center gap-1">
-                                                                    <span className="w-1 h-1 bg-zinc-600 rounded-full" />
-                                                                    Private
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-zinc-400 text-sm leading-relaxed bg-white/[0.02] hover:bg-white/[0.04] p-3.5 rounded-2xl border border-white/[0.04] transition-colors group-hover:border-white/10">
-                                                            {reply.content && <p>{reply.content}</p>}
-                                                            {reply.imageUrl && (
-                                                                <div className={`${reply.content ? 'mt-3' : ''} rounded-xl overflow-hidden border border-white/10 max-w-sm`}>
-                                                                    <img src={reply.imageUrl} alt="attached" className="w-full h-auto object-cover max-h-60" />
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Modal Footer (Reply Input) */}
-                                <div className="p-6 border-t border-white/10 bg-black/50">
-                                    {session ? (
-                                        <div className="space-y-4">
-                                            <div className="relative">
-                                                <textarea
-                                                    value={newReply}
-                                                    onChange={e => setNewReply(e.target.value)}
-                                                    placeholder="Write a reply..."
-                                                    rows={3}
-                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-zinc-600 outline-none focus:border-white/25 transition-colors resize-none"
-                                                />
-                                                <div className="absolute right-3 bottom-3 flex items-center gap-2">
-                                                    <input 
-                                                        type="file" 
-                                                        ref={fileInputRef} 
-                                                        onChange={handleImageChange} 
-                                                        accept="image/*" 
-                                                        className="hidden" 
-                                                    />
-                                                    <button 
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors"
-                                                        title="Attach image"
-                                                    >
-                                                        🖼️
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {replyImage && (
-                                                <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-white/20 group">
-                                                    <img src={replyImage} alt="Preview" className="w-full h-full object-cover" />
-                                                    <button 
-                                                        onClick={() => {
-                                                            setReplyImage(null);
-                                                            if (fileInputRef.current) {
-                                                                fileInputRef.current.value = '';
-                                                            }
-                                                        }}
-                                                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <span className="text-white text-xs font-bold">✕</span>
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            <div className="flex items-center justify-between">
-                                                <button
-                                                    onClick={() => setReplyIsPublic(p => !p)}
-                                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
-                                                        replyIsPublic
-                                                            ? 'bg-[#4CAF50]/10 border-[#4CAF50]/30 text-[#4CAF50]'
-                                                            : 'bg-white/5 border-white/10 text-zinc-400'
-                                                    }`}
-                                                >
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${replyIsPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'}`} />
-                                                    {replyIsPublic ? 'Public Reply' : 'Private Reply'}
-                                                </button>
-                                                <LiquidButton
-                                                    onClick={handleSendReply}
-                                                    disabled={(!newReply.trim() && !replyImage) || sendingReply}
-                                                    className="text-white h-9 text-xs"
-                                                >
-                                                    {sendingReply ? 'Sending...' : 'Post Reply'}
-                                                </LiquidButton>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="text-center text-zinc-600 text-sm">
-                                            Please sign in to reply.
-                                        </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
             </main>
         </div>
     );

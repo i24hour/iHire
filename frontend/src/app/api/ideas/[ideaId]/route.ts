@@ -6,6 +6,28 @@ import Idea from '@/models/Idea';
 
 export const dynamic = 'force-dynamic';
 
+// GET /api/ideas/[ideaId]
+// Fetch a single idea by ID
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ ideaId: string }> }
+) {
+    try {
+        const { ideaId } = await params;
+        await connectDB();
+        const idea = await Idea.findById(ideaId).lean();
+        
+        if (!idea) {
+            return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
+        }
+        
+        return NextResponse.json({ idea });
+    } catch (error) {
+        console.error('Error fetching idea:', error);
+        return NextResponse.json({ error: 'Failed to fetch idea' }, { status: 500 });
+    }
+}
+
 // PATCH /api/ideas/[ideaId]
 // Toggle isPublic — only the owner can do this
 export async function PATCH(
