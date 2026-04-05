@@ -149,7 +149,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
             <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 w-full">
-                <div className="max-w-3xl mx-auto space-y-6">
+                <div className="space-y-8 max-w-4xl">
                     {/* Back Button */}
                     <div className="flex items-center gap-4">
                         <Link href="/ideas" className="text-zinc-500 hover:text-white transition-colors duration-200 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full text-sm font-medium border border-white/10 flex items-center gap-2">
