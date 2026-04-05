@@ -52,7 +52,6 @@ export default function IdeasPage() {
     const [newReply, setNewReply] = useState('');
     const [replyIsPublic, setReplyIsPublic] = useState(true);
     const [sendingReply, setSendingReply] = useState(false);
-    const [togglingReplyId, setTogglingReplyId] = useState<string | null>(null);
     const [replyImage, setReplyImage] = useState<string | null>(null);
     const titleRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -210,29 +209,6 @@ export default function IdeasPage() {
     const closeReplyModal = () => {
         setSelectedIdeaId(null);
         resetReplyComposer();
-    };
-
-    const handleToggleReplyVisibility = async (reply: Reply) => {
-        if (togglingReplyId) return;
-        setTogglingReplyId(reply._id);
-        
-        // Optimistic update
-        setReplies(prev => prev.map(r => r._id === reply._id ? { ...r, isPublic: !r.isPublic } : r));
-        
-        try {
-            const res = await fetch(`/api/replies/${reply._id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isPublic: !reply.isPublic }),
-            });
-            if (!res.ok) throw new Error('Failed');
-        } catch (err) {
-            console.error('Failed to toggle reply visibility:', err);
-            // Revert on error
-            setReplies(prev => prev.map(r => r._id === reply._id ? { ...r, isPublic: reply.isPublic } : r));
-        } finally {
-            setTogglingReplyId(null);
-        }
     };
 
     const myEmail = session?.user?.email;
@@ -552,21 +528,13 @@ export default function IdeasPage() {
                                                                     {new Date(reply.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                                                                 </span>
                                                             </div>
-                                                            
-                                                            {/* Reply visibility toggle for owner */}
-                                                            <button
-                                                                onClick={() => reply.createdBy === myEmail && handleToggleReplyVisibility(reply)}
-                                                                disabled={reply.createdBy !== myEmail || togglingReplyId === reply._id}
-                                                                className={`text-[9px] px-1.5 py-0.5 rounded transition-all duration-200 flex items-center gap-1 border ${
-                                                                    reply.isPublic 
-                                                                        ? 'bg-[#4CAF50]/5 border-[#4CAF50]/20 text-[#4CAF50]/70' 
-                                                                        : 'bg-zinc-900 border-white/5 text-zinc-500'
-                                                                } ${reply.createdBy === myEmail ? 'cursor-pointer hover:bg-white/5' : 'cursor-default'}`}
-                                                            >
-                                                                <span className={`w-1 h-1 rounded-full ${reply.isPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'}`} />
-                                                                {reply.isPublic ? 'Public' : 'Private'}
-                                                                {reply.createdBy === myEmail && <span className="ml-0.5 opacity-50">✎</span>}
-                                                            </button>
+
+                                                            {!reply.isPublic && (
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-white/5 text-zinc-500 flex items-center gap-1">
+                                                                    <span className="w-1 h-1 bg-zinc-600 rounded-full" />
+                                                                    Private
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <div className="text-zinc-400 text-sm leading-relaxed bg-white/[0.02] hover:bg-white/[0.04] p-3.5 rounded-2xl border border-white/[0.04] transition-colors group-hover:border-white/10">
                                                             {reply.content && <p>{reply.content}</p>}
