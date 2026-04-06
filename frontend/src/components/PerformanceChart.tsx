@@ -569,13 +569,15 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             dataLength = chartData.baselineData.length;
         }
         
-        // Instead of fitContent (which shows all historical outliers flattening the scale),
-        // we zoom in to show the most recent segment (100 bars) for better visibility.
+        // Instead of fitContent or hardcoded bar counts, we guarantee exactly 1 rolling month of history
         if (dataLength > 0) {
-            const VISIBLE_BARS_COUNT = 100;
-            chart.timeScale().setVisibleLogicalRange({
-                from: dataLength - Math.min(VISIBLE_BARS_COUNT, dataLength),
-                to: dataLength - 1,
+            const nowInSeconds = Math.floor(Date.now() / 1000);
+            const thirtyDaysAgo = nowInSeconds - (30 * 24 * 60 * 60);
+            
+            // Note: time is passed as raw number to satisfy lightweight-charts Time type constraint
+            chart.timeScale().setVisibleRange({
+                from: thirtyDaysAgo as unknown as import('lightweight-charts').Time,
+                to: nowInSeconds as unknown as import('lightweight-charts').Time,
             });
         }
 
