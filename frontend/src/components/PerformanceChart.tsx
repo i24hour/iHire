@@ -60,6 +60,59 @@ function getNext5PmIstTimestamp(referenceTime: number): number {
 
 
 
+function getFocusedRange(values: number[], referenceValue?: number): { minValue: number; maxValue: number } | null {
+    if (!values.length) return null;
+
+    const focusWindow = Math.max(24, Math.floor(values.length * 0.2));
+    const focusValues = values.slice(-focusWindow);
+    const latestValue = focusValues[focusValues.length - 1];
+
+    let minValue = Math.min(...focusValues);
+    let maxValue = Math.max(...focusValues);
+
+    // Always keep the previous close line in the visible range.
+    if (typeof referenceValue === 'number' && Number.isFinite(referenceValue)) {
+        minValue = Math.min(minValue, referenceValue);
+        maxValue = Math.max(maxValue, referenceValue);
+    }
+
+    const span = Math.max(maxValue - minValue, Math.max(Math.abs(latestValue), 1) * 0.05);
+    const padding = Math.max(span * 0.2, 1);
+    return {
+        minValue: minValue - padding,
+        maxValue: maxValue + padding,
+    };
+}
+
+function getFocusedCandleRange(candles: CandlestickData[], referenceValue?: number): { minValue: number; maxValue: number } | null {
+    if (!candles.length) return null;
+
+    const focusWindow = Math.max(24, Math.floor(candles.length * 0.2));
+    const focusCandles = candles.slice(-focusWindow);
+
+    const lows = focusCandles.map((c) => c.low);
+    const highs = focusCandles.map((c) => c.high);
+
+    let minValue = Math.min(...lows);
+    let maxValue = Math.max(...highs);
+    const latestClose = focusCandles[focusCandles.length - 1]?.close ?? maxValue;
+    if (typeof referenceValue === 'number' && Number.isFinite(referenceValue)) {
+        minValue = Math.min(minValue, referenceValue);
+        maxValue = Math.max(maxValue, referenceValue);
+    }
+
+    const anchorValue = typeof referenceValue === 'number' && Number.isFinite(referenceValue)
+        ? referenceValue
+        : latestClose;
+    const span = Math.max(maxValue - minValue, Math.max(Math.abs(anchorValue), 1) * 0.05);
+    const padding = Math.max(span * 0.2, 1);
+
+    return {
+        minValue: minValue - padding,
+        maxValue: maxValue + padding,
+    };
+}
+
 /**
  * Calculate the performance score at a given point in time.
  * 
@@ -519,6 +572,11 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 wickUpColor: '#10b981',
                 priceLineVisible: false,
                 lastValueVisible: false,
+                autoscaleInfoProvider: () => {
+                    const range = getFocusedCandleRange(chartData.candleData, previousCloseValue);
+                    if (!range) return null;
+                    return { priceRange: range };
+                },
             });
 
             candleSeries.createPriceLine({
@@ -546,6 +604,14 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 crosshairMarkerBackgroundColor: '#fff',
                 priceLineVisible: false,
                 lastValueVisible: false,
+                autoscaleInfoProvider: () => {
+                    const vals = chartData.baselineData.map((d) => d.value);
+                    const range = getFocusedRange(vals, previousCloseValue);
+                    if (!range) return null;
+                    return {
+                        priceRange: range,
+                    };
+                },
             });
 
             baselineSeries.createPriceLine({
