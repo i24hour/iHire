@@ -119,7 +119,12 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                 }),
             });
             if (!res.ok) throw new Error('Failed');
-            fetchReplies(selectedIdeaId);
+            const data = await res.json();
+            // Optimistically append to avoid triggering the full-screen loading spinner
+            setReplies(prev => [...prev, {
+                ...data.reply,
+                username: session?.user?.name || myEmail?.split('@')[0],
+            }]);
             setNewReply('');
             setReplyImage(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
