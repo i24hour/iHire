@@ -252,7 +252,7 @@ export default function IdeasPage() {
                                                         {idea.title}
                                                     </p>
                                                     {idea.details && (
-                                                        <p className="text-sm text-zinc-500 leading-relaxed break-words">
+                                                        <p className="text-[15px] font-medium text-white leading-relaxed break-words">
                                                             {idea.details}
                                                         </p>
                                                     )}

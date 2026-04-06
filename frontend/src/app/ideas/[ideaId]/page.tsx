@@ -192,7 +192,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                 {selectedIdea.title}
                                             </h1>
                                             {selectedIdea.details && (
-                                                <div className="text-[15px] text-zinc-400 leading-relaxed bg-white/5 p-5 rounded-2xl border border-white/10 shadow-sm">
+                                                <div className="text-[15px] text-white font-medium leading-relaxed bg-white/5 p-5 rounded-2xl border border-white/10 shadow-sm">
                                                     {selectedIdea.details}
                                                 </div>
                                             )}
@@ -250,7 +250,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                         {reply.createdBy === myEmail && <span className="opacity-50 ml-0.5">✎</span>}
                                                     </button>
                                                 </div>
-                                                <div className="text-zinc-400 text-[15px] leading-relaxed bg-white/5 hover:bg-white/10 p-4 rounded-3xl rounded-tl-sm border border-white/10 transition-colors shadow-sm">
+                                                <div className="text-white font-medium text-[15px] leading-relaxed bg-white/5 hover:bg-white/10 p-4 rounded-3xl rounded-tl-sm border border-white/10 transition-colors shadow-sm">
                                                     {reply.content && <p className="whitespace-pre-wrap">{reply.content}</p>}
                                                     {reply.imageUrl && (
                                                         <div 
