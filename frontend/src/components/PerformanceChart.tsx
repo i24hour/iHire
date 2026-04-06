@@ -58,58 +58,7 @@ function getNext5PmIstTimestamp(referenceTime: number): number {
     return getMostRecent5PmIstTimestamp(referenceTime) + DAY_MS;
 }
 
-function getFocusedRange(values: number[], referenceValue?: number): { minValue: number; maxValue: number } | null {
-    if (!values.length) return null;
 
-    const focusWindow = Math.max(24, Math.floor(values.length * 0.2));
-    const focusValues = values.slice(-focusWindow);
-    const latestValue = focusValues[focusValues.length - 1];
-
-    let minValue = Math.min(...focusValues);
-    let maxValue = Math.max(...focusValues);
-
-    // Always keep the previous close line in the visible range.
-    if (typeof referenceValue === 'number' && Number.isFinite(referenceValue)) {
-        minValue = Math.min(minValue, referenceValue);
-        maxValue = Math.max(maxValue, referenceValue);
-    }
-
-    const span = Math.max(maxValue - minValue, Math.max(Math.abs(latestValue), 1) * 0.05);
-    const padding = Math.max(span * 0.2, 1);
-    return {
-        minValue: minValue - padding,
-        maxValue: maxValue + padding,
-    };
-}
-
-function getFocusedCandleRange(candles: CandlestickData[], referenceValue?: number): { minValue: number; maxValue: number } | null {
-    if (!candles.length) return null;
-
-    const focusWindow = Math.max(24, Math.floor(candles.length * 0.2));
-    const focusCandles = candles.slice(-focusWindow);
-
-    const lows = focusCandles.map((c) => c.low);
-    const highs = focusCandles.map((c) => c.high);
-
-    let minValue = Math.min(...lows);
-    let maxValue = Math.max(...highs);
-    const latestClose = focusCandles[focusCandles.length - 1]?.close ?? maxValue;
-    if (typeof referenceValue === 'number' && Number.isFinite(referenceValue)) {
-        minValue = Math.min(minValue, referenceValue);
-        maxValue = Math.max(maxValue, referenceValue);
-    }
-
-    const anchorValue = typeof referenceValue === 'number' && Number.isFinite(referenceValue)
-        ? referenceValue
-        : latestClose;
-    const span = Math.max(maxValue - minValue, Math.max(Math.abs(anchorValue), 1) * 0.05);
-    const padding = Math.max(span * 0.2, 1);
-
-    return {
-        minValue: minValue - padding,
-        maxValue: maxValue + padding,
-    };
-}
 
 /**
  * Calculate the performance score at a given point in time.
@@ -610,13 +559,25 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             seriesRef.current = baselineSeries;
         }
 
-        // Apply initial data immediately so that fitContent aligns properly
+        // Apply initial data immediately so that auto-scaling aligns properly
+        let dataLength = 0;
         if (chartType === 'candle') {
             (seriesRef.current as ISeriesApi<'Candlestick'>).setData(chartData.candleData);
+            dataLength = chartData.candleData.length;
         } else {
             (seriesRef.current as ISeriesApi<'Baseline'>).setData(chartData.baselineData);
+            dataLength = chartData.baselineData.length;
         }
-        chart.timeScale().fitContent();
+        
+        // Instead of fitContent (which shows all historical outliers flattening the scale),
+        // we zoom in to show the most recent segment (100 bars) for better visibility.
+        if (dataLength > 0) {
+            const VISIBLE_BARS_COUNT = 100;
+            chart.timeScale().setVisibleLogicalRange({
+                from: dataLength - Math.min(VISIBLE_BARS_COUNT, dataLength),
+                to: dataLength - 1,
+            });
+        }
 
         // Handle resize
         const resizeObserver = new ResizeObserver((entries) => {
