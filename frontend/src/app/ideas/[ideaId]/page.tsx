@@ -171,8 +171,8 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                         <div className="absolute left-6 top-14 bottom-[-40px] w-[1px] bg-gradient-to-b from-white/20 to-transparent z-0" />
                                     )}
                                     <div className="relative z-10 flex gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 shadow-lg">
-                                            <span className="text-xl">💡</span>
+                                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 border border-white/20 shadow-lg text-white font-bold text-lg">
+                                            {selectedIdea.createdBy[0].toUpperCase()}
                                         </div>
                                         <div className="flex-1 space-y-3">
                                             <div className="flex items-center gap-2 flex-wrap">
