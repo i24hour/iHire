@@ -121,12 +121,12 @@ export default function IdeasPage() {
                             <p className="text-zinc-400">Capture, share, and track your ideas.</p>
                         </div>
                         {session && (
-                            <LiquidButton
+                            <button
                                 onClick={() => setFormOpen(prev => !prev)}
-                                className="text-white self-start sm:self-auto"
+                                className="self-start sm:self-auto px-6 py-2 rounded-full font-bold text-[15px] bg-white text-black hover:opacity-90 transition-opacity shadow-md"
                             >
                                 {formOpen ? '✕ Cancel' : '+ New Idea'}
-                            </LiquidButton>
+                            </button>
                         )}
                     </div>
 
@@ -188,13 +188,13 @@ export default function IdeasPage() {
                                             <span className={`w-2 h-2 rounded-full ${isPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'}`} />
                                             {isPublic ? 'Public' : 'Private'}
                                         </button>
-                                        <LiquidButton
+                                        <button
                                             onClick={handleSave}
                                             disabled={!title.trim() || saving}
-                                            className="text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                                            className="px-6 py-2 rounded-full font-bold text-[15px] bg-white text-black hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                                         >
                                             {saving ? 'Saving...' : 'Save Idea'}
-                                        </LiquidButton>
+                                        </button>
                                     </div>
                                 </div>
                             </motion.div>

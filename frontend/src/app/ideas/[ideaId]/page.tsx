@@ -343,13 +343,13 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                 {replyIsPublic ? 'Public Reply' : 'Private Reply'}
                                             </span>
                                         </div>
-                                        <LiquidButton
+                                        <button
                                             onClick={handleSendReply}
                                             disabled={(!newReply.trim() && !replyImage) || sendingReply}
-                                            className="text-white px-8 h-10 shadow-xl"
+                                            className="px-6 py-2 rounded-full font-bold text-[15px] bg-white text-black hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                                         >
                                             {sendingReply ? 'Posting...' : 'Post Reply'}
-                                        </LiquidButton>
+                                        </button>
                                     </div>
                                 </div>
                             ) : (
