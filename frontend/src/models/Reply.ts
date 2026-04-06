@@ -7,6 +7,7 @@ export interface IReply {
     createdBy: string; // userId (email)
     isPublic: boolean; // public vs private
     imageUrl?: string; // base64 or URL
+    isEdited?: boolean; // track if content was changed
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -36,6 +37,10 @@ const ReplySchema = new mongoose.Schema<IReply>({
     imageUrl: {
         type: String,
         required: false,
+    },
+    isEdited: {
+        type: Boolean,
+        default: false,
     },
 }, {
     timestamps: true,

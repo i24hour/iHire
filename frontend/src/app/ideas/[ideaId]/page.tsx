@@ -25,6 +25,8 @@ interface Reply {
     isPublic: boolean;
     imageUrl?: string;
     createdAt: string;
+    updatedAt?: string;
+    isEdited?: boolean;
 }
 
 export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaId: string }> }) {
@@ -44,6 +46,10 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
     const [replyIsPublic, setReplyIsPublic] = useState(true);
     const [sendingReply, setSendingReply] = useState(false);
     const [togglingReplyId, setTogglingReplyId] = useState<string | null>(null);
+    
+    // Edit & Delete State
+    const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+    const [editingContent, setEditingContent] = useState('');
     
     const [replyImage, setReplyImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +151,34 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
         }
     };
 
+    const handleDeleteReply = async (replyId: string) => {
+        if (!confirm('Are you sure you want to delete this reply?')) return;
+        setReplies(prev => prev.filter(r => r._id !== replyId));
+        try {
+            await fetch(`/api/replies/${replyId}`, { method: 'DELETE' });
+        } catch (err) {
+            console.error('Failed to delete reply:', err);
+            fetchReplies(selectedIdeaId!);
+        }
+    };
+
+    const handleSaveEdit = async (replyId: string) => {
+        if (!editingContent.trim()) return;
+        try {
+            const res = await fetch(`/api/replies/${replyId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: editingContent.trim() }),
+            });
+            if (!res.ok) throw new Error('Failed to edit');
+            setReplies(prev => prev.map(r => r._id === replyId ? { ...r, content: editingContent.trim(), isEdited: true, updatedAt: new Date().toISOString() } : r));
+            setEditingReplyId(null);
+            setEditingContent('');
+        } catch (err) {
+            console.error('Failed to save edit:', err);
+        }
+    };
+
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
@@ -233,6 +267,14 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                         <span className="text-[11px] text-zinc-600">
                                                             {new Date(reply.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                         </span>
+                                                        {reply.isEdited && reply.updatedAt && (
+                                                            <span className="text-[11px] text-zinc-500 italic ml-1 relative group/edited">
+                                                                (edited)
+                                                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover/edited:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-20">
+                                                                    Edited {new Date(reply.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     
                                                     {/* Toggle Reply Visibility (Slider) */}
@@ -256,20 +298,53 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                                 }`} />
                                                             </button>
                                                         )}
+                                                        {reply.createdBy === myEmail && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => { setEditingReplyId(reply._id); setEditingContent(reply.content); }}
+                                                                    className="text-[11px] text-zinc-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100 ml-1"
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteReply(reply._id)}
+                                                                    className="text-[11px] text-zinc-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="text-white font-medium text-[15px] leading-relaxed bg-white/5 hover:bg-white/10 p-4 rounded-3xl rounded-tl-sm border border-white/10 transition-colors shadow-sm">
-                                                    {reply.content && <p className="whitespace-pre-wrap">{reply.content}</p>}
-                                                    {reply.imageUrl && (
-                                                        <div 
-                                                            className={`${reply.content ? 'mt-4' : ''} rounded-xl overflow-hidden border border-white/10 max-w-sm cursor-pointer relative group/img`}
-                                                            onClick={() => setZoomedImage(reply.imageUrl!)}
-                                                        >
-                                                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                                                <span className="bg-black/60 text-white backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium">🔍 Zoom</span>
+                                                    {editingReplyId === reply._id ? (
+                                                        <div className="space-y-3">
+                                                            <textarea
+                                                                value={editingContent}
+                                                                onChange={e => setEditingContent(e.target.value)}
+                                                                className="w-full bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-[15px] focus:border-white/40 outline-none resize-none font-normal"
+                                                                rows={3}
+                                                            />
+                                                            <div className="flex justify-end gap-2">
+                                                                <button onClick={() => setEditingReplyId(null)} className="text-xs px-3 py-1.5 rounded-full hover:bg-white/10 text-zinc-400 transition-colors">Cancel</button>
+                                                                <button onClick={() => handleSaveEdit(reply._id)} disabled={!editingContent.trim()} className="text-xs px-4 py-1.5 rounded-full bg-white text-black font-bold disabled:opacity-50 transition-colors">Save</button>
                                                             </div>
-                                                            <img src={reply.imageUrl} alt="attached" className="w-full h-auto object-cover max-h-72" />
                                                         </div>
+                                                    ) : (
+                                                        <>
+                                                            {reply.content && <p className="whitespace-pre-wrap">{reply.content}</p>}
+                                                            {reply.imageUrl && (
+                                                                <div 
+                                                                    className={`${reply.content ? 'mt-4' : ''} rounded-xl overflow-hidden border border-white/10 max-w-sm cursor-pointer relative group/img`}
+                                                                    onClick={() => setZoomedImage(reply.imageUrl!)}
+                                                                >
+                                                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                                                        <span className="bg-black/60 text-white backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium">🔍 Zoom</span>
+                                                                    </div>
+                                                                    <img src={reply.imageUrl} alt="attached" className="w-full h-auto object-cover max-h-72" />
+                                                                </div>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
