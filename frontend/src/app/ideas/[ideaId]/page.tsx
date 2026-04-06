@@ -235,20 +235,28 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                         </span>
                                                     </div>
                                                     
-                                                    {/* Toggle Reply Visibility */}
-                                                    <button
-                                                        onClick={() => reply.createdBy === myEmail && handleToggleReplyVisibility(reply)}
-                                                        disabled={reply.createdBy !== myEmail || togglingReplyId === reply._id}
-                                                        className={`text-[10px] font-medium tracking-wide px-2 py-0.5 rounded transition-all duration-200 flex items-center gap-1.5 border ${
-                                                            reply.isPublic 
-                                                                ? 'bg-[#4CAF50]/5 border-[#4CAF50]/20 text-[#4CAF50]/70' 
-                                                                : 'bg-zinc-900 border-white/5 text-zinc-500'
-                                                        } ${reply.createdBy === myEmail ? 'cursor-pointer hover:bg-white/10 hover:text-white' : 'cursor-default opacity-80'}`}
-                                                    >
-                                                        <span className={`w-1 h-1 rounded-full ${reply.isPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'}`} />
-                                                        {reply.isPublic ? 'Public' : 'Private'}
-                                                        {reply.createdBy === myEmail && <span className="opacity-50 ml-0.5">✎</span>}
-                                                    </button>
+                                                    {/* Toggle Reply Visibility (Slider) */}
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] font-medium tracking-wider uppercase ${reply.isPublic ? 'text-[#4CAF50]' : 'text-zinc-500'}`}>
+                                                            {reply.isPublic ? 'Public' : 'Private'}
+                                                        </span>
+                                                        {reply.createdBy === myEmail && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleToggleReplyVisibility(reply)}
+                                                                disabled={togglingReplyId === reply._id}
+                                                                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                                    reply.isPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'
+                                                                } ${togglingReplyId === reply._id ? 'opacity-50' : ''}`}
+                                                                role="switch"
+                                                                aria-checked={reply.isPublic}
+                                                            >
+                                                                <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                                    reply.isPublic ? 'translate-x-3' : 'translate-x-0'
+                                                                }`} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <div className="text-white font-medium text-[15px] leading-relaxed bg-white/5 hover:bg-white/10 p-4 rounded-3xl rounded-tl-sm border border-white/10 transition-colors shadow-sm">
                                                     {reply.content && <p className="whitespace-pre-wrap">{reply.content}</p>}
@@ -293,10 +301,10 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                             />
                                             <button 
                                                 onClick={() => fileInputRef.current?.click()}
-                                                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                                                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-all duration-200 hover:scale-105 active:scale-95 group"
                                                 title="Attach image"
                                             >
-                                                🖼️
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 group-hover:opacity-100 transition-opacity"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                                             </button>
                                         </div>
                                     </div>
@@ -317,17 +325,24 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                     )}
 
                                     <div className="flex items-center justify-between pt-2">
-                                        <button
-                                            onClick={() => setReplyIsPublic(p => !p)}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold tracking-wide border transition-all duration-200 ${
-                                                replyIsPublic
-                                                    ? 'bg-[#4CAF50]/10 border-[#4CAF50]/30 text-[#4CAF50] hover:bg-[#4CAF50]/20'
-                                                    : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white'
-                                            }`}
-                                        >
-                                            <span className={`w-2 h-2 rounded-full ${replyIsPublic ? 'bg-[#4CAF50] shadow-[0_0_8px_rgba(76,175,80,0.5)]' : 'bg-zinc-500'}`} />
-                                            {replyIsPublic ? 'Public Reply' : 'Private Reply'}
-                                        </button>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setReplyIsPublic(p => !p)}
+                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                    replyIsPublic ? 'bg-[#4CAF50]' : 'bg-zinc-600'
+                                                }`}
+                                                role="switch"
+                                                aria-checked={replyIsPublic}
+                                            >
+                                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                    replyIsPublic ? 'translate-x-5' : 'translate-x-0'
+                                                }`} />
+                                            </button>
+                                            <span className={`text-xs font-semibold tracking-wide ${replyIsPublic ? 'text-[#4CAF50]' : 'text-zinc-500'}`}>
+                                                {replyIsPublic ? 'Public Reply' : 'Private Reply'}
+                                            </span>
+                                        </div>
                                         <LiquidButton
                                             onClick={handleSendReply}
                                             disabled={(!newReply.trim() && !replyImage) || sendingReply}
