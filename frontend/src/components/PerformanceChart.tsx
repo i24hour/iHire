@@ -523,7 +523,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
 
             candleSeries.createPriceLine({
                 price: previousCloseValue,
-                color: 'rgba(255, 255, 255, 0.4)',
+                color: isLightTheme ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.4)',
                 lineWidth: 1,
                 lineStyle: LineStyle.Dashed,
                 axisLabelVisible: false,
@@ -550,7 +550,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
 
             baselineSeries.createPriceLine({
                 price: previousCloseValue,
-                color: 'rgba(255, 255, 255, 0.4)',
+                color: isLightTheme ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.4)',
                 lineWidth: 1,
                 lineStyle: LineStyle.Dashed,
                 axisLabelVisible: false,
