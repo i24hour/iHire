@@ -192,7 +192,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                 {selectedIdea.title}
                                             </h1>
                                             {selectedIdea.details && (
-                                                <div className="text-[15px] text-zinc-300 leading-relaxed bg-white/[0.03] p-5 rounded-2xl border border-white/[0.05] shadow-sm">
+                                                <div className="text-[15px] text-zinc-400 leading-relaxed bg-white/5 p-5 rounded-2xl border border-white/10 shadow-sm">
                                                     {selectedIdea.details}
                                                 </div>
                                             )}
@@ -210,7 +210,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                         <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white/40" />
                                     </div>
                                 ) : replies.length === 0 ? (
-                                    <div className="text-center py-12 text-zinc-600 bg-white/[0.01] rounded-3xl border border-white/[0.02]">
+                                    <div className="text-center py-12 text-zinc-600 bg-white/5 rounded-3xl border border-white/10">
                                         <div className="text-3xl mb-3">💬</div>
                                         <p className="font-medium text-zinc-400">No replies yet</p>
                                         <p className="text-sm mt-1">Start the discussion below.</p>
@@ -227,7 +227,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                             <div className="relative z-10 space-y-2.5">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-semibold text-zinc-200">
+                                                        <span className="text-xs font-semibold text-white">
                                                             @{reply.username || reply.createdBy.split('@')[0]}
                                                         </span>
                                                         <span className="text-[11px] text-zinc-600">
@@ -250,7 +250,7 @@ export default function IdeaDiscussionPage({ params }: { params: Promise<{ ideaI
                                                         {reply.createdBy === myEmail && <span className="opacity-50 ml-0.5">✎</span>}
                                                     </button>
                                                 </div>
-                                                <div className="text-zinc-300 text-[15px] leading-relaxed bg-white/[0.02] hover:bg-white/[0.04] p-4 rounded-3xl rounded-tl-sm border border-white/[0.04] transition-colors group-hover:border-white/[0.08] shadow-sm">
+                                                <div className="text-zinc-400 text-[15px] leading-relaxed bg-white/5 hover:bg-white/10 p-4 rounded-3xl rounded-tl-sm border border-white/10 transition-colors shadow-sm">
                                                     {reply.content && <p className="whitespace-pre-wrap">{reply.content}</p>}
                                                     {reply.imageUrl && (
                                                         <div 
