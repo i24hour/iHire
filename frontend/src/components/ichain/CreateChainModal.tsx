@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 interface CreateChainModalProps {
@@ -12,6 +12,8 @@ interface CreateChainModalProps {
 export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChainModalProps) {
     const [name, setName] = useState('');
     const [memberInput, setMemberInput] = useState('');
+    const [suggestions, setSuggestions] = useState<{username?: string, email: string}[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [members, setMembers] = useState<string[]>([]);
     const [whatsappLink, setWhatsappLink] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,6 +21,35 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
     const [memberError, setMemberError] = useState('');
 
     if (!isOpen) return null;
+
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            const query = memberInput.trim();
+            if (!query) {
+                setSuggestions([]);
+                setShowSuggestions(false);
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/user/search?q=${encodeURIComponent(query)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.users && data.users.length > 0) {
+                        setSuggestions(data.users);
+                        setShowSuggestions(true);
+                    } else {
+                        setShowSuggestions(false);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching suggestions", error);
+            }
+        };
+
+        const timeoutId = setTimeout(fetchSuggestions, 300);
+        return () => clearTimeout(timeoutId);
+    }, [memberInput]);
 
     const handleAddMember = async () => {
         const identifier = memberInput.trim();
@@ -121,18 +152,50 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
 
                     <div className="space-y-2">
                         <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Add Members (Email or Username)</label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 relative">
                             <input
                                 type="text"
                                 value={memberInput}
                                 onChange={(e) => setMemberInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddMember())}
+                                onFocus={() => memberInput.trim() && setShowSuggestions(true)}
+                                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                 placeholder="priyanshu or member@example.com"
                                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/20 transition-colors"
                             />
                             <LiquidButton type="button" onClick={handleAddMember} size="sm" className="px-4" disabled={isCheckingMember}>
                                 {isCheckingMember ? 'Checking...' : 'Add'}
                             </LiquidButton>
+                            
+                            {showSuggestions && suggestions.length > 0 && (
+                                <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden z-50 shadow-2xl max-h-48 overflow-y-auto">
+                                    {suggestions.map((suggestion, index) => {
+                                        const identifier = suggestion.username || suggestion.email;
+                                        return (
+                                            <div
+                                                key={index}
+                                                className="px-4 py-3 hover:bg-white/10 cursor-pointer flex justify-between items-center transition-colors border-b border-white/5 last:border-0"
+                                                onClick={() => {
+                                                    setMemberError('');
+                                                    if (!members.includes(identifier)) {
+                                                        setMembers([...members, identifier]);
+                                                    } else {
+                                                        setMemberError('Member already added.');
+                                                    }
+                                                    setMemberInput('');
+                                                    setShowSuggestions(false);
+                                                }}
+                                            >
+                                                <div className="flex flex-col">
+                                                    <span className="text-white text-sm font-medium">{suggestion.username || suggestion.email}</span>
+                                                    {suggestion.username && <span className="text-xs text-zinc-500">{suggestion.email}</span>}
+                                                </div>
+                                                <div className="text-xs text-zinc-400 bg-white/5 px-2 py-1 rounded">Add</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                         {memberError && (
                             <p className="text-xs text-red-400 mt-2">{memberError}</p>
