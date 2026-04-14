@@ -68,6 +68,24 @@ export default function SettingsPage() {
         }
     };
 
+    const handleDisconnectGithub = async () => {
+        setSyncing(true); // Reuse syncing state for loading indicator
+        setMessage({ type: '', text: '' });
+        try {
+            const res = await fetch('/api/user/disconnect-github', { method: 'POST' });
+            if (res.ok) {
+                setGithubUsername(null);
+                setMessage({ type: 'success', text: 'GitHub disconnected successfully.' });
+            } else {
+                setMessage({ type: 'error', text: 'Failed to disconnect GitHub.' });
+            }
+        } catch (err) {
+            setMessage({ type: 'error', text: 'Error disconnecting GitHub.' });
+        } finally {
+            setSyncing(false);
+        }
+    };
+
     const handleSyncGithub = async () => {
         setSyncing(true);
         setMessage({ type: '', text: '' });
@@ -183,13 +201,22 @@ export default function SettingsPage() {
                                     </div>
                                     <div>
                                         {githubUsername ? (
-                                            <LiquidButton 
-                                                onClick={handleSyncGithub}
-                                                disabled={syncing}
-                                                className="px-6 py-2 text-white"
-                                            >
-                                                {syncing ? 'Syncing...' : 'Sync Commits'}
-                                            </LiquidButton>
+                                            <div className="flex gap-2">
+                                                <LiquidButton 
+                                                    onClick={handleSyncGithub}
+                                                    disabled={syncing}
+                                                    className="px-6 py-2 text-white"
+                                                >
+                                                    {syncing ? 'Loading...' : 'Sync Commits'}
+                                                </LiquidButton>
+                                                <button
+                                                    onClick={handleDisconnectGithub}
+                                                    disabled={syncing}
+                                                    className="px-4 py-2 text-red-500 hover:text-red-400 text-sm font-medium transition-colors border border-red-500/20 rounded-xl hover:bg-red-500/10"
+                                                >
+                                                    Disconnect
+                                                </button>
+                                            </div>
                                         ) : (
                                             <LiquidButton 
                                                 onClick={() => signIn('github')}

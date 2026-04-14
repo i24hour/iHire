@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
         allUsers.forEach(u => {
             emailToUserMap.set(u.email, {
                 username: u.username,
-                image: u.image
+                image: u.image,
+                points: u.points || 0
             });
         });
 
@@ -76,7 +77,8 @@ export async function GET(request: NextRequest) {
                     runningTasks: 0,
                     allTimeSeconds: 0,
                     lastActive: task.updatedAt || new Date(0),
-                    tasks: [] // Provide tasks to frontend for precise score calculation
+                    tasks: [], // Provide tasks to frontend for precise score calculation
+                    gamificationPoints: userData?.points || 0
                 });
             }
 

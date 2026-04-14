@@ -32,6 +32,7 @@ interface WorkerStats {
     runningTasks?: number;
     lastActive: string;
     tasks: any[]; // tasks attached by backend for scoring
+    gamificationPoints?: number;
 }
 
 function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
@@ -50,7 +51,8 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
     // Calculate live scores and apply sorting
     const sortedWorkers = useMemo(() => {
         const withScores = initialWorkers.map(w => {
-            const score = getScoreAtTime(w.tasks || [], currentTime);
+            const taskScore = getScoreAtTime(w.tasks || [], currentTime);
+            const score = taskScore + (w.gamificationPoints || 0);
             return { ...w, currentScore: score };
         });
 
