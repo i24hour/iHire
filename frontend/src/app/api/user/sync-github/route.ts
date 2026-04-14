@@ -50,9 +50,13 @@ export async function POST(req: NextRequest) {
         // If it's the first sync, we only want to reward commits from the last 7 days so they don't get 1,000,000 points instantly
         const cutoffTime = lastSync > 0 ? lastSync : Date.now() - (7 * 24 * 60 * 60 * 1000); 
 
+        let maxEventTime = lastSync;
         for (const event of events) {
+            const eventDate = new Date(event.created_at).getTime();
+            if (eventDate > maxEventTime) {
+                maxEventTime = eventDate;
+            }
             if (event.type === 'PushEvent') {
-                const eventDate = new Date(event.created_at).getTime();
                 if (eventDate > cutoffTime) {
                     totalNewCommits += event.payload.commits?.length || 0;
                 }
@@ -63,7 +67,11 @@ export async function POST(req: NextRequest) {
         
         // Update user
         user.points = (user.points || 0) + pointsEarned;
-        user.lastGithubSyncAt = new Date();
+        
+        // Fix: Use the timestamp of the most recent event to prevent Github API caching race-conditions
+        if (maxEventTime > lastSync) {
+            user.lastGithubSyncAt = new Date(maxEventTime);
+        }
         await user.save();
 
         return NextResponse.json({
