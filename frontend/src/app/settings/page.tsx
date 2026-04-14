@@ -106,6 +106,14 @@ export default function SettingsPage() {
         }
     };
 
+    const handleConnectGithub = () => {
+        // Set a 5-minute cookie with current email to tell NextAuth we are linking accounts, not replacing sessions
+        if (session?.user?.email) {
+            document.cookie = `github_link_email=${encodeURIComponent(session.user.email)}; path=/; max-age=300`;
+        }
+        signIn('github');
+    };
+
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
             <Sidebar />
@@ -219,7 +227,7 @@ export default function SettingsPage() {
                                             </div>
                                         ) : (
                                             <LiquidButton 
-                                                onClick={() => signIn('github')}
+                                                onClick={handleConnectGithub}
                                                 className="px-6 py-2 text-white"
                                                 variant="outline"
                                             >

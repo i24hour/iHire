@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import connectDB from '@/lib/mongodb';
+import { cookies } from 'next/headers';
 import { ensureUserHasDefaultUsername } from '@/lib/username';
 import User from '@/models/User';
 
@@ -61,7 +62,19 @@ export const authOptions: NextAuthOptions = {
                 if (account && account.provider === 'github') {
                     // When user authenticates with github, update their profile
                     const githubProfile = profile as any;
-                    const emailToFind = user?.email || token.email;
+                    
+                    // Recover linking intent from cookie if present
+                    const cookieStore = cookies();
+                    // nextJS 14/15 safe cookie retrieval
+                    const linkCookie = (cookieStore as any).get ? (cookieStore as any).get('github_link_email') : await (cookieStore as any).get('github_link_email');
+                    
+                    let isLinking = false;
+                    let emailToFind = user?.email || token.email;
+
+                    if (linkCookie && linkCookie.value) {
+                        emailToFind = decodeURIComponent(linkCookie.value);
+                        isLinking = true;
+                    }
                     
                     if (emailToFind) {
                         await User.findOneAndUpdate(
@@ -75,6 +88,21 @@ export const authOptions: NextAuthOptions = {
                             },
                             { new: true, upsert: true }
                         );
+
+                        if (isLinking) {
+                            // If we are linking an account from the Settings page, we MUST prevent NextAuth
+                            // from replacing the original session (Google) with the new identity (GitHub).
+                            const originalUser = await User.findOne({ email: emailToFind });
+                            if (originalUser) {
+                                token.email = originalUser.email;
+                                token.name = originalUser.username;
+                                token.id = originalUser._id.toString();
+                                // token.picture = originalUser.image || token.picture;
+                                
+                                // Return early so NextAuth doesn't overwrite it with GitHub details
+                                return token;
+                            }
+                        }
                     }
                 }
 
