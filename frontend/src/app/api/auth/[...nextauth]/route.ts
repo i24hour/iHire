@@ -1,14 +1,25 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import GithubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import connectDB from '@/lib/mongodb';
 import { ensureUserHasDefaultUsername } from '@/lib/username';
+import User from '@/models/User';
 
 export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+        }),
+        GithubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID || "",
+            clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+            authorization: {
+                params: {
+                    scope: 'read:user user:email'
+                }
+            }
         }),
         CredentialsProvider({
             name: "Email",
@@ -39,19 +50,40 @@ export const authOptions: NextAuthOptions = {
             }
             return session;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, account, profile }) {
             if (user) {
                 token.id = user.id;
             }
 
-            if (token?.email) {
-                try {
-                    await connectDB();
+            try {
+                await connectDB();
+
+                if (account && account.provider === 'github') {
+                    // When user authenticates with github, update their profile
+                    const githubProfile = profile as any;
+                    const emailToFind = user?.email || token.email;
+                    
+                    if (emailToFind) {
+                        await User.findOneAndUpdate(
+                            { email: emailToFind },
+                            { 
+                                $set: {
+                                    githubId: account.providerAccountId,
+                                    githubUsername: githubProfile?.login,
+                                    githubAccessToken: account.access_token,
+                                }
+                            },
+                            { new: true, upsert: true }
+                        );
+                    }
+                }
+
+                if (token?.email && user) {
                     const profileName = (user as any)?.name || token.name || null;
                     await ensureUserHasDefaultUsername(token.email, profileName);
-                } catch (error) {
-                    console.error('Failed to ensure default username during auth:', error);
                 }
+            } catch (error) {
+                console.error('Failed to update DB during auth:', error);
             }
 
             return token;

@@ -5,6 +5,11 @@ export interface IUser {
     email: string;
     username?: string;
     image?: string;
+    points?: number;
+    githubId?: string;
+    githubUsername?: string;
+    githubAccessToken?: string;
+    lastGithubSyncAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -26,6 +31,24 @@ const UserSchema = new mongoose.Schema<IUser>({
     },
     image: {
         type: String, // Base64 or URL
+    },
+    points: {
+        type: Number,
+        default: 0,
+    },
+    githubId: {
+        type: String,
+        sparse: true,
+        unique: true,
+    },
+    githubUsername: {
+        type: String,
+    },
+    githubAccessToken: {
+        type: String,
+    },
+    lastGithubSyncAt: {
+        type: Date,
     },
 }, {
     timestamps: true,

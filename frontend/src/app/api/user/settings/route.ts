@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ 
             username: user?.username || '', 
-            email: session.user.email 
+            email: session.user.email,
+            points: user?.points || 0,
+            githubUsername: user?.githubUsername || null
         });
     } catch (error) {
         console.error('Error fetching settings:', error);
