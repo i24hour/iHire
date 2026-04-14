@@ -63,16 +63,23 @@ export const authOptions: NextAuthOptions = {
                     // When user authenticates with github, update their profile
                     const githubProfile = profile as any;
                     
-                    // Recover linking intent from cookie if present
-                    const cookieStore = cookies();
-                    // nextJS 14/15 safe cookie retrieval
-                    const linkCookie = (cookieStore as any).get ? (cookieStore as any).get('github_link_email') : await (cookieStore as any).get('github_link_email');
+                    // nextJS 16 safe cookie retrieval
+                    let linkCookieValue = null;
+                    try {
+                        let cStore: any = cookies();
+                        if (cStore instanceof Promise || typeof cStore.then === 'function') {
+                            cStore = await cStore;
+                        }
+                        linkCookieValue = cStore.get('github_link_email')?.value;
+                    } catch (e) {
+                        console.error('cookie error', e);
+                    }
                     
                     let isLinking = false;
                     let emailToFind = user?.email || token.email;
 
-                    if (linkCookie && linkCookie.value) {
-                        emailToFind = decodeURIComponent(linkCookie.value);
+                    if (linkCookieValue) {
+                        emailToFind = decodeURIComponent(linkCookieValue);
                         isLinking = true;
                     }
                     
