@@ -24,54 +24,65 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'GitHub account not connected.' }, { status: 400 });
         }
 
-        // Fetch Public Events from GitHub
-        const githubRes = await fetch(`https://api.github.com/users/${user.githubUsername}/events/public`, {
+        // Determine the 'from' date for the GraphQL query
+        const lastSyncDate = user.lastGithubSyncAt ? new Date(user.lastGithubSyncAt) : null;
+        
+        // If it's the first sync, we only want to reward commits from the last 7 days so they don't get massive points
+        let fromDate = lastSyncDate;
+        if (!fromDate) {
+            fromDate = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));
+        } else {
+            // Add 1 second so we don't accidentally double-count a commit that occurred at the exact millisecond of the last sync
+            fromDate = new Date(fromDate.getTime() + 1000);
+        }
+
+        // GraphQL Query for contributionsCollection
+        const query = `
+          query($login: String!, $from: DateTime!) {
+            user(login: $login) {
+              contributionsCollection(from: $from) {
+                totalCommitContributions
+              }
+            }
+          }
+        `;
+
+        const variables = {
+            login: user.githubUsername,
+            from: fromDate.toISOString()
+        };
+
+        const githubRes = await fetch('https://api.github.com/graphql', {
+            method: 'POST',
             headers: user.githubAccessToken ? {
                 'Authorization': `Bearer ${user.githubAccessToken}`,
-                'Accept': 'application/vnd.github.v3+json'
+                'Content-Type': 'application/json'
             } : {
-                'Accept': 'application/vnd.github.v3+json'
-            }
+                'Content-Type': 'application/json' // Will likely fail without token, but fallback
+            },
+            body: JSON.stringify({ query, variables })
         });
 
         if (!githubRes.ok) {
-            console.error('GitHub API error:', await githubRes.text());
+            console.error('GitHub GraphQL API error:', await githubRes.text());
             return NextResponse.json({ error: 'Failed to fetch from GitHub' }, { status: githubRes.status });
         }
 
-        const events = await githubRes.json();
+        const jsonRes = await githubRes.json();
         
-        // Filter events
-        // 1. Must be PushEvent
-        // 2. Must be newer than lastGithubSyncAt (if exists)
-        let totalNewCommits = 0;
-        const lastSync = user.lastGithubSyncAt ? new Date(user.lastGithubSyncAt).getTime() : 0;
-        
-        // If it's the first sync, we only want to reward commits from the last 7 days so they don't get 1,000,000 points instantly
-        const cutoffTime = lastSync > 0 ? lastSync : Date.now() - (7 * 24 * 60 * 60 * 1000); 
-
-        let maxEventTime = lastSync;
-        for (const event of events) {
-            const eventDate = new Date(event.created_at).getTime();
-            if (eventDate > maxEventTime) {
-                maxEventTime = eventDate;
-            }
-            if (event.type === 'PushEvent') {
-                if (eventDate > cutoffTime) {
-                    totalNewCommits += event.payload.commits?.length || 0;
-                }
-            }
+        if (jsonRes.errors) {
+            console.error('GitHub GraphQL Errors:', jsonRes.errors);
+            return NextResponse.json({ error: 'Failed to query GitHub profile.' }, { status: 400 });
         }
 
+        const totalNewCommits = jsonRes.data?.user?.contributionsCollection?.totalCommitContributions || 0;
         const pointsEarned = totalNewCommits * 10;
         
         // Update user
         user.points = (user.points || 0) + pointsEarned;
         
-        // Fix: Use the timestamp of the most recent event to prevent Github API caching race-conditions
-        if (maxEventTime > lastSync) {
-            user.lastGithubSyncAt = new Date(maxEventTime);
-        }
+        // Save the exact current time as the new sync cursor
+        user.lastGithubSyncAt = new Date();
         await user.save();
 
         return NextResponse.json({
