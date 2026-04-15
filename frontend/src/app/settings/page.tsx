@@ -75,6 +75,7 @@ export default function SettingsPage() {
             const res = await fetch('/api/user/disconnect-github', { method: 'POST' });
             if (res.ok) {
                 setGithubUsername(null);
+                setPoints(0);
                 setMessage({ type: 'success', text: 'GitHub disconnected successfully.' });
             } else {
                 setMessage({ type: 'error', text: 'Failed to disconnect GitHub.' });

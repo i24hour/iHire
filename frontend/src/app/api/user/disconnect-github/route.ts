@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
         await connectDB();
 
-        // Find the user and unset github fields
+        // Find the user and unset all github fields + reset points checkpoint
         const user = await User.findOneAndUpdate(
             { email: session.user.email },
             { 
@@ -21,8 +21,12 @@ export async function POST(request: NextRequest) {
                     githubId: "", 
                     githubUsername: "", 
                     githubAccessToken: "", 
-                    lastGithubSyncAt: "" 
-                } 
+                    lastGithubSyncAt: "",
+                    githubCommitsTotal: ""
+                },
+                $set: {
+                    points: 0  // Reset GitHub gamification points
+                }
             },
             { new: true }
         );
