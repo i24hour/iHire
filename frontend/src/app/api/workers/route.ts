@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
+import { syncGithubForUserByEmail } from '@/lib/github-sync';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const session = await getServerSession(authOptions);
 
@@ -19,6 +20,14 @@ export async function GET(request: NextRequest) {
         }
 
         await connectDB();
+
+        if (session?.user?.email) {
+            try {
+                await syncGithubForUserByEmail(session.user.email);
+            } catch (syncError) {
+                console.error('GitHub auto-sync failed in workers route:', syncError);
+            }
+        }
 
         // Fetch all tasks (public + private) so score matches personal iTime view
         const allTasks = await ITimeTask.find({}).lean() as any[];

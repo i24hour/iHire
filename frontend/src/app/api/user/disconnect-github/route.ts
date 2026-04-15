@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.email) {
@@ -14,15 +14,17 @@ export async function POST(request: NextRequest) {
         await connectDB();
 
         // Find the user and unset all github fields + reset points checkpoint
-        const user = await User.findOneAndUpdate(
+        await User.findOneAndUpdate(
             { email: session.user.email },
             { 
                 $unset: { 
                     githubId: "", 
                     githubUsername: "", 
                     githubAccessToken: "", 
+                    githubConnectedAt: "",
                     lastGithubSyncAt: "",
-                    githubCommitsTotal: ""
+                    githubCommitsTotal: "",
+                    githubSyncLockUntil: ""
                 },
                 $set: {
                     points: 0  // Reset GitHub gamification points

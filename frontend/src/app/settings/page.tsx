@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { useSession, signIn } from 'next-auth/react';
@@ -15,14 +15,9 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [lastGithubSyncAt, setLastGithubSyncAt] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (session) {
-            fetchSettings();
-        }
-    }, [session]);
-
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         try {
             const res = await fetch('/api/user/settings');
             const data = await res.json();
@@ -34,13 +29,43 @@ export default function SettingsPage() {
             }
             if (data.githubUsername) {
                 setGithubUsername(data.githubUsername);
+            } else {
+                setGithubUsername(null);
             }
+            setLastGithubSyncAt(data.lastGithubSyncAt || null);
         } catch (err) {
             console.error('Error fetching settings:', err);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (session) {
+            fetchSettings();
+        }
+    }, [fetchSettings, session]);
+
+    useEffect(() => {
+        if (!session) return;
+
+        const interval = setInterval(() => {
+            fetchSettings();
+        }, 60000);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                fetchSettings();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchSettings, session]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,6 +101,7 @@ export default function SettingsPage() {
             if (res.ok) {
                 setGithubUsername(null);
                 setPoints(0);
+                setLastGithubSyncAt(null);
                 setMessage({ type: 'success', text: 'GitHub disconnected successfully.' });
             } else {
                 setMessage({ type: 'error', text: 'Failed to disconnect GitHub.' });
@@ -96,6 +122,7 @@ export default function SettingsPage() {
             
             if (res.ok) {
                 setPoints(data.totalPoints);
+                setLastGithubSyncAt(data.lastGithubSyncAt || new Date().toISOString());
                 setMessage({ type: 'success', text: `Sync complete! Earned ${data.pointsEarned} points. Total points: ${data.totalPoints}` });
             } else {
                 setMessage({ type: 'error', text: data.error || 'Failed to sync GitHub' });
@@ -207,6 +234,11 @@ export default function SettingsPage() {
                                                 ? `Connected as @${githubUsername}` 
                                                 : 'Connect GitHub to earn +10 points for every commit.'}
                                         </p>
+                                        {githubUsername && (
+                                            <p className="text-xs text-zinc-500 mt-2">
+                                                Auto-sync runs every minute while you use the app{lastGithubSyncAt ? ` - last sync ${new Date(lastGithubSyncAt).toLocaleString()}` : ''}.
+                                            </p>
+                                        )}
                                     </div>
                                     <div>
                                         {githubUsername ? (
@@ -216,7 +248,7 @@ export default function SettingsPage() {
                                                     disabled={syncing}
                                                     className="px-6 py-2 text-white"
                                                 >
-                                                    {syncing ? 'Loading...' : 'Sync Commits'}
+                                                    {syncing ? 'Loading...' : 'Sync Now'}
                                                 </LiquidButton>
                                                 <button
                                                     onClick={handleDisconnectGithub}

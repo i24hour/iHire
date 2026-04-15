@@ -11,7 +11,6 @@ const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
     { ssr: false, loading: () => <div className="h-[500px] bg-black rounded-2xl border border-white/10 flex items-center justify-center text-zinc-500">Loading chart...</div> }
 );
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
@@ -46,15 +45,16 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const resolvedParams = use(params);
     const userId = decodeURIComponent(resolvedParams.userId || '');
 
-    const { data: session, status } = useSession(); // Added this line
-    const router = useRouter(); // Moved this line here
+    const { data: session } = useSession();
+    const router = useRouter();
 
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
-    const [userData, setUserData] = useState<{ username: string; image: string | null } | null>(null);
+    const [userData, setUserData] = useState<{ username: string; image: string | null; points?: number } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
     const [scoreNow, setScoreNow] = useState(() => Date.now());
+    const [gamificationPoints, setGamificationPoints] = useState(0);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -67,6 +67,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 })));
                 if (data.user) {
                     setUserData(data.user);
+                    setGamificationPoints(data.user.points || 0);
                 }
             } else {
                 throw new Error('Failed to fetch tasks');
@@ -164,7 +165,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
-    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow), [tasks, scoreNow]);
+    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow) + gamificationPoints, [tasks, scoreNow, gamificationPoints]);
 
     if (isLoading) {
         return (
@@ -255,7 +256,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                 {/* Stock Performance Chart representing Workload */}
                 <div className="max-w-5xl mb-8">
-                    <PerformanceChart tasks={tasks} />
+                    <PerformanceChart tasks={tasks} gamificationPoints={gamificationPoints} />
                 </div>
 
                 {/* Active/Pending Tasks */}

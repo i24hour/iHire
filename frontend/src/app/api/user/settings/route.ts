@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { ensureUserHasDefaultUsername } from '@/lib/username';
+import { syncGithubForUserByEmail } from '@/lib/github-sync';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.email) {
@@ -13,13 +14,19 @@ export async function GET(request: NextRequest) {
         }
 
         await connectDB();
+        try {
+            await syncGithubForUserByEmail(session.user.email);
+        } catch (syncError) {
+            console.error('GitHub auto-sync failed in settings route:', syncError);
+        }
         const user = await ensureUserHasDefaultUsername(session.user.email);
 
         return NextResponse.json({ 
             username: user?.username || '', 
             email: session.user.email,
             points: user?.points || 0,
-            githubUsername: user?.githubUsername || null
+            githubUsername: user?.githubUsername || null,
+            lastGithubSyncAt: user?.lastGithubSyncAt || null
         });
     } catch (error) {
         console.error('Error fetching settings:', error);
@@ -27,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.email) {

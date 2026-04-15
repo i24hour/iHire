@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/Sidebar';
@@ -137,12 +137,9 @@ export default function WorkersPage() {
     const [error, setError] = useState<string | null>(null);
     const isLightTheme = useIsLightTheme();
 
-    useEffect(() => {
-        fetchWorkers();
-    }, []);
-
-    const fetchWorkers = async () => {
+    const fetchWorkers = useCallback(async () => {
         try {
+            setError(null);
             const response = await fetch('/api/workers');
             if (!response.ok) throw new Error('Failed to fetch workers');
             const data = await response.json();
@@ -154,7 +151,28 @@ export default function WorkersPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchWorkers();
+
+        const interval = setInterval(() => {
+            fetchWorkers();
+        }, 60000);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                fetchWorkers();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchWorkers]);
 
     // We will render loading and error states inside the main layout to preserve the sidebar
 

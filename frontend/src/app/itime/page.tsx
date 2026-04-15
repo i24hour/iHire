@@ -128,15 +128,7 @@ export default function ITimePage() {
     const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
     const [gamificationPoints, setGamificationPoints] = useState(0);
 
-    // Initial load
-    useEffect(() => {
-        fetchTasks();
-        if (session?.user?.email) {
-            fetchUserProfile();
-        }
-    }, [fetchTasks, session]);
-
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = useCallback(async () => {
         try {
             const res = await fetch('/api/user/settings');
             const data = await res.json();
@@ -149,7 +141,36 @@ export default function ITimePage() {
         } catch (err) {
             console.error('Error fetching profile:', err);
         }
-    };
+    }, []);
+
+    // Initial load
+    useEffect(() => {
+        fetchTasks();
+        if (session?.user?.email) {
+            fetchUserProfile();
+        }
+    }, [fetchTasks, fetchUserProfile, session]);
+
+    useEffect(() => {
+        if (!session?.user?.email) return;
+
+        const interval = setInterval(() => {
+            fetchUserProfile();
+        }, 60000);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                fetchUserProfile();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchUserProfile, session]);
 
     // Click outside to close pause menu
     useEffect(() => {

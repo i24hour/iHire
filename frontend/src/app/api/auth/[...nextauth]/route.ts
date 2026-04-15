@@ -84,15 +84,37 @@ export const authOptions: NextAuthOptions = {
                     }
                     
                     if (emailToFind) {
+                        const existingUser = await User.findOne({ email: emailToFind });
+                        const isSameGithubAccount = existingUser?.githubId === account.providerAccountId;
+
+                        const githubUpdate: Record<string, unknown> = {
+                            githubId: account.providerAccountId,
+                            githubUsername: githubProfile?.login,
+                            githubAccessToken: account.access_token,
+                        };
+
+                        if (!isSameGithubAccount) {
+                            githubUpdate.githubConnectedAt = new Date();
+                            githubUpdate.githubCommitsTotal = 0;
+                            githubUpdate.points = 0;
+                        } else if (!existingUser?.githubConnectedAt) {
+                            githubUpdate.githubConnectedAt = new Date();
+                        }
+
+                        const userUpdate: Record<string, unknown> = {
+                            $set: githubUpdate,
+                        };
+
+                        if (!isSameGithubAccount) {
+                            userUpdate.$unset = {
+                                lastGithubSyncAt: '',
+                                githubSyncLockUntil: '',
+                            };
+                        }
+
                         await User.findOneAndUpdate(
                             { email: emailToFind },
-                            { 
-                                $set: {
-                                    githubId: account.providerAccountId,
-                                    githubUsername: githubProfile?.login,
-                                    githubAccessToken: account.access_token,
-                                }
-                            },
+                            userUpdate,
                             { new: true, upsert: true }
                         );
 

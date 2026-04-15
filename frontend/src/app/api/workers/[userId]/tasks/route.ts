@@ -1,6 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
@@ -8,7 +6,6 @@ import User from '@/models/User';
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-    request: NextRequest,
     context: { params: Promise<{ userId: string }> } | { params: { userId: string } }
 ) {
     try {
@@ -35,7 +32,8 @@ export async function GET(
             tasks, 
             user: {
                 username: user?.username || targetUserId.split('@')[0],
-                image: user?.image || null
+                image: user?.image || null,
+                points: user?.points || 0
             } 
         });
     } catch (error) {
