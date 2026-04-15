@@ -20,6 +20,7 @@ export interface ChartTask {
 
 interface PerformanceChartProps {
     tasks: ChartTask[];
+    gamificationPoints?: number;
 }
 
 type ChartType = 'line' | 'candle';
@@ -363,7 +364,7 @@ function snapToInterval(timestamp: number, interval: CandleInterval): number {
     return d.getTime();
 }
 
-export function PerformanceChart({ tasks }: PerformanceChartProps) {
+export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceChartProps) {
     const [chartType, setChartType] = useState<ChartType>('line');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
     const [isLightTheme, setIsLightTheme] = useState(false);
@@ -411,8 +412,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
     }, [referenceNow]);
 
     const previousCloseValue = useMemo(() => {
-        return getScoreAtTime(tasks, previousCloseTimestamp);
-    }, [tasks, previousCloseTimestamp]);
+        return getScoreAtTime(tasks, previousCloseTimestamp) + gamificationPoints;
+    }, [tasks, previousCloseTimestamp, gamificationPoints]);
 
     // Generate OHLC data
     const chartData = useMemo(() => {
@@ -446,8 +447,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             const T_end = Math.min(now, startTime + ((i + 1) * intervalMs));
             if (T_start >= now) break;
 
-            let open = getScoreAtTime(tasks, T_start);
-            let close = getScoreAtTime(tasks, T_end);
+            let open = getScoreAtTime(tasks, T_start) + gamificationPoints;
+            let close = getScoreAtTime(tasks, T_end) + gamificationPoints;
             let high = Math.max(open, close);
             let low = Math.min(open, close);
 
@@ -456,8 +457,8 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
                 if (task.events) {
                     for (const ev of task.events) {
                         if (ev.timestamp > T_start && ev.timestamp <= T_end) {
-                            const val = getScoreAtTime(tasks, ev.timestamp);
-                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1);
+                            const val = getScoreAtTime(tasks, ev.timestamp) + gamificationPoints;
+                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1) + gamificationPoints;
                             high = Math.max(high, val, valBefore);
                             low = Math.min(low, val, valBefore);
                         }
@@ -488,7 +489,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
         }
 
         return { candleData, lineData, baselineData };
-    }, [tasks, interval]);
+    }, [tasks, interval, gamificationPoints]);
 
     // Create/update chart container and base settings
     useEffect(() => {
@@ -683,7 +684,7 @@ export function PerformanceChart({ tasks }: PerformanceChartProps) {
             if (!seriesRef.current) return;
 
             const now = Date.now();
-            const currentScore = getScoreAtTime(tasks, now);
+            const currentScore = getScoreAtTime(tasks, now) + gamificationPoints;
             const snappedNow = snapToInterval(now, interval);
             const timeSeconds = Math.floor(snappedNow / 1000) as Time;
 

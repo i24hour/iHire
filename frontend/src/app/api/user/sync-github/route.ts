@@ -24,23 +24,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'GitHub account not connected.' }, { status: 400 });
         }
 
-        // Determine the 'from' date for the GraphQL query
-        const lastSyncDate = user.lastGithubSyncAt ? new Date(user.lastGithubSyncAt) : null;
+        const isFirstSync = !user.githubCommitsTotal && user.githubCommitsTotal !== 0 || user.githubCommitsTotal === 0 && !user.lastGithubSyncAt;
         
-        // If it's the first sync, we only want to reward commits from the last 7 days so they don't get massive points
-        let fromDate = lastSyncDate;
-        if (!fromDate) {
-            fromDate = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000));
-        } else {
-            // Add 1 second so we don't accidentally double-count a commit that occurred at the exact millisecond of the last sync
-            fromDate = new Date(fromDate.getTime() + 1000);
-        }
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-        // GraphQL Query for contributionsCollection
+        // Two aliases in one GraphQL call:
+        // 1. recentContributions - last 7 days (only for first sync reward)
+        // 2. allContributions - current GitHub year (used as the checkpoint for subsequent syncs)
         const query = `
-          query($login: String!, $from: DateTime!) {
+          query($login: String!, $sevenDaysAgo: DateTime!) {
             user(login: $login) {
-              contributionsCollection(from: $from) {
+              recentContributions: contributionsCollection(from: $sevenDaysAgo) {
+                totalCommitContributions
+              }
+              allContributions: contributionsCollection {
                 totalCommitContributions
               }
             }
@@ -49,7 +46,7 @@ export async function POST(req: NextRequest) {
 
         const variables = {
             login: user.githubUsername,
-            from: fromDate.toISOString()
+            sevenDaysAgo
         };
 
         const githubRes = await fetch('https://api.github.com/graphql', {
@@ -58,7 +55,7 @@ export async function POST(req: NextRequest) {
                 'Authorization': `Bearer ${user.githubAccessToken}`,
                 'Content-Type': 'application/json'
             } : {
-                'Content-Type': 'application/json' // Will likely fail without token, but fallback
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ query, variables })
         });
@@ -75,21 +72,43 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Failed to query GitHub profile.' }, { status: 400 });
         }
 
-        const totalNewCommits = jsonRes.data?.user?.contributionsCollection?.totalCommitContributions || 0;
-        const pointsEarned = totalNewCommits * 10;
+        // Current year total commits — used as IDempotent checkpoint
+        const currentYearTotal: number = jsonRes.data?.user?.allContributions?.totalCommitContributions || 0;
+        // Last 7 days commits — only used for first sync
+        const last7DaysCommits: number = jsonRes.data?.user?.recentContributions?.totalCommitContributions || 0;
+
+        const previousCheckpoint: number = user.githubCommitsTotal || 0;
+
+        let newCommits = 0;
+
+        if (isFirstSync) {
+            // First time: only reward last 7 days worth of commits
+            newCommits = last7DaysCommits;
+        } else {
+            // Subsequent syncs: diff against stored checkpoint
+            // currentYearTotal can only go UP (GitHub only adds commits, doesn't remove)
+            newCommits = Math.max(0, currentYearTotal - previousCheckpoint);
+        }
+
+        const pointsEarned = newCommits * 10;
         
-        // Update user
-        user.points = (user.points || 0) + pointsEarned;
-        
-        // Save the exact current time as the new sync cursor
+        if (newCommits > 0) {
+            user.points = (user.points || 0) + pointsEarned;
+        }
+
+        // ALWAYS update the checkpoint to current total, so next sync is idempotent
+        // Even if we click sync 100 times with no new commits, this stays the same
+        // and returns 0 new commits each time.
+        user.githubCommitsTotal = currentYearTotal;
         user.lastGithubSyncAt = new Date();
         await user.save();
 
         return NextResponse.json({
-            message: 'GitHub commits synced',
-            newCommits: totalNewCommits,
+            message: newCommits > 0 ? 'GitHub commits synced!' : 'No new commits since last sync.',
+            newCommits,
             pointsEarned,
-            totalPoints: user.points
+            totalPoints: user.points,
+            isFirstSync
         });
 
     } catch (error) {

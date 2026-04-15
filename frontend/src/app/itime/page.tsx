@@ -594,7 +594,7 @@ export default function ITimePage() {
 
                 {/* Performance Chart */}
                 <div className="mb-8 w-full max-w-none">
-                    <PerformanceChart tasks={tasks} />
+                    <PerformanceChart tasks={tasks} gamificationPoints={gamificationPoints} />
                 </div>
 
                 {/* Add Task Form */}

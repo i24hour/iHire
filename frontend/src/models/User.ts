@@ -10,6 +10,7 @@ export interface IUser {
     githubUsername?: string;
     githubAccessToken?: string;
     lastGithubSyncAt?: Date;
+    githubCommitsTotal?: number; // Total commits already rewarded — used to prevent double-counting
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -49,6 +50,10 @@ const UserSchema = new mongoose.Schema<IUser>({
     },
     lastGithubSyncAt: {
         type: Date,
+    },
+    githubCommitsTotal: {
+        type: Number,
+        default: 0,
     },
 }, {
     timestamps: true,
