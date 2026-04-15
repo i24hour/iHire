@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
@@ -6,13 +6,13 @@ import User from '@/models/User';
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-    context: { params: Promise<{ userId: string }> } | { params: { userId: string } }
+    _request: NextRequest,
+    context: { params: Promise<{ userId: string }> }
 ) {
     try {
         // Authentication intentionally removed so anyone can view a worker's public profile tasks
         // const session = await getServerSession(authOptions);
 
-        // Await params if it's a promise (Next.js 15+ routing)
         const params = await context.params;
         const targetUserId = decodeURIComponent(params.userId);
 
