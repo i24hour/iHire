@@ -24,17 +24,27 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'GitHub account not connected.' }, { status: 400 });
         }
 
-        const isFirstSync = !user.githubCommitsTotal && user.githubCommitsTotal !== 0 || user.githubCommitsTotal === 0 && !user.lastGithubSyncAt;
+        // isFirstSync = no checkpoint yet (githubCommitsTotal never set)
+        // This handles both brand new users AND users who synced with the old code (which didn't set githubCommitsTotal)
+        const isFirstSync = !user.githubCommitsTotal;
         
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        // For first sync: use the date GitHub was connected (lastGithubSyncAt if exists, else now)
+        // This prevents counting commits from BEFORE the user connected their GitHub.
+        // If they connected April 13, we only count from April 13 onwards.
+        const connectionDate = user.lastGithubSyncAt 
+            ? new Date(user.lastGithubSyncAt).toISOString()
+            : new Date().toISOString();
+        
+        // For subsequent syncs, the 7-day window is irrelevant (we use checkpoint diff)
+        // We still pass sevenDaysAgo for the query alias but won't use its result
 
         // Two aliases in one GraphQL call:
         // 1. recentContributions - last 7 days (only for first sync reward)
         // 2. allContributions - current GitHub year (used as the checkpoint for subsequent syncs)
         const query = `
-          query($login: String!, $sevenDaysAgo: DateTime!) {
+          query($login: String!, $connectionDate: DateTime!) {
             user(login: $login) {
-              recentContributions: contributionsCollection(from: $sevenDaysAgo) {
+              recentContributions: contributionsCollection(from: $connectionDate) {
                 totalCommitContributions
               }
               allContributions: contributionsCollection {
@@ -46,7 +56,7 @@ export async function POST(req: NextRequest) {
 
         const variables = {
             login: user.githubUsername,
-            sevenDaysAgo
+            connectionDate
         };
 
         const githubRes = await fetch('https://api.github.com/graphql', {
@@ -82,23 +92,24 @@ export async function POST(req: NextRequest) {
         let newCommits = 0;
 
         if (isFirstSync) {
-            // First time: only reward last 7 days worth of commits
+            // First time establishing checkpoint: only count commits since connection date
+            // Also resets any incorrectly awarded points from the old code
             newCommits = last7DaysCommits;
         } else {
-            // Subsequent syncs: diff against stored checkpoint
-            // currentYearTotal can only go UP (GitHub only adds commits, doesn't remove)
+            // Subsequent syncs: diff against stored checkpoint — fully idempotent
             newCommits = Math.max(0, currentYearTotal - previousCheckpoint);
         }
 
         const pointsEarned = newCommits * 10;
         
-        if (newCommits > 0) {
+        if (isFirstSync) {
+            // Reset & re-award: clears any inflated points from old buggy code
+            user.points = pointsEarned;
+        } else if (newCommits > 0) {
             user.points = (user.points || 0) + pointsEarned;
         }
 
-        // ALWAYS update the checkpoint to current total, so next sync is idempotent
-        // Even if we click sync 100 times with no new commits, this stays the same
-        // and returns 0 new commits each time.
+        // ALWAYS update checkpoint to current total — next sync idempotent
         user.githubCommitsTotal = currentYearTotal;
         user.lastGithubSyncAt = new Date();
         await user.save();
