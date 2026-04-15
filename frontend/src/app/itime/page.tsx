@@ -126,6 +126,7 @@ export default function ITimePage() {
     const pauseMenuRef = useRef<HTMLDivElement>(null);
 
     const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
+    const [gamificationPoints, setGamificationPoints] = useState(0);
 
     // Initial load
     useEffect(() => {
@@ -141,6 +142,9 @@ export default function ITimePage() {
             const data = await res.json();
             if (data.username) {
                 setUserProfile(prev => ({ ...prev, username: data.username }));
+            }
+            if (data.points !== undefined) {
+                setGamificationPoints(data.points || 0);
             }
         } catch (err) {
             console.error('Error fetching profile:', err);
@@ -507,7 +511,7 @@ export default function ITimePage() {
     };
 
     const totalTime = useMemo(() => tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0), [tasks, getElapsedSeconds]);
-    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow), [tasks, scoreNow]);
+    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow) + gamificationPoints, [tasks, scoreNow, gamificationPoints]);
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
