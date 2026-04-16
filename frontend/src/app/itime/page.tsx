@@ -127,6 +127,7 @@ export default function ITimePage() {
 
     const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
     const [gamificationPoints, setGamificationPoints] = useState(0);
+    const [gamificationPointsLastUpdatedAt, setGamificationPointsLastUpdatedAt] = useState<string | null>(null);
 
     const fetchUserProfile = useCallback(async () => {
         try {
@@ -138,6 +139,7 @@ export default function ITimePage() {
             if (data.points !== undefined) {
                 setGamificationPoints(data.points || 0);
             }
+            setGamificationPointsLastUpdatedAt(data.githubPointsLastUpdatedAt || null);
         } catch (err) {
             console.error('Error fetching profile:', err);
         }
@@ -532,7 +534,10 @@ export default function ITimePage() {
     };
 
     const totalTime = useMemo(() => tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0), [tasks, getElapsedSeconds]);
-    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow) + gamificationPoints, [tasks, scoreNow, gamificationPoints]);
+    const liveScore = useMemo(
+        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
+        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
+    );
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
@@ -615,7 +620,11 @@ export default function ITimePage() {
 
                 {/* Performance Chart */}
                 <div className="mb-8 w-full max-w-none">
-                    <PerformanceChart tasks={tasks} gamificationPoints={gamificationPoints} />
+                    <PerformanceChart
+                        tasks={tasks}
+                        gamificationPoints={gamificationPoints}
+                        gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
+                    />
                 </div>
 
                 {/* Add Task Form */}

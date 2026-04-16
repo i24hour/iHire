@@ -65,7 +65,8 @@ export async function GET() {
             emailToUserMap.set(u.email, {
                 username: u.username,
                 image: u.image,
-                points: u.points || 0
+                points: u.points || 0,
+                githubPointsLastUpdatedAt: u.githubPointsLastUpdatedAt || u.githubConnectedAt || null
             });
         });
 
@@ -87,7 +88,8 @@ export async function GET() {
                     allTimeSeconds: 0,
                     lastActive: task.updatedAt || new Date(0),
                     tasks: [], // Provide tasks to frontend for precise score calculation
-                    gamificationPoints: userData?.points || 0
+                    gamificationPoints: userData?.points || 0,
+                    gamificationPointsLastUpdatedAt: userData?.githubPointsLastUpdatedAt || null
                 });
             }
 

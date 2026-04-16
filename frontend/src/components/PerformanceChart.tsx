@@ -21,6 +21,7 @@ export interface ChartTask {
 interface PerformanceChartProps {
     tasks: ChartTask[];
     gamificationPoints?: number;
+    gamificationPointsLastUpdatedAt?: Date | string | number | null;
 }
 
 type ChartType = 'line' | 'candle';
@@ -284,7 +285,24 @@ function getAllActiveIntervals(tasks: ChartTask[], t: number) {
     return allIntervals;
 }
 
-export function getScoreAtTime(tasks: ChartTask[], t: number): number {
+function getPointsCheckpointTimestamp(value?: Date | string | number | null): number | null {
+    if (value === null || value === undefined) return null;
+
+    const timestamp = value instanceof Date
+        ? value.getTime()
+        : typeof value === 'number'
+            ? value
+            : new Date(value).getTime();
+
+    return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+export function getScoreAtTime(
+    tasks: ChartTask[],
+    t: number,
+    gamificationPoints: number = 0,
+    gamificationPointsLastUpdatedAt?: Date | string | number | null
+): number {
     const allIntervals = getAllActiveIntervals(tasks, t);
     allIntervals.sort((a, b) => a.start - b.start);
 
@@ -325,22 +343,31 @@ export function getScoreAtTime(tasks: ChartTask[], t: number): number {
     }
 
     // Accumulate penalty iteratively, locking penalty if the "visible score" goes to 0
+    const pointsCheckpoint = getPointsCheckpointTimestamp(gamificationPointsLastUpdatedAt);
     let p_accum = 0;
     for (const idle of idleIntervals) {
-        // Base score remains exactly constant during an idle period
-        const s = computeBaseScore(tasks, idle.start);
-        const v = Math.max(0, s - p_accum);
+        const segments = pointsCheckpoint && pointsCheckpoint > idle.start && pointsCheckpoint < idle.end
+            ? [
+                { start: idle.start, end: pointsCheckpoint },
+                { start: pointsCheckpoint, end: idle.end }
+            ]
+            : [idle];
 
-        const rawPenalty = ((idle.end - idle.start) / 1000) * 0.001;
-        
-        // This is the crucial logic: penalty can only drain existing points!
-        // Once `v` drops to 0, `actualPenalty` is capped. Debt doesn't climb endlessly.
-        const actualPenalty = Math.min(rawPenalty, v);
-        p_accum += actualPenalty;
+        for (const segment of segments) {
+            const includeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || segment.start >= pointsCheckpoint);
+            const s = computeBaseScore(tasks, segment.start) + (includeGithubPoints ? gamificationPoints : 0);
+            const v = Math.max(0, s - p_accum);
+            const rawPenalty = ((segment.end - segment.start) / 1000) * 0.001;
+            const actualPenalty = Math.min(rawPenalty, v);
+            p_accum += actualPenalty;
+        }
     }
 
-    const finalBaseScore = computeBaseScore(tasks, t);
-    return Math.round(Math.max(0, finalBaseScore - p_accum) * 100) / 100;
+    const activeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || t >= pointsCheckpoint)
+        ? gamificationPoints
+        : 0;
+    const finalVisibleScore = computeBaseScore(tasks, t) + activeGithubPoints;
+    return Math.round(Math.max(0, finalVisibleScore - p_accum) * 100) / 100;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
@@ -364,7 +391,11 @@ function snapToInterval(timestamp: number, interval: CandleInterval): number {
     return d.getTime();
 }
 
-export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceChartProps) {
+export function PerformanceChart({
+    tasks,
+    gamificationPoints = 0,
+    gamificationPointsLastUpdatedAt = null
+}: PerformanceChartProps) {
     const [chartType, setChartType] = useState<ChartType>('line');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
     const [isLightTheme, setIsLightTheme] = useState(false);
@@ -412,8 +443,8 @@ export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceC
     }, [referenceNow]);
 
     const previousCloseValue = useMemo(() => {
-        return getScoreAtTime(tasks, previousCloseTimestamp) + gamificationPoints;
-    }, [tasks, previousCloseTimestamp, gamificationPoints]);
+        return getScoreAtTime(tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt);
+    }, [tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt]);
 
     // Generate OHLC data
     const chartData = useMemo(() => {
@@ -447,8 +478,8 @@ export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceC
             const T_end = Math.min(now, startTime + ((i + 1) * intervalMs));
             if (T_start >= now) break;
 
-            let open = getScoreAtTime(tasks, T_start) + gamificationPoints;
-            let close = getScoreAtTime(tasks, T_end) + gamificationPoints;
+            let open = getScoreAtTime(tasks, T_start, gamificationPoints, gamificationPointsLastUpdatedAt);
+            let close = getScoreAtTime(tasks, T_end, gamificationPoints, gamificationPointsLastUpdatedAt);
             let high = Math.max(open, close);
             let low = Math.min(open, close);
 
@@ -457,8 +488,8 @@ export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceC
                 if (task.events) {
                     for (const ev of task.events) {
                         if (ev.timestamp > T_start && ev.timestamp <= T_end) {
-                            const val = getScoreAtTime(tasks, ev.timestamp) + gamificationPoints;
-                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1) + gamificationPoints;
+                            const val = getScoreAtTime(tasks, ev.timestamp, gamificationPoints, gamificationPointsLastUpdatedAt);
+                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1, gamificationPoints, gamificationPointsLastUpdatedAt);
                             high = Math.max(high, val, valBefore);
                             low = Math.min(low, val, valBefore);
                         }
@@ -489,7 +520,7 @@ export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceC
         }
 
         return { candleData, lineData, baselineData };
-    }, [tasks, interval, gamificationPoints]);
+    }, [tasks, interval, gamificationPoints, gamificationPointsLastUpdatedAt]);
 
     // Create/update chart container and base settings
     useEffect(() => {
@@ -684,7 +715,7 @@ export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceC
             if (!seriesRef.current) return;
 
             const now = Date.now();
-            const currentScore = getScoreAtTime(tasks, now) + gamificationPoints;
+            const currentScore = getScoreAtTime(tasks, now, gamificationPoints, gamificationPointsLastUpdatedAt);
             const snappedNow = snapToInterval(now, interval);
             const timeSeconds = Math.floor(snappedNow / 1000) as Time;
 
@@ -721,7 +752,7 @@ export function PerformanceChart({ tasks, gamificationPoints = 0 }: PerformanceC
         }, 1000);
 
         return () => clearInterval(liveInterval);
-    }, [tasks, interval, chartType, chartData]);
+    }, [tasks, interval, chartType, chartData, gamificationPoints, gamificationPointsLastUpdatedAt]);
 
     return (
         <div className="bg-black rounded-2xl border border-white/10 p-6 flex flex-col w-full h-[500px]">

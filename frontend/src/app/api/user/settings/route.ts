@@ -26,7 +26,8 @@ export async function GET() {
             email: session.user.email,
             points: user?.points || 0,
             githubUsername: user?.githubUsername || null,
-            lastGithubSyncAt: user?.lastGithubSyncAt || null
+            lastGithubSyncAt: user?.lastGithubSyncAt || null,
+            githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null
         });
     } catch (error) {
         console.error('Error fetching settings:', error);

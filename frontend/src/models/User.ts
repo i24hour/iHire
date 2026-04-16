@@ -11,7 +11,8 @@ export interface IUser {
     githubAccessToken?: string;
     githubConnectedAt?: Date;
     lastGithubSyncAt?: Date;
-    githubCommitsTotal?: number; // Total commits already rewarded — used to prevent double-counting
+    githubCommitsTotal?: number;
+    githubPointsLastUpdatedAt?: Date;
     githubSyncLockUntil?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -27,13 +28,13 @@ const UserSchema = new mongoose.Schema<IUser>({
     username: {
         type: String,
         unique: true,
-        sparse: true, // Allow multiple nulls if username not set yet
+        sparse: true,
         index: true,
         lowercase: true,
         trim: true,
     },
     image: {
-        type: String, // Base64 or URL
+        type: String,
     },
     points: {
         type: Number,
@@ -59,6 +60,9 @@ const UserSchema = new mongoose.Schema<IUser>({
     githubCommitsTotal: {
         type: Number,
         default: 0,
+    },
+    githubPointsLastUpdatedAt: {
+        type: Date,
     },
     githubSyncLockUntil: {
         type: Date,

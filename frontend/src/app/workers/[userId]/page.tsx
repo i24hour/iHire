@@ -49,12 +49,18 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const router = useRouter();
 
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
-    const [userData, setUserData] = useState<{ username: string; image: string | null; points?: number } | null>(null);
+    const [userData, setUserData] = useState<{
+        username: string;
+        image: string | null;
+        points?: number;
+        githubPointsLastUpdatedAt?: string | null;
+    } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
     const [scoreNow, setScoreNow] = useState(() => Date.now());
     const [gamificationPoints, setGamificationPoints] = useState(0);
+    const [gamificationPointsLastUpdatedAt, setGamificationPointsLastUpdatedAt] = useState<string | null>(null);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -68,6 +74,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                 if (data.user) {
                     setUserData(data.user);
                     setGamificationPoints(data.user.points || 0);
+                    setGamificationPointsLastUpdatedAt(data.user.githubPointsLastUpdatedAt || null);
                 }
             } else {
                 throw new Error('Failed to fetch tasks');
@@ -165,7 +172,10 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
-    const liveScore = useMemo(() => getScoreAtTime(tasks, scoreNow) + gamificationPoints, [tasks, scoreNow, gamificationPoints]);
+    const liveScore = useMemo(
+        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
+        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
+    );
 
     if (isLoading) {
         return (
@@ -256,7 +266,11 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                 {/* Stock Performance Chart representing Workload */}
                 <div className="max-w-5xl mb-8">
-                    <PerformanceChart tasks={tasks} gamificationPoints={gamificationPoints} />
+                    <PerformanceChart
+                        tasks={tasks}
+                        gamificationPoints={gamificationPoints}
+                        gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
+                    />
                 </div>
 
                 {/* Active/Pending Tasks */}

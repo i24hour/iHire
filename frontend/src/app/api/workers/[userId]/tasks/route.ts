@@ -33,7 +33,8 @@ export async function GET(
             user: {
                 username: user?.username || targetUserId.split('@')[0],
                 image: user?.image || null,
-                points: user?.points || 0
+                points: user?.points || 0,
+                githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null
             } 
         });
     } catch (error) {

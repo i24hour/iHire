@@ -108,6 +108,7 @@ export const authOptions: NextAuthOptions = {
                         if (!isSameGithubAccount) {
                             userUpdate.$unset = {
                                 lastGithubSyncAt: '',
+                                githubPointsLastUpdatedAt: '',
                                 githubSyncLockUntil: '',
                             };
                         }

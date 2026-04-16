@@ -1,4 +1,6 @@
 import User from '@/models/User';
+import ITimeTask from '@/models/ITimeTask';
+import { getScoreAtTime } from '@/lib/score';
 
 const DEFAULT_GITHUB_SYNC_INTERVAL_MS = 60 * 1000;
 const GITHUB_SYNC_LOCK_MS = 30 * 1000;
@@ -14,6 +16,7 @@ export interface GithubSyncResult {
     pointsEarned: number;
     totalPoints: number;
     lastGithubSyncAt: Date | null;
+    githubPointsLastUpdatedAt: Date | null;
 }
 
 interface SyncGithubOptions {
@@ -49,6 +52,7 @@ export async function syncGithubForUserByEmail(
             pointsEarned: 0,
             totalPoints: 0,
             lastGithubSyncAt: null,
+            githubPointsLastUpdatedAt: null,
         };
     }
 
@@ -72,6 +76,7 @@ export async function syncGithubForUser(
             pointsEarned: 0,
             totalPoints: currentPoints,
             lastGithubSyncAt: currentLastSyncAt,
+            githubPointsLastUpdatedAt: user.githubPointsLastUpdatedAt ? new Date(user.githubPointsLastUpdatedAt) : null,
         };
     }
 
@@ -84,6 +89,7 @@ export async function syncGithubForUser(
             pointsEarned: 0,
             totalPoints: currentPoints,
             lastGithubSyncAt: currentLastSyncAt,
+            githubPointsLastUpdatedAt: user.githubPointsLastUpdatedAt ? new Date(user.githubPointsLastUpdatedAt) : null,
         };
     }
 
@@ -116,6 +122,7 @@ export async function syncGithubForUser(
             pointsEarned: 0,
             totalPoints: latestUser?.points || currentPoints,
             lastGithubSyncAt: latestUser?.lastGithubSyncAt ? new Date(latestUser.lastGithubSyncAt) : currentLastSyncAt,
+            githubPointsLastUpdatedAt: latestUser?.githubPointsLastUpdatedAt ? new Date(latestUser.githubPointsLastUpdatedAt) : null,
         };
     }
 
@@ -131,6 +138,7 @@ export async function syncGithubForUser(
                 pointsEarned: 0,
                 totalPoints: lockedUser.points || 0,
                 lastGithubSyncAt: lockedUser.lastGithubSyncAt ? new Date(lockedUser.lastGithubSyncAt) : null,
+                githubPointsLastUpdatedAt: lockedUser.githubPointsLastUpdatedAt ? new Date(lockedUser.githubPointsLastUpdatedAt) : null,
             };
         }
 
@@ -195,10 +203,23 @@ export async function syncGithubForUser(
             : Math.max(0, currentYearTotal - previousCheckpoint);
         const pointsEarned = newCommits * COMMIT_REWARD_POINTS;
 
-        if (isFirstSync) {
-            lockedUser.points = pointsEarned;
-        } else if (pointsEarned > 0) {
-            lockedUser.points = (lockedUser.points || 0) + pointsEarned;
+        const tasks = await ITimeTask.find({ userId: lockedUser.email }).lean() as any[];
+        const currentTimeMs = now.getTime();
+        const effectiveExistingPoints = isFirstSync
+            ? 0
+            : Math.max(
+                0,
+                getScoreAtTime(
+                    tasks,
+                    currentTimeMs,
+                    lockedUser.points || 0,
+                    lockedUser.githubPointsLastUpdatedAt || lockedUser.githubConnectedAt || null
+                ) - getScoreAtTime(tasks, currentTimeMs)
+            );
+
+        if (isFirstSync || pointsEarned > 0) {
+            lockedUser.points = Math.round((effectiveExistingPoints + pointsEarned) * 100) / 100;
+            lockedUser.githubPointsLastUpdatedAt = now;
         }
 
         if (!lockedUser.githubConnectedAt) {
@@ -218,6 +239,7 @@ export async function syncGithubForUser(
             pointsEarned,
             totalPoints: lockedUser.points || 0,
             lastGithubSyncAt: lockedUser.lastGithubSyncAt ? new Date(lockedUser.lastGithubSyncAt) : null,
+            githubPointsLastUpdatedAt: lockedUser.githubPointsLastUpdatedAt ? new Date(lockedUser.githubPointsLastUpdatedAt) : null,
         };
     } finally {
         if (shouldReleaseLock) {

@@ -24,6 +24,7 @@ export async function POST() {
                     githubConnectedAt: "",
                     lastGithubSyncAt: "",
                     githubCommitsTotal: "",
+                    githubPointsLastUpdatedAt: "",
                     githubSyncLockUntil: ""
                 },
                 $set: {

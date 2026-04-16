@@ -34,6 +34,7 @@ export async function POST() {
             totalPoints: result.totalPoints,
             isFirstSync: result.isFirstSync,
             lastGithubSyncAt: result.lastGithubSyncAt,
+            githubPointsLastUpdatedAt: result.githubPointsLastUpdatedAt,
         });
     } catch (error) {
         console.error('Error syncing GitHub:', error);
