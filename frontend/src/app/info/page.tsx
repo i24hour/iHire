@@ -61,18 +61,22 @@ export default function InfoPage() {
                         </h2>
 
                         <p className="text-zinc-400 text-sm leading-relaxed mb-6 relative z-10">
-                            Your score bleeds in real-time whenever no task is actively running. Every second of idle time costs you points — there are no safe pauses.
+                            Score decay is now intentionally softer. Short breaks are safe, and long idle windows reduce score gradually instead of sharply dropping momentum.
                         </p>
 
                         <div className="bg-white/5 rounded-xl p-5 border border-white/10 relative z-10">
                             <ul className="space-y-3 text-sm text-zinc-400">
                                 <li className="flex items-start gap-3">
                                     <span className="text-white mt-0.5">▪</span>
-                                    <span>For every <strong className="text-white">1 second</strong> no task is running, <strong className="text-white">0.001 points</strong> are deducted from your score.</span>
+                                    <span>First <strong className="text-white">8 minutes</strong> of every idle stretch have <strong className="text-white">0 penalty</strong>.</span>
                                 </li>
                                 <li className="flex items-start gap-3">
                                     <span className="text-white mt-0.5">▪</span>
-                                    <span>This equals <strong className="text-white">3.6 points/hour</strong> of idle time — the decay is continuous and visible live on your score.</span>
+                                    <span>After grace, decay is <strong className="text-white">0.0002/sec</strong> (about <strong className="text-white">0.72 points/hour</strong>) for the next 45 minutes.</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-white mt-0.5">▪</span>
+                                    <span>For very long idle streaks, decay becomes <strong className="text-white">0.00035/sec</strong> (about <strong className="text-white">1.26 points/hour</strong>) to discourage full drop-offs while staying gentle.</span>
                                 </li>
                                 <li className="flex items-start gap-3">
                                     <span className="text-white mt-0.5">▪</span>

@@ -28,6 +28,23 @@ type ChartType = 'line' | 'candle';
 type CandleInterval = '1m' | '5m' | '10m' | '15m' | '1h' | '1d';
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const IDLE_GRACE_SECONDS = 8 * 60;
+const IDLE_BASE_PENALTY_RATE_PER_SEC = 0.0002;
+const LONG_IDLE_THRESHOLD_SECONDS = 45 * 60;
+const LONG_IDLE_PENALTY_RATE_PER_SEC = 0.00035;
+
+function calculateIdlePenalty(idleMs: number): number {
+    const idleSeconds = Math.max(0, idleMs / 1000);
+    const effectiveIdleSeconds = Math.max(0, idleSeconds - IDLE_GRACE_SECONDS);
+
+    if (effectiveIdleSeconds === 0) return 0;
+
+    const baseBucketSeconds = Math.min(effectiveIdleSeconds, LONG_IDLE_THRESHOLD_SECONDS);
+    const longIdleSeconds = Math.max(0, effectiveIdleSeconds - LONG_IDLE_THRESHOLD_SECONDS);
+
+    return (baseBucketSeconds * IDLE_BASE_PENALTY_RATE_PER_SEC)
+        + (longIdleSeconds * LONG_IDLE_PENALTY_RATE_PER_SEC);
+}
 
 const getIntervalMs = (interval: CandleInterval) => {
     switch (interval) {
@@ -357,7 +374,11 @@ export function getScoreAtTime(
             const includeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || segment.start >= pointsCheckpoint);
             const s = computeBaseScore(tasks, segment.start) + (includeGithubPoints ? gamificationPoints : 0);
             const v = Math.max(0, s - p_accum);
-            const rawPenalty = ((segment.end - segment.start) / 1000) * 0.001;
+
+            // Slow decay: brief breaks are free, then apply gentle idle drain.
+            const rawPenalty = calculateIdlePenalty(segment.end - segment.start);
+
+            // Penalty can only drain existing visible points at this checkpoint.
             const actualPenalty = Math.min(rawPenalty, v);
             p_accum += actualPenalty;
         }
