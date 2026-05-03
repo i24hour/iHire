@@ -24,7 +24,7 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
     const { data: session } = useSession();
     const [isDeleting, setIsDeleting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
-    const activeMembers = chain.members.filter(m => m.isWorking).length;
+    const activeMembers = (chain.members || []).filter(m => m.isWorking).length;
     
     const canDelete = !chain.createdBy || chain.createdBy === session?.user?.email;
 
@@ -148,19 +148,19 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
                     <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <div className="flex -space-x-2">
-                                {chain.members.slice(0, 3).map((member, i) => (
+                                {(chain.members || []).slice(0, 3).map((member, i) => (
                                     <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-white/10 flex items-center justify-center text-[10px] text-white overflow-hidden">
-                                        {member.image ? <img src={member.image} alt="" /> : member.name[0]}
+                                        {member.image ? <img src={member.image} alt="" /> : (member.name || '?')[0]}
                                     </div>
                                 ))}
-                                {chain.members.length > 3 && (
+                                {(chain.members || []).length > 3 && (
                                     <div className="w-8 h-8 rounded-full border-2 border-black bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-400">
-                                        +{chain.members.length - 3}
+                                        +{(chain.members || []).length - 3}
                                     </div>
                                 )}
                             </div>
                             <span className="text-xs text-zinc-400">
-                                {activeMembers} / {chain.members.length} Active
+                                {activeMembers} / {(chain.members || []).length} Active
                             </span>
                         </div>
                         

@@ -108,8 +108,8 @@ export default function IChainPage() {
                             </div>
                         ) : (() => {
                             const myChains = chains
-                                .filter(chain => chain.members.some((m: any) => m.userId === session?.user?.email))
-                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                                .filter(chain => (chain.members || []).some((m: any) => m.userId === session?.user?.email))
+                                .sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
                                 
                             const displayChains = activeTab === 'my' ? myChains : chains;
 
@@ -165,7 +165,7 @@ export default function IChainPage() {
                                                         </button>
                                                     </div>
                                                     <p className="text-sm text-zinc-400">
-                                                        {chain.members.length} Members • Status: {chain.status === 'Burst' ? <span className="text-red-500 font-medium tracking-wide">Burst</span> : chain.status === 'Active' ? <span className="text-emerald-500 font-medium tracking-wide">Active</span> : <span className="text-amber-500 font-medium tracking-wide">Idle</span>}
+                                                        {(chain.members || []).length} Members • Status: {chain.status === 'Burst' ? <span className="text-red-500 font-medium tracking-wide">Burst</span> : chain.status === 'Active' ? <span className="text-emerald-500 font-medium tracking-wide">Active</span> : <span className="text-amber-500 font-medium tracking-wide">Idle</span>}
                                                     </p>
                                                 </div>
                                             </div>
