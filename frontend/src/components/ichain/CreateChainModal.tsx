@@ -20,9 +20,9 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
     const [isCheckingMember, setIsCheckingMember] = useState(false);
     const [memberError, setMemberError] = useState('');
 
-    if (!isOpen) return null;
-
     useEffect(() => {
+        if (!isOpen) return;
+
         const fetchSuggestions = async () => {
             const query = memberInput.trim();
             if (!query) {
@@ -49,7 +49,9 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
 
         const timeoutId = setTimeout(fetchSuggestions, 300);
         return () => clearTimeout(timeoutId);
-    }, [memberInput]);
+    }, [memberInput, isOpen]);
+
+    if (!isOpen) return null;
 
     const handleAddMember = async () => {
         const identifier = memberInput.trim();
