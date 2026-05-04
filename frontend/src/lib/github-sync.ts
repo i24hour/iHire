@@ -1,8 +1,6 @@
 import User from '@/models/User';
-import ITimeTask from '@/models/ITimeTask';
-import { getScoreAtTime } from '@/lib/score';
 
-const DEFAULT_GITHUB_SYNC_INTERVAL_MS = 60 * 1000;
+const DEFAULT_GITHUB_SYNC_INTERVAL_MS = 15 * 1000;
 const GITHUB_SYNC_LOCK_MS = 30 * 1000;
 const COMMIT_REWARD_POINTS = 10;
 
@@ -64,7 +62,7 @@ export async function syncGithubForUser(
     options: SyncGithubOptions = {}
 ): Promise<GithubSyncResult> {
     const minIntervalMs = options.minIntervalMs ?? DEFAULT_GITHUB_SYNC_INTERVAL_MS;
-    const currentPoints = user.points || 0;
+    const currentPoints = Math.max(0, Math.round(user.points || 0));
     const currentLastSyncAt = user.lastGithubSyncAt ? new Date(user.lastGithubSyncAt) : null;
 
     if (!user.githubUsername) {
@@ -146,14 +144,17 @@ export async function syncGithubForUser(
         const connectionDate = lockedUser.githubConnectedAt
             ? new Date(lockedUser.githubConnectedAt)
             : now;
+        const syncWindowStart = lockedUser.lastGithubSyncAt
+            ? new Date(lockedUser.lastGithubSyncAt)
+            : connectionDate;
 
         const query = `
-          query($login: String!, $connectionDate: DateTime!) {
+          query($login: String!, $connectionDate: DateTime!, $syncWindowStart: DateTime!) {
             user(login: $login) {
-              commitsSinceConnection: contributionsCollection(from: $connectionDate) {
+              commitsSinceLastSync: contributionsCollection(from: $syncWindowStart) {
                 totalCommitContributions
               }
-              allContributions: contributionsCollection {
+              commitsSinceConnection: contributionsCollection(from: $connectionDate) {
                 totalCommitContributions
               }
             }
@@ -176,6 +177,7 @@ export async function syncGithubForUser(
                 variables: {
                     login: lockedUser.githubUsername,
                     connectionDate: connectionDate.toISOString(),
+                    syncWindowStart: syncWindowStart.toISOString(),
                 },
             }),
             cache: 'no-store',
@@ -194,31 +196,16 @@ export async function syncGithubForUser(
             throw new Error('Failed to query GitHub profile.');
         }
 
-        const currentYearTotal = jsonRes.data?.user?.allContributions?.totalCommitContributions || 0;
+        const commitsSinceLastSync = jsonRes.data?.user?.commitsSinceLastSync?.totalCommitContributions || 0;
         const commitsSinceConnection = jsonRes.data?.user?.commitsSinceConnection?.totalCommitContributions || 0;
-        const previousCheckpoint = typeof lockedUser.githubCommitsTotal === 'number' ? lockedUser.githubCommitsTotal : 0;
-
         const newCommits = isFirstSync
             ? commitsSinceConnection
-            : Math.max(0, currentYearTotal - previousCheckpoint);
+            : Math.max(0, commitsSinceLastSync);
         const pointsEarned = newCommits * COMMIT_REWARD_POINTS;
-
-        const tasks = await ITimeTask.find({ userId: lockedUser.email }).lean() as any[];
-        const currentTimeMs = now.getTime();
-        const effectiveExistingPoints = isFirstSync
-            ? 0
-            : Math.max(
-                0,
-                getScoreAtTime(
-                    tasks,
-                    currentTimeMs,
-                    lockedUser.points || 0,
-                    lockedUser.githubPointsLastUpdatedAt || lockedUser.githubConnectedAt || null
-                ) - getScoreAtTime(tasks, currentTimeMs)
-            );
+        const existingGithubPoints = Math.max(0, Math.round(lockedUser.points || 0));
 
         if (isFirstSync || pointsEarned > 0) {
-            lockedUser.points = Math.round((effectiveExistingPoints + pointsEarned) * 100) / 100;
+            lockedUser.points = existingGithubPoints + pointsEarned;
             lockedUser.githubPointsLastUpdatedAt = now;
         }
 
@@ -226,7 +213,9 @@ export async function syncGithubForUser(
             lockedUser.githubConnectedAt = connectionDate;
         }
 
-        lockedUser.githubCommitsTotal = currentYearTotal;
+        lockedUser.githubCommitsTotal = isFirstSync
+            ? commitsSinceConnection
+            : Math.max(0, (lockedUser.githubCommitsTotal || 0) + newCommits);
         lockedUser.lastGithubSyncAt = now;
         lockedUser.githubSyncLockUntil = undefined;
         await lockedUser.save();
@@ -237,7 +226,7 @@ export async function syncGithubForUser(
             isFirstSync,
             newCommits,
             pointsEarned,
-            totalPoints: lockedUser.points || 0,
+            totalPoints: Math.max(0, Math.round(lockedUser.points || 0)),
             lastGithubSyncAt: lockedUser.lastGithubSyncAt ? new Date(lockedUser.lastGithubSyncAt) : null,
             githubPointsLastUpdatedAt: lockedUser.githubPointsLastUpdatedAt ? new Date(lockedUser.githubPointsLastUpdatedAt) : null,
         };

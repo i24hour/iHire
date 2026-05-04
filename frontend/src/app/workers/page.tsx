@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
-import { getScoreAtTime } from '@/components/PerformanceChart';
+import { getScoreAtTime } from '@/lib/score';
 
 function useIsLightTheme() {
     const [isLightTheme, setIsLightTheme] = useState(false);
@@ -119,10 +119,10 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
                                         {worker.completedTasks}
                                     </span>
                                 </div>
-                                <div className="bg-black rounded-xl px-4 py-2 border border-[#4CAF50]/30 shadow-[0_0_15px_rgba(76,175,80,0.1)] flex flex-col justify-center min-w-[110px] flex-1 md:flex-none relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#4CAF50]/5 to-transparent"></div>
-                                    <span className="block text-[10px] uppercase tracking-wider font-bold text-[#4CAF50] mb-0.5 relative">Live Score</span>
-                                    <span className="block text-2xl font-bold text-white leading-none font-mono tracking-tight relative">
+                                <div className={`bg-black rounded-xl px-4 py-2 border flex flex-col justify-center min-w-[110px] flex-1 md:flex-none relative overflow-hidden ${worker.currentScore < 0 ? 'border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.12)]' : 'border-[#4CAF50]/30 shadow-[0_0_15px_rgba(76,175,80,0.1)]'}`}>
+                                    <div className={`absolute inset-0 bg-gradient-to-br ${worker.currentScore < 0 ? 'from-red-500/8' : 'from-[#4CAF50]/5'} to-transparent`}></div>
+                                    <span className={`block text-[10px] uppercase tracking-wider font-bold mb-0.5 relative ${worker.currentScore < 0 ? 'text-red-400' : 'text-[#4CAF50]'}`}>Live Score</span>
+                                    <span className={`block text-2xl font-bold leading-none font-mono tracking-tight relative ${worker.currentScore < 0 ? 'text-red-400' : 'text-white'}`}>
                                         {worker.currentScore.toFixed(2)}
                                     </span>
                                 </div>
@@ -163,7 +163,7 @@ export default function WorkersPage() {
 
         const interval = setInterval(() => {
             fetchWorkers();
-        }, 60000);
+        }, 15000);
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {

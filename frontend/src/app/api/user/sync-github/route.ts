@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import ITimeTask from '@/models/ITimeTask';
 import { syncGithubForUser } from '@/lib/github-sync';
+import { getScoreBreakdownAtTime } from '@/lib/score';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,12 +28,21 @@ export async function POST() {
         }
 
         const result = await syncGithubForUser(user, { force: true });
+        const refreshedUser = await User.findById(user._id).lean();
+        const tasks = await ITimeTask.find({ userId: session.user.email }).lean();
+        const scoreBreakdown = getScoreBreakdownAtTime(
+            tasks,
+            Date.now(),
+            refreshedUser?.points || 0,
+            refreshedUser?.githubPointsLastUpdatedAt || refreshedUser?.githubConnectedAt || null
+        );
 
         return NextResponse.json({
             message: result.newCommits > 0 ? 'GitHub commits synced!' : 'No new commits since last sync.',
             newCommits: result.newCommits,
             pointsEarned: result.pointsEarned,
-            totalPoints: result.totalPoints,
+            githubPoints: scoreBreakdown.githubPoints,
+            totalPoints: scoreBreakdown.totalScore,
             isFirstSync: result.isFirstSync,
             lastGithubSyncAt: result.lastGithubSyncAt,
             githubPointsLastUpdatedAt: result.githubPointsLastUpdatedAt,

@@ -60,6 +60,22 @@ body {
   background-color: rgba(9, 9, 11, 0.04) !important;
 }
 
+:root[data-theme='light'] .bg-white\/10 {
+  background-color: rgba(9, 9, 11, 0.08) !important;
+}
+
+:root[data-theme='light'] .hover\:bg-white\/10:hover {
+  background-color: rgba(9, 9, 11, 0.12) !important;
+}
+
+:root[data-theme='light'] .bg-zinc-900 {
+  background-color: #ffffff !important;
+}
+
+:root[data-theme='light'] .bg-zinc-800 {
+  background-color: #e4e4e7 !important;
+}
+
 :root[data-theme='light'] ::selection {
   background: rgba(37, 99, 235, 0.18);
   color: #0d0d0d;

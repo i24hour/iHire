@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { createChart, ColorType, CandlestickSeries, LineSeries, BaselineSeries, type IChartApi, type ISeriesApi, type CandlestickData, type LineData, type BaselineData, type Time, LineStyle } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries, BaselineSeries, type IChartApi, type ISeriesApi, type CandlestickData, type LineData, type BaselineData, type Time, LineStyle } from 'lightweight-charts';
+import { getScoreAtTime } from '@/lib/score';
 
 export interface ChartEvent {
     type: 'start' | 'pause' | 'complete';
@@ -28,23 +29,6 @@ type ChartType = 'line' | 'candle';
 type CandleInterval = '1m' | '5m' | '10m' | '15m' | '1h' | '1d';
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const IDLE_GRACE_SECONDS = 8 * 60;
-const IDLE_BASE_PENALTY_RATE_PER_SEC = 0.0002;
-const LONG_IDLE_THRESHOLD_SECONDS = 45 * 60;
-const LONG_IDLE_PENALTY_RATE_PER_SEC = 0.00035;
-
-function calculateIdlePenalty(idleMs: number): number {
-    const idleSeconds = Math.max(0, idleMs / 1000);
-    const effectiveIdleSeconds = Math.max(0, idleSeconds - IDLE_GRACE_SECONDS);
-
-    if (effectiveIdleSeconds === 0) return 0;
-
-    const baseBucketSeconds = Math.min(effectiveIdleSeconds, LONG_IDLE_THRESHOLD_SECONDS);
-    const longIdleSeconds = Math.max(0, effectiveIdleSeconds - LONG_IDLE_THRESHOLD_SECONDS);
-
-    return (baseBucketSeconds * IDLE_BASE_PENALTY_RATE_PER_SEC)
-        + (longIdleSeconds * LONG_IDLE_PENALTY_RATE_PER_SEC);
-}
 
 const getIntervalMs = (interval: CandleInterval) => {
     switch (interval) {
@@ -300,95 +284,6 @@ function getAllActiveIntervals(tasks: ChartTask[], t: number) {
         }
     }
     return allIntervals;
-}
-
-function getPointsCheckpointTimestamp(value?: Date | string | number | null): number | null {
-    if (value === null || value === undefined) return null;
-
-    const timestamp = value instanceof Date
-        ? value.getTime()
-        : typeof value === 'number'
-            ? value
-            : new Date(value).getTime();
-
-    return Number.isNaN(timestamp) ? null : timestamp;
-}
-
-export function getScoreAtTime(
-    tasks: ChartTask[],
-    t: number,
-    gamificationPoints: number = 0,
-    gamificationPointsLastUpdatedAt?: Date | string | number | null
-): number {
-    const allIntervals = getAllActiveIntervals(tasks, t);
-    allIntervals.sort((a, b) => a.start - b.start);
-
-    // Merge active intervals
-    const mergedActive: { start: number; end: number }[] = [];
-    for (const iv of allIntervals) {
-        if (mergedActive.length === 0) {
-            mergedActive.push({ ...iv });
-        } else {
-            const last = mergedActive[mergedActive.length - 1];
-            if (iv.start <= last.end) {
-                last.end = Math.max(last.end, iv.end);
-            } else {
-                mergedActive.push({ ...iv });
-            }
-        }
-    }
-
-    // Fixed Continuous Penalty rule: only applies from April 1, 2026 IST onwards.
-    const IST_OFFSET_MS = 5.5 * 3600 * 1000;
-    const APRIL_1_2026_IST = Date.UTC(2026, 3, 1, 0, 0, 0, 0) - IST_OFFSET_MS;
-    const penaltyWindowStart = APRIL_1_2026_IST; // Constant date window start!
-
-    // Find strictly idle periods within the penalty window (penaltyWindowStart -> t)
-    const idleIntervals: { start: number; end: number }[] = [];
-    let currentT = penaltyWindowStart;
-
-    for (const active of mergedActive) {
-        if (active.end <= penaltyWindowStart) continue;
-        if (active.start > currentT) {
-            idleIntervals.push({ start: currentT, end: Math.min(active.start, t) });
-        }
-        currentT = Math.max(currentT, active.end);
-        if (currentT >= t) break;
-    }
-    if (currentT < t) {
-        idleIntervals.push({ start: currentT, end: t });
-    }
-
-    // Accumulate penalty iteratively, locking penalty if the "visible score" goes to 0
-    const pointsCheckpoint = getPointsCheckpointTimestamp(gamificationPointsLastUpdatedAt);
-    let p_accum = 0;
-    for (const idle of idleIntervals) {
-        const segments = pointsCheckpoint && pointsCheckpoint > idle.start && pointsCheckpoint < idle.end
-            ? [
-                { start: idle.start, end: pointsCheckpoint },
-                { start: pointsCheckpoint, end: idle.end }
-            ]
-            : [idle];
-
-        for (const segment of segments) {
-            const includeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || segment.start >= pointsCheckpoint);
-            const s = computeBaseScore(tasks, segment.start) + (includeGithubPoints ? gamificationPoints : 0);
-            const v = Math.max(0, s - p_accum);
-
-            // Slow decay: brief breaks are free, then apply gentle idle drain.
-            const rawPenalty = calculateIdlePenalty(segment.end - segment.start);
-
-            // Penalty can only drain existing visible points at this checkpoint.
-            const actualPenalty = Math.min(rawPenalty, v);
-            p_accum += actualPenalty;
-        }
-    }
-
-    const activeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || t >= pointsCheckpoint)
-        ? gamificationPoints
-        : 0;
-    const finalVisibleScore = computeBaseScore(tasks, t) + activeGithubPoints;
-    return Math.round(Math.max(0, finalVisibleScore - p_accum) * 100) / 100;
 }
 
 function snapToInterval(timestamp: number, interval: CandleInterval): number {

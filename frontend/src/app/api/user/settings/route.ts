@@ -3,8 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import ITimeTask from '@/models/ITimeTask';
 import { ensureUserHasDefaultUsername } from '@/lib/username';
 import { syncGithubForUserByEmail } from '@/lib/github-sync';
+import { getScoreBreakdownAtTime } from '@/lib/score';
 
 export async function GET() {
     try {
@@ -20,11 +22,21 @@ export async function GET() {
             console.error('GitHub auto-sync failed in settings route:', syncError);
         }
         const user = await ensureUserHasDefaultUsername(session.user.email);
+        const tasks = await ITimeTask.find({ userId: session.user.email }).lean();
+        const scoreBreakdown = getScoreBreakdownAtTime(
+            tasks,
+            Date.now(),
+            user?.points || 0,
+            user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null
+        );
 
         return NextResponse.json({ 
             username: user?.username || '', 
             email: session.user.email,
-            points: user?.points || 0,
+            points: scoreBreakdown.githubPoints,
+            totalScore: scoreBreakdown.totalScore,
+            baseScore: scoreBreakdown.penalizedBaseScore,
+            idlePenalty: scoreBreakdown.idlePenalty,
             githubUsername: user?.githubUsername || null,
             lastGithubSyncAt: user?.lastGithubSyncAt || null,
             githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null

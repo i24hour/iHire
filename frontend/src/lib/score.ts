@@ -12,7 +12,19 @@ export interface ScoreTask {
     completedAt?: number;
 }
 
-function computeBaseScore(tasks: ScoreTask[], t: number): number {
+export interface ScoreBreakdown {
+    baseScore: number;
+    idlePenalty: number;
+    penalizedBaseScore: number;
+    githubPoints: number;
+    totalScore: number;
+}
+
+function roundScore(value: number): number {
+    return Math.round(value * 100) / 100;
+}
+
+export function computeBaseScore(tasks: ScoreTask[], t: number): number {
     let totalTasks = 0;
     let completedTasks = 0;
     let runningTasksHours = 0;
@@ -41,7 +53,8 @@ function computeBaseScore(tasks: ScoreTask[], t: number): number {
         if (!task.events || task.events.length === 0) {
             if (task.startTime && task.startTime <= t) {
                 if (isCompletedByT) {
-                    taskHours = (actualCompletedAt! - task.startTime) / (1000 * 3600);
+                    const completedAtMs = actualCompletedAt ?? task.startTime;
+                    taskHours = (completedAtMs - task.startTime) / (1000 * 3600);
                 } else if (!task.completed && !task.enabled) {
                     taskHours = task.pausedElapsed / 3600;
                 } else {
@@ -126,7 +139,8 @@ function getAllActiveIntervals(tasks: ScoreTask[], t: number) {
         if (!task.events || task.events.length === 0) {
             if (task.startTime && task.startTime <= t) {
                 if (isCompletedByT) {
-                    allIntervals.push({ start: task.startTime, end: actualCompletedAt! });
+                    const completedAtMs = actualCompletedAt ?? task.startTime;
+                    allIntervals.push({ start: task.startTime, end: completedAtMs });
                 } else if (!task.completed && !task.enabled) {
                     allIntervals.push({ start: task.startTime, end: task.startTime + task.pausedElapsed * 1000 });
                 } else {
@@ -178,12 +192,7 @@ function getPointsCheckpointTimestamp(value?: Date | string | number | null): nu
     return Number.isNaN(timestamp) ? null : timestamp;
 }
 
-export function getScoreAtTime(
-    tasks: ScoreTask[],
-    t: number,
-    gamificationPoints: number = 0,
-    gamificationPointsLastUpdatedAt?: Date | string | number | null
-): number {
+function getIdlePenaltyAtTime(tasks: ScoreTask[], t: number): number {
     const allIntervals = getAllActiveIntervals(tasks, t);
     allIntervals.sort((a, b) => a.start - b.start);
 
@@ -201,14 +210,14 @@ export function getScoreAtTime(
         }
     }
 
-    const IST_OFFSET_MS = 5.5 * 3600 * 1000;
-    const APRIL_1_2026_IST = Date.UTC(2026, 3, 1, 0, 0, 0, 0) - IST_OFFSET_MS;
+    const istOffsetMs = 5.5 * 3600 * 1000;
+    const april1st2026Ist = Date.UTC(2026, 3, 1, 0, 0, 0, 0) - istOffsetMs;
 
     const idleIntervals: { start: number; end: number }[] = [];
-    let currentT = APRIL_1_2026_IST;
+    let currentT = april1st2026Ist;
 
     for (const active of mergedActive) {
-        if (active.end <= APRIL_1_2026_IST) continue;
+        if (active.end <= april1st2026Ist) continue;
         if (active.start > currentT) {
             idleIntervals.push({ start: currentT, end: Math.min(active.start, t) });
         }
@@ -220,30 +229,45 @@ export function getScoreAtTime(
         idleIntervals.push({ start: currentT, end: t });
     }
 
-    const pointsCheckpoint = getPointsCheckpointTimestamp(gamificationPointsLastUpdatedAt);
     let accumulatedPenalty = 0;
-
     for (const idle of idleIntervals) {
-        const segments = pointsCheckpoint && pointsCheckpoint > idle.start && pointsCheckpoint < idle.end
-            ? [
-                { start: idle.start, end: pointsCheckpoint },
-                { start: pointsCheckpoint, end: idle.end }
-            ]
-            : [idle];
-
-        for (const segment of segments) {
-            const includeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || segment.start >= pointsCheckpoint);
-            const scoreAtSegmentStart = computeBaseScore(tasks, segment.start) + (includeGithubPoints ? gamificationPoints : 0);
-            const visibleScore = Math.max(0, scoreAtSegmentStart - accumulatedPenalty);
-            const rawPenalty = ((segment.end - segment.start) / 1000) * 0.001;
-            accumulatedPenalty += Math.min(rawPenalty, visibleScore);
-        }
+        const scoreAtSegmentStart = computeBaseScore(tasks, idle.start);
+        const visibleBaseScore = Math.max(0, scoreAtSegmentStart - accumulatedPenalty);
+        const rawPenalty = ((idle.end - idle.start) / 1000) * 0.001;
+        accumulatedPenalty += Math.min(rawPenalty, visibleBaseScore);
     }
 
-    const activeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || t >= pointsCheckpoint)
+    return accumulatedPenalty;
+}
+
+export function getScoreBreakdownAtTime(
+    tasks: ScoreTask[],
+    t: number,
+    gamificationPoints: number = 0,
+    gamificationPointsLastUpdatedAt?: Date | string | number | null
+): ScoreBreakdown {
+    const pointsCheckpoint = getPointsCheckpointTimestamp(gamificationPointsLastUpdatedAt);
+    const baseScore = computeBaseScore(tasks, t);
+    const idlePenalty = getIdlePenaltyAtTime(tasks, t);
+    const penalizedBaseScore = Math.max(0, baseScore - idlePenalty);
+    const githubPoints = gamificationPoints > 0 && (!pointsCheckpoint || t >= pointsCheckpoint)
         ? gamificationPoints
         : 0;
-    const finalVisibleScore = computeBaseScore(tasks, t) + activeGithubPoints;
 
-    return Math.round(Math.max(0, finalVisibleScore - accumulatedPenalty) * 100) / 100;
+    return {
+        baseScore: roundScore(baseScore),
+        idlePenalty: roundScore(idlePenalty),
+        penalizedBaseScore: roundScore(penalizedBaseScore),
+        githubPoints: Math.round(githubPoints),
+        totalScore: roundScore(penalizedBaseScore + githubPoints),
+    };
+}
+
+export function getScoreAtTime(
+    tasks: ScoreTask[],
+    t: number,
+    gamificationPoints: number = 0,
+    gamificationPointsLastUpdatedAt?: Date | string | number | null
+): number {
+    return getScoreBreakdownAtTime(tasks, t, gamificationPoints, gamificationPointsLastUpdatedAt).totalScore;
 }

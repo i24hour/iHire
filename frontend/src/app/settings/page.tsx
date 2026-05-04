@@ -9,7 +9,8 @@ import { motion } from 'framer-motion';
 export default function SettingsPage() {
     const { data: session } = useSession();
     const [username, setUsername] = useState('');
-    const [points, setPoints] = useState(0);
+    const [totalScore, setTotalScore] = useState(0);
+    const [githubPoints, setGithubPoints] = useState(0);
     const [githubUsername, setGithubUsername] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -24,8 +25,11 @@ export default function SettingsPage() {
             if (data.username) {
                 setUsername(data.username);
             }
+            if (data.totalScore !== undefined) {
+                setTotalScore(data.totalScore);
+            }
             if (data.points !== undefined) {
-                setPoints(data.points);
+                setGithubPoints(data.points);
             }
             if (data.githubUsername) {
                 setGithubUsername(data.githubUsername);
@@ -51,7 +55,7 @@ export default function SettingsPage() {
 
         const interval = setInterval(() => {
             fetchSettings();
-        }, 60000);
+        }, 15000);
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
@@ -100,8 +104,8 @@ export default function SettingsPage() {
             const res = await fetch('/api/user/disconnect-github', { method: 'POST' });
             if (res.ok) {
                 setGithubUsername(null);
-                setPoints(0);
                 setLastGithubSyncAt(null);
+                await fetchSettings();
                 setMessage({ type: 'success', text: 'GitHub disconnected successfully.' });
             } else {
                 setMessage({ type: 'error', text: 'Failed to disconnect GitHub.' });
@@ -121,9 +125,9 @@ export default function SettingsPage() {
             const data = await res.json();
             
             if (res.ok) {
-                setPoints(data.totalPoints);
                 setLastGithubSyncAt(data.lastGithubSyncAt || new Date().toISOString());
-                setMessage({ type: 'success', text: `Sync complete! Earned ${data.pointsEarned} points. Total points: ${data.totalPoints}` });
+                await fetchSettings();
+                setMessage({ type: 'success', text: `Sync complete! Earned ${data.pointsEarned} GitHub points.` });
             } else {
                 setMessage({ type: 'error', text: data.error || 'Failed to sync GitHub' });
             }
@@ -141,6 +145,10 @@ export default function SettingsPage() {
         }
         signIn('github');
     };
+
+    const totalScoreAccentClass = totalScore < 0
+        ? 'from-red-400 to-orange-400'
+        : 'from-blue-400 to-emerald-400';
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
@@ -212,10 +220,11 @@ export default function SettingsPage() {
                             <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4">
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <h3 className="font-medium text-white mb-1">Total Points Score</h3>
-                                        <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                                            {points} <span className="text-sm text-zinc-500 font-normal">pts</span>
+                                        <h3 className="font-medium text-white mb-1">Total Score</h3>
+                                        <div className={`text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${totalScoreAccentClass}`}>
+                                            {totalScore.toFixed(2)} <span className="text-sm text-zinc-500 font-normal">pts</span>
                                         </div>
+                                        <p className="text-xs text-zinc-500 mt-2">GitHub bonus stored separately: {githubPoints} pts</p>
                                     </div>
                                 </div>
                             </div>
@@ -236,7 +245,7 @@ export default function SettingsPage() {
                                         </p>
                                         {githubUsername && (
                                             <p className="text-xs text-zinc-500 mt-2">
-                                                Auto-sync runs every minute while you use the app{lastGithubSyncAt ? ` - last sync ${new Date(lastGithubSyncAt).toLocaleString()}` : ''}.
+                                                Auto-sync checks every 15 seconds while this page is open{lastGithubSyncAt ? ` - last sync ${new Date(lastGithubSyncAt).toLocaleString()}` : ''}.
                                             </p>
                                         )}
                                     </div>

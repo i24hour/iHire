@@ -6,7 +6,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
-import { getScoreAtTime } from '@/components/PerformanceChart';
+import { getScoreAtTime } from '@/lib/score';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -158,7 +158,7 @@ export default function ITimePage() {
 
         const interval = setInterval(() => {
             fetchUserProfile();
-        }, 60000);
+        }, 15000);
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
@@ -538,6 +538,7 @@ export default function ITimePage() {
         () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
         [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
     );
+    const liveScoreColorClass = liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
@@ -614,7 +615,7 @@ export default function ITimePage() {
 
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Live Score</div>
-                        <div className="text-2xl md:text-4xl font-bold text-[#4CAF50]">{liveScore.toFixed(2)}</div>
+                                        <div className={`text-2xl md:text-4xl font-bold ${liveScoreColorClass}`}>{liveScore.toFixed(2)}</div>
                     </div>
                 </div>
 

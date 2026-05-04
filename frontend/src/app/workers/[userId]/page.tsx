@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import dynamic from 'next/dynamic';
 import { LiveTimer } from '@/components/LiveTimer';
-import { getScoreAtTime } from '@/components/PerformanceChart';
+import { getScoreAtTime } from '@/lib/score';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -176,6 +176,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
         [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
     );
+    const liveScoreColorClass = liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
 
     if (isLoading) {
         return (
@@ -258,7 +259,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                     <div className="bg-black  rounded-2xl border border-white/10 p-6 flex flex-col justify-center">
                         <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Score</div>
-                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#4CAF50] truncate tracking-tight">
+                        <div className={`text-2xl sm:text-3xl lg:text-4xl font-bold truncate tracking-tight ${liveScoreColorClass}`}>
                             {liveScore.toFixed(2)}
                         </div>
                     </div>
