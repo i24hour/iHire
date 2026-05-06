@@ -4,54 +4,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
 import User from '@/models/User';
+import { enforceChainVisitWindow } from '@/lib/ichain';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const VISIT_WINDOW_MS = 3 * 60 * 60 * 1000;
-
-const enforceVisitWindow = (chain: any, now: number) => {
-    let hasTimedOutMember = false;
-    let earliestTimeoutAt = now;
-
-    chain.members = chain.members.map((member: any) => {
-        if (!member.isWorking || !member.lastStartedAt) return member;
-
-        const lastVisitAt = member.lastVisitAt || member.lastStartedAt;
-        const timeoutAt = lastVisitAt + VISIT_WINDOW_MS;
-        if (now <= timeoutAt) return member;
-
-        const contributedUntil = Math.max(member.lastStartedAt, timeoutAt);
-        const elapsed = Math.floor((contributedUntil - member.lastStartedAt) / 1000);
-        if (elapsed > 0) {
-            member.contributionTime += elapsed;
-        }
-
-        member.isWorking = false;
-        member.lastStartedAt = undefined;
-        hasTimedOutMember = true;
-        earliestTimeoutAt = Math.min(earliestTimeoutAt, timeoutAt);
-        return member;
-    });
-
-    if (hasTimedOutMember) {
-        const activeMembers = chain.members.filter((member: any) => member.isWorking).length;
-        if (activeMembers === 0 && chain.status === 'Active') {
-            if (chain.lastStartedAt) {
-                const chainElapsed = Math.floor((Math.max(chain.lastStartedAt, earliestTimeoutAt) - chain.lastStartedAt) / 1000);
-                if (chainElapsed > 0) {
-                    chain.totalTime += chainElapsed;
-                    if (chain.totalTime > (chain.maxTime || 0)) {
-                        chain.maxTime = chain.totalTime;
-                    }
-                }
-            }
-            chain.status = 'Burst';
-            chain.burstAt = earliestTimeoutAt;
-            chain.lastStartedAt = undefined;
-        }
-    }
-
-    return hasTimedOutMember;
-};
 
 export const dynamic = 'force-dynamic';
 
@@ -72,16 +27,16 @@ export async function GET(
         const now = Date.now();
         let shouldPersist = false;
 
+        if (chainDoc && enforceChainVisitWindow(chainDoc, now)) {
+            shouldPersist = true;
+        }
+
         if (session?.user?.email && chainDoc?.members) {
             const visitingMember = chainDoc.members.find((member: any) => member.userId === session.user?.email);
             if (visitingMember && (!visitingMember.lastVisitAt || (now - visitingMember.lastVisitAt) > 60_000)) {
                 visitingMember.lastVisitAt = now;
                 shouldPersist = true;
             }
-        }
-
-        if (chainDoc && enforceVisitWindow(chainDoc, now)) {
-            shouldPersist = true;
         }
 
         if (shouldPersist) {
@@ -200,7 +155,7 @@ export async function PUT(
         }
 
         const now = Date.now();
-        enforceVisitWindow(chain, now);
+        enforceChainVisitWindow(chain, now);
         const member = chain.members[memberIndex];
 
         // Calculation logic

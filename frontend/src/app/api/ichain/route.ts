@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
-import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
+import { enforceChainVisitWindow } from '@/lib/ichain';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const normalizeIdentifier = (value: string) => value.trim().toLowerCase();
@@ -14,9 +14,17 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
     try {
         await connectDB();
-        let chains = await Chain.find().sort({ maxTime: -1, createdAt: -1 });
-
         const now = Date.now();
+        const chainDocs = await Chain.find().sort({ maxTime: -1, createdAt: -1 });
+
+        await Promise.all(chainDocs.map(async (chainDoc: any) => {
+            if (enforceChainVisitWindow(chainDoc, now)) {
+                await chainDoc.save();
+            }
+        }));
+
+        let chains = chainDocs.map((chainDoc: any) => chainDoc.toObject());
+
         // Calculate live totalTime for Active status chains
         chains = chains.map((chain: any) => {
             if (chain.status === 'Active' && chain.lastStartedAt) {
