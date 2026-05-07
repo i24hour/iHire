@@ -401,6 +401,7 @@ export function PerformanceChart({
     const [referenceNow, setReferenceNow] = useState(() => Date.now());
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const dailyPanelRef = useRef<HTMLDivElement>(null);
+    const dailyScrollRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
     const [hoveredDay, setHoveredDay] = useState<DailyScoreDay | null>(null);
@@ -615,12 +616,18 @@ export function PerformanceChart({
         setHoveredDay(day);
     };
 
-    const visibleDailyWeeks = useMemo(() => {
-        if (isMobileViewport) {
-            return dailyScoreData.weeks.slice(-28);
-        }
-        return dailyScoreData.weeks;
-    }, [dailyScoreData.weeks, isMobileViewport]);
+    useEffect(() => {
+        if (chartType !== 'daily' || !isMobileViewport) return;
+        const scrollEl = dailyScrollRef.current;
+        if (!scrollEl) return;
+
+        // On phones, open the heatmap from the most recent weeks (right edge).
+        const raf = window.requestAnimationFrame(() => {
+            scrollEl.scrollLeft = scrollEl.scrollWidth;
+        });
+
+        return () => window.cancelAnimationFrame(raf);
+    }, [chartType, isMobileViewport, dailyScoreData.weeks.length]);
 
     // Create/update chart container and base settings
     useEffect(() => {
@@ -982,13 +989,16 @@ export function PerformanceChart({
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto md:overflow-visible pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <div
+                        ref={dailyScrollRef}
+                        className="overflow-x-auto md:overflow-visible pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    >
                         <div className={`w-max ${isMobileViewport ? '' : 'md:w-full'}`}>
                             <div
                                 className="ml-7 sm:ml-9 mb-1 grid gap-x-[3px]"
-                                style={{ gridTemplateColumns: `repeat(${visibleDailyWeeks.length}, ${isMobileViewport ? 11 : 12}px)` }}
+                                style={{ gridTemplateColumns: `repeat(${dailyScoreData.weeks.length}, ${isMobileViewport ? 11 : 12}px)` }}
                             >
-                                {visibleDailyWeeks.map((week) => (
+                                {dailyScoreData.weeks.map((week) => (
                                     <div
                                         key={week.weekStart}
                                         className={`h-5 text-xs sm:text-sm font-medium ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}
@@ -1010,7 +1020,7 @@ export function PerformanceChart({
                                 </div>
 
                                 <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
-                                    {visibleDailyWeeks.flatMap((week) => week.days.map((day, dayIndex) => {
+                                    {dailyScoreData.weeks.flatMap((week) => week.days.map((day, dayIndex) => {
                                         if (!day) {
                                             return <div key={`${week.weekStart}-${dayIndex}`} className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px]`} />;
                                         }
