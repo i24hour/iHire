@@ -405,6 +405,7 @@ export function PerformanceChart({
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
     const [hoveredDay, setHoveredDay] = useState<DailyScoreDay | null>(null);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 240, y: 120 });
+    const [isMobileViewport, setIsMobileViewport] = useState(false);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -416,6 +417,16 @@ export function PerformanceChart({
         const observer = new MutationObserver(syncTheme);
         observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
         return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        const syncViewport = () => {
+            setIsMobileViewport(window.innerWidth < 768);
+        };
+
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        return () => window.removeEventListener('resize', syncViewport);
     }, []);
 
     useEffect(() => {
@@ -603,6 +614,13 @@ export function PerformanceChart({
         }
         setHoveredDay(day);
     };
+
+    const visibleDailyWeeks = useMemo(() => {
+        if (isMobileViewport) {
+            return dailyScoreData.weeks.slice(-28);
+        }
+        return dailyScoreData.weeks;
+    }, [dailyScoreData.weeks, isMobileViewport]);
 
     // Create/update chart container and base settings
     useEffect(() => {
@@ -917,7 +935,7 @@ export function PerformanceChart({
             {chartType === 'daily' ? (
                 <div
                     ref={dailyPanelRef}
-                    className={`relative flex-1 rounded-lg border px-4 py-4 md:px-5 md:py-5 overflow-hidden ${
+                    className={`relative flex-1 rounded-lg border px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 overflow-hidden ${
                         isLightTheme
                             ? 'border-zinc-300 bg-white text-zinc-950'
                             : 'border-[#30363d] bg-[#0d1117] text-[#e6edf3]'
@@ -925,50 +943,55 @@ export function PerformanceChart({
                 >
                     {hoveredDay && (
                         <div
-                            className={`pointer-events-none absolute z-30 max-w-[260px] -translate-x-1/2 rounded-md border px-3 py-2 text-sm font-semibold shadow-2xl ${
+                            className={`pointer-events-none absolute z-30 max-w-[220px] -translate-x-1/2 rounded-md border px-2.5 py-1.5 text-xs shadow-lg ${
                                 isLightTheme
-                                    ? 'border-zinc-700 bg-zinc-950 text-white'
-                                    : 'border-zinc-600 bg-[#30363d] text-white'
+                                    ? 'border-zinc-300 bg-white/95 text-zinc-900'
+                                    : 'border-zinc-600 bg-[#161b22]/95 text-zinc-100'
                             }`}
                             style={{ left: tooltipPosition.x, top: tooltipPosition.y }}
                         >
-                            <span
-                                className={`mr-2 inline-block h-2 w-2 rounded-full ${
-                                    hoveredDay.value > 0
-                                        ? 'bg-[#2da44e]'
-                                        : hoveredDay.value < 0
-                                            ? 'bg-[#f85149]'
-                                            : 'bg-zinc-400'
-                                }`}
-                            />
-                            <span>{hoveredDay.value >= 0 ? '+' : ''}{hoveredDay.value.toFixed(2)} points on {hoveredDay.formattedDate}</span>
+                            <div className="flex items-center gap-1.5 font-semibold leading-tight">
+                                <span
+                                    className={`inline-block h-2 w-2 rounded-full ${
+                                        hoveredDay.value > 0
+                                            ? 'bg-[#2da44e]'
+                                            : hoveredDay.value < 0
+                                                ? 'bg-[#f85149]'
+                                                : 'bg-zinc-400'
+                                    }`}
+                                />
+                                <span>{hoveredDay.value >= 0 ? '+' : ''}{hoveredDay.value.toFixed(2)} points</span>
+                            </div>
+                            <div className={`mt-0.5 text-[11px] leading-tight ${isLightTheme ? 'text-zinc-600' : 'text-zinc-300'}`}>
+                                {hoveredDay.formattedDate}
+                            </div>
                         </div>
                     )}
 
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
                         <div>
-                            <div className={`text-2xl md:text-[26px] font-semibold tracking-tight ${isLightTheme ? 'text-zinc-950' : 'text-[#e6edf3]'}`}>
+                            <div className={`text-[22px] leading-tight sm:text-2xl md:text-[26px] font-semibold tracking-tight ${isLightTheme ? 'text-zinc-950' : 'text-[#e6edf3]'}`}>
                                 {dailyScoreData.netTotal >= 0 ? '+' : ''}{dailyScoreData.netTotal.toFixed(2)} points in the last year
                             </div>
-                            <div className={`text-sm mt-1 ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
+                            <div className={`text-xs sm:text-sm mt-1 ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
                                 +{dailyScoreData.positiveTotal.toFixed(2)} gained / {dailyScoreData.negativeTotal.toFixed(2)} lost
                             </div>
                         </div>
-                        <div className={`text-sm ${isLightTheme ? 'text-zinc-500' : 'text-[#8b949e]'}`}>
+                        <div className={`text-xs sm:text-sm ${isLightTheme ? 'text-zinc-500' : 'text-[#8b949e]'}`}>
                             Daily score
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto md:overflow-visible pb-1">
-                        <div className="w-max md:w-full">
+                    <div className="overflow-x-auto md:overflow-visible pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <div className={`w-max ${isMobileViewport ? '' : 'md:w-full'}`}>
                             <div
-                                className="ml-9 mb-1 grid gap-x-[3px]"
-                                style={{ gridTemplateColumns: `repeat(${dailyScoreData.weeks.length}, 12px)` }}
+                                className="ml-7 sm:ml-9 mb-1 grid gap-x-[3px]"
+                                style={{ gridTemplateColumns: `repeat(${visibleDailyWeeks.length}, ${isMobileViewport ? 11 : 12}px)` }}
                             >
-                                {dailyScoreData.weeks.map((week) => (
+                                {visibleDailyWeeks.map((week) => (
                                     <div
                                         key={week.weekStart}
-                                        className={`h-5 text-sm font-medium ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}
+                                        className={`h-5 text-xs sm:text-sm font-medium ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}
                                     >
                                         {week.monthLabel || ''}
                                     </div>
@@ -976,20 +999,20 @@ export function PerformanceChart({
                             </div>
 
                             <div className="flex">
-                                <div className={`grid grid-rows-7 gap-[3px] pr-3 text-sm ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}>
-                                    <div className="h-3" />
-                                    <div className="h-3 leading-3">Mon</div>
-                                    <div className="h-3" />
-                                    <div className="h-3 leading-3">Wed</div>
-                                    <div className="h-3" />
-                                    <div className="h-3 leading-3">Fri</div>
-                                    <div className="h-3" />
+                                <div className={`grid grid-rows-7 gap-[3px] pr-2 sm:pr-3 text-xs sm:text-sm ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}>
+                                    <div className="h-[11px] sm:h-3" />
+                                    <div className="h-[11px] sm:h-3 leading-[11px] sm:leading-3">Mon</div>
+                                    <div className="h-[11px] sm:h-3" />
+                                    <div className="h-[11px] sm:h-3 leading-[11px] sm:leading-3">Wed</div>
+                                    <div className="h-[11px] sm:h-3" />
+                                    <div className="h-[11px] sm:h-3 leading-[11px] sm:leading-3">Fri</div>
+                                    <div className="h-[11px] sm:h-3" />
                                 </div>
 
                                 <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
-                                    {dailyScoreData.weeks.flatMap((week) => week.days.map((day, dayIndex) => {
+                                    {visibleDailyWeeks.flatMap((week) => week.days.map((day, dayIndex) => {
                                         if (!day) {
-                                            return <div key={`${week.weekStart}-${dayIndex}`} className="h-3 w-3 rounded-[3px]" />;
+                                            return <div key={`${week.weekStart}-${dayIndex}`} className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px]`} />;
                                         }
 
                                         const signedValue = `${day.value >= 0 ? '+' : ''}${day.value.toFixed(2)}`;
@@ -1000,8 +1023,9 @@ export function PerformanceChart({
                                                 type="button"
                                                 onMouseEnter={(event) => updateDailyTooltip(event, day)}
                                                 onMouseMove={(event) => updateDailyTooltip(event, day)}
+                                                onClick={(event) => updateDailyTooltip(event, day)}
                                                 onMouseLeave={() => setHoveredDay(null)}
-                                                className={`h-3 w-3 rounded-[3px] outline-none ring-offset-2 transition-transform hover:scale-125 focus-visible:ring-2 ${
+                                                className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] outline-none ring-offset-2 transition-transform hover:scale-125 focus-visible:ring-2 ${
                                                     isLightTheme
                                                         ? 'ring-offset-white focus-visible:ring-zinc-950'
                                                         : 'ring-offset-[#0d1117] focus-visible:ring-[#e6edf3]'
@@ -1016,19 +1040,19 @@ export function PerformanceChart({
                             </div>
 
                             <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className={`text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
+                                <div className={`text-xs sm:text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
                                     {hoveredDay
                                         ? `${hoveredDay.value >= 0 ? '+' : ''}${hoveredDay.value.toFixed(2)} points on ${hoveredDay.formattedDate}`
-                                        : 'Hover a day to inspect the score movement'}
+                                        : (isMobileViewport ? 'Tap a day to inspect the score movement' : 'Hover a day to inspect the score movement')}
                                 </div>
-                                <div className={`flex items-center gap-2 text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
+                                <div className={`flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
                                     <span>Loss</span>
                                     {[4, 3, 2, 1].map((level) => (
-                                        <span key={`loss-${level}`} className={`h-3 w-3 rounded-[3px] ${getDailyScoreClass(-level, level, isLightTheme)}`} />
+                                        <span key={`loss-${level}`} className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] ${getDailyScoreClass(-level, level, isLightTheme)}`} />
                                     ))}
-                                    <span className={`h-3 w-3 rounded-[3px] ${getDailyScoreClass(0, 0, isLightTheme)}`} />
+                                    <span className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] ${getDailyScoreClass(0, 0, isLightTheme)}`} />
                                     {[1, 2, 3, 4].map((level) => (
-                                        <span key={`gain-${level}`} className={`h-3 w-3 rounded-[3px] ${getDailyScoreClass(level, level, isLightTheme)}`} />
+                                        <span key={`gain-${level}`} className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] ${getDailyScoreClass(level, level, isLightTheme)}`} />
                                     ))}
                                     <span>Gain</span>
                                 </div>
