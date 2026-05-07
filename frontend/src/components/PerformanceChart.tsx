@@ -109,34 +109,42 @@ function formatIstMonth(timestamp: number): string {
 function getDailyScoreClass(value: number, level: number, isLightTheme: boolean): string {
     if (Math.abs(value) < 0.005 || level === 0) {
         return isLightTheme
-            ? 'bg-zinc-200/80 hover:bg-zinc-300'
-            : 'bg-zinc-900 hover:bg-zinc-800';
+            ? 'bg-[#ebedf0] hover:bg-[#d8dee4]'
+            : 'bg-[#161b22] hover:bg-[#21262d]';
     }
 
     if (value > 0) {
-        return [
-            'bg-emerald-950 hover:bg-emerald-900',
-            'bg-emerald-800 hover:bg-emerald-700',
-            'bg-emerald-600 hover:bg-emerald-500',
-            'bg-emerald-400 hover:bg-emerald-300',
-        ][level - 1] || 'bg-emerald-400 hover:bg-emerald-300';
+        const colors = isLightTheme
+            ? [
+                'bg-[#9be9a8] hover:bg-[#7ee787]',
+                'bg-[#40c463] hover:bg-[#2da44e]',
+                'bg-[#30a14e] hover:bg-[#238636]',
+                'bg-[#216e39] hover:bg-[#1a5d32]',
+            ]
+            : [
+                'bg-[#0e4429] hover:bg-[#006d32]',
+                'bg-[#006d32] hover:bg-[#26a641]',
+                'bg-[#26a641] hover:bg-[#39d353]',
+                'bg-[#39d353] hover:bg-[#56d364]',
+            ];
+        return colors[level - 1] || colors[colors.length - 1];
     }
 
-    return [
-        'bg-red-950 hover:bg-red-900',
-        'bg-red-800 hover:bg-red-700',
-        'bg-red-600 hover:bg-red-500',
-        'bg-red-400 hover:bg-red-300',
-    ][level - 1] || 'bg-red-400 hover:bg-red-300';
+    const colors = isLightTheme
+        ? [
+            'bg-[#ffaba8] hover:bg-[#ff938a]',
+            'bg-[#ff7b72] hover:bg-[#f85149]',
+            'bg-[#da3633] hover:bg-[#cf222e]',
+            'bg-[#a40e26] hover:bg-[#82071e]',
+        ]
+        : [
+            'bg-[#4c0519] hover:bg-[#7f1d1d]',
+            'bg-[#7f1d1d] hover:bg-[#b91c1c]',
+            'bg-[#dc2626] hover:bg-[#ef4444]',
+            'bg-[#ff5a5f] hover:bg-[#ff7378]',
+        ];
+    return colors[level - 1] || colors[colors.length - 1];
 }
-
-function getDailyScoreTone(value: number): string {
-    if (value > 0) return 'positive';
-    if (value < 0) return 'negative';
-    return 'neutral';
-}
-
-
 
 function getFocusedRange(values: number[], referenceValue?: number): { minValue: number; maxValue: number } | null {
     if (!values.length) return null;
@@ -392,9 +400,11 @@ export function PerformanceChart({
     const [isLightTheme, setIsLightTheme] = useState(false);
     const [referenceNow, setReferenceNow] = useState(() => Date.now());
     const chartContainerRef = useRef<HTMLDivElement>(null);
+    const dailyPanelRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
     const [hoveredDay, setHoveredDay] = useState<DailyScoreDay | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 240, y: 120 });
 
     useEffect(() => {
         const root = document.documentElement;
@@ -583,6 +593,16 @@ export function PerformanceChart({
             netTotal: Math.round(netTotal * 100) / 100,
         };
     }, [tasks, gamificationPoints, gamificationPointsLastUpdatedAt, referenceNow]);
+
+    const updateDailyTooltip = (event: React.MouseEvent<HTMLElement>, day: DailyScoreDay) => {
+        const rect = dailyPanelRef.current?.getBoundingClientRect();
+        if (rect) {
+            const x = Math.min(Math.max(event.clientX - rect.left, 130), rect.width - 130);
+            const y = Math.min(Math.max(event.clientY - rect.top - 42, 74), rect.height - 64);
+            setTooltipPosition({ x, y });
+        }
+        setHoveredDay(day);
+    };
 
     // Create/update chart container and base settings
     useEffect(() => {
@@ -895,31 +915,60 @@ export function PerformanceChart({
 
             {/* Chart Container */}
             {chartType === 'daily' ? (
-                <div className={`flex-1 rounded-xl border p-4 md:p-5 overflow-hidden ${isLightTheme ? 'bg-white/60 border-black/10' : 'bg-[#0d1117] border-zinc-700/70'}`}>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+                <div
+                    ref={dailyPanelRef}
+                    className={`relative flex-1 rounded-lg border px-4 py-4 md:px-5 md:py-5 overflow-hidden ${
+                        isLightTheme
+                            ? 'border-zinc-300 bg-white text-zinc-950'
+                            : 'border-[#30363d] bg-[#0d1117] text-[#e6edf3]'
+                    }`}
+                >
+                    {hoveredDay && (
+                        <div
+                            className={`pointer-events-none absolute z-30 max-w-[260px] -translate-x-1/2 rounded-md border px-3 py-2 text-sm font-semibold shadow-2xl ${
+                                isLightTheme
+                                    ? 'border-zinc-700 bg-zinc-950 text-white'
+                                    : 'border-zinc-600 bg-[#30363d] text-white'
+                            }`}
+                            style={{ left: tooltipPosition.x, top: tooltipPosition.y }}
+                        >
+                            <span
+                                className={`mr-2 inline-block h-2 w-2 rounded-full ${
+                                    hoveredDay.value > 0
+                                        ? 'bg-[#2da44e]'
+                                        : hoveredDay.value < 0
+                                            ? 'bg-[#f85149]'
+                                            : 'bg-zinc-400'
+                                }`}
+                            />
+                            <span>{hoveredDay.value >= 0 ? '+' : ''}{hoveredDay.value.toFixed(2)} points on {hoveredDay.formattedDate}</span>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
                         <div>
-                            <div className={`text-2xl md:text-3xl font-semibold tracking-tight ${isLightTheme ? 'text-zinc-950' : 'text-zinc-100'}`}>
-                                {dailyScoreData.netTotal >= 0 ? '+' : ''}{dailyScoreData.netTotal.toFixed(2)} daily score in the last year
+                            <div className={`text-2xl md:text-[26px] font-semibold tracking-tight ${isLightTheme ? 'text-zinc-950' : 'text-[#e6edf3]'}`}>
+                                {dailyScoreData.netTotal >= 0 ? '+' : ''}{dailyScoreData.netTotal.toFixed(2)} points in the last year
                             </div>
-                            <div className={`text-sm mt-1 ${isLightTheme ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                            <div className={`text-sm mt-1 ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
                                 +{dailyScoreData.positiveTotal.toFixed(2)} gained / {dailyScoreData.negativeTotal.toFixed(2)} lost
                             </div>
                         </div>
-                        <div className={`text-sm ${isLightTheme ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                        <div className={`text-sm ${isLightTheme ? 'text-zinc-500' : 'text-[#8b949e]'}`}>
                             Daily score
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto pb-2">
-                        <div className="min-w-[900px]">
+                    <div className="overflow-x-auto md:overflow-visible pb-1">
+                        <div className="w-max md:w-full">
                             <div
-                                className="ml-11 mb-2 grid"
-                                style={{ gridTemplateColumns: `repeat(${dailyScoreData.weeks.length}, 16px)` }}
+                                className="ml-9 mb-1 grid gap-x-[3px]"
+                                style={{ gridTemplateColumns: `repeat(${dailyScoreData.weeks.length}, 12px)` }}
                             >
                                 {dailyScoreData.weeks.map((week) => (
                                     <div
                                         key={week.weekStart}
-                                        className={`h-5 text-sm font-medium ${isLightTheme ? 'text-zinc-700' : 'text-zinc-200'}`}
+                                        className={`h-5 text-sm font-medium ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}
                                     >
                                         {week.monthLabel || ''}
                                     </div>
@@ -927,7 +976,7 @@ export function PerformanceChart({
                             </div>
 
                             <div className="flex">
-                                <div className={`grid grid-rows-7 gap-1 pr-3 text-sm ${isLightTheme ? 'text-zinc-700' : 'text-zinc-200'}`}>
+                                <div className={`grid grid-rows-7 gap-[3px] pr-3 text-sm ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}>
                                     <div className="h-3" />
                                     <div className="h-3 leading-3">Mon</div>
                                     <div className="h-3" />
@@ -937,42 +986,42 @@ export function PerformanceChart({
                                     <div className="h-3" />
                                 </div>
 
-                                <div className="grid grid-flow-col grid-rows-7 gap-1">
+                                <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
                                     {dailyScoreData.weeks.flatMap((week) => week.days.map((day, dayIndex) => {
                                         if (!day) {
                                             return <div key={`${week.weekStart}-${dayIndex}`} className="h-3 w-3 rounded-[3px]" />;
                                         }
 
-                                        const tone = getDailyScoreTone(day.value);
                                         const signedValue = `${day.value >= 0 ? '+' : ''}${day.value.toFixed(2)}`;
 
                                         return (
                                             <button
                                                 key={day.dateKey}
                                                 type="button"
-                                                onMouseEnter={() => setHoveredDay(day)}
+                                                onMouseEnter={(event) => updateDailyTooltip(event, day)}
+                                                onMouseMove={(event) => updateDailyTooltip(event, day)}
                                                 onMouseLeave={() => setHoveredDay(null)}
-                                                className={`group relative h-3 w-3 rounded-[3px] outline-none ring-offset-2 ring-offset-black transition-transform hover:scale-125 focus-visible:ring-2 focus-visible:ring-white ${getDailyScoreClass(day.value, day.level, isLightTheme)}`}
+                                                className={`h-3 w-3 rounded-[3px] outline-none ring-offset-2 transition-transform hover:scale-125 focus-visible:ring-2 ${
+                                                    isLightTheme
+                                                        ? 'ring-offset-white focus-visible:ring-zinc-950'
+                                                        : 'ring-offset-[#0d1117] focus-visible:ring-[#e6edf3]'
+                                                } ${getDailyScoreClass(day.value, day.level, isLightTheme)}`}
                                                 aria-label={`${signedValue} points on ${day.formattedDate}`}
                                             >
-                                                <span className={`pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-white shadow-xl group-hover:block ${
-                                                    tone === 'positive' ? 'bg-emerald-600' : tone === 'negative' ? 'bg-red-600' : 'bg-zinc-700'
-                                                }`}>
-                                                    {signedValue} points on {day.formattedDate}
-                                                </span>
+                                                <span className="sr-only">{signedValue} points on {day.formattedDate}</span>
                                             </button>
                                         );
                                     }))}
                                 </div>
                             </div>
 
-                            <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className={`text-sm ${isLightTheme ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className={`text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
                                     {hoveredDay
                                         ? `${hoveredDay.value >= 0 ? '+' : ''}${hoveredDay.value.toFixed(2)} points on ${hoveredDay.formattedDate}`
                                         : 'Hover a day to inspect the score movement'}
                                 </div>
-                                <div className={`flex items-center gap-2 text-sm ${isLightTheme ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                <div className={`flex items-center gap-2 text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
                                     <span>Loss</span>
                                     {[4, 3, 2, 1].map((level) => (
                                         <span key={`loss-${level}`} className={`h-3 w-3 rounded-[3px] ${getDailyScoreClass(-level, level, isLightTheme)}`} />
