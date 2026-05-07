@@ -25,10 +25,26 @@ interface PerformanceChartProps {
     gamificationPointsLastUpdatedAt?: Date | string | number | null;
 }
 
-type ChartType = 'line' | 'candle';
+type ChartType = 'line' | 'candle' | 'daily';
 type CandleInterval = '1m' | '5m' | '10m' | '15m' | '1h' | '1d';
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+type DailyScoreDay = {
+    dateKey: string;
+    timestamp: number;
+    value: number;
+    level: number;
+    dayOfWeek: number;
+    monthLabel: string;
+    formattedDate: string;
+};
+
+type DailyScoreWeek = {
+    weekStart: number;
+    monthLabel?: string;
+    days: Array<DailyScoreDay | null>;
+};
 
 const getIntervalMs = (interval: CandleInterval) => {
     switch (interval) {
@@ -59,6 +75,65 @@ function getMostRecent5PmIstTimestamp(referenceTime: number): number {
 
 function getNext5PmIstTimestamp(referenceTime: number): number {
     return getMostRecent5PmIstTimestamp(referenceTime) + DAY_MS;
+}
+
+function getIstDayStart(timestamp: number): number {
+    const istDate = new Date(timestamp + IST_OFFSET_MS);
+    return Date.UTC(
+        istDate.getUTCFullYear(),
+        istDate.getUTCMonth(),
+        istDate.getUTCDate(),
+        0,
+        0,
+        0,
+        0
+    ) - IST_OFFSET_MS;
+}
+
+function formatIstDate(timestamp: number): string {
+    return new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(timestamp));
+}
+
+function formatIstMonth(timestamp: number): string {
+    return new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        month: 'short',
+    }).format(new Date(timestamp));
+}
+
+function getDailyScoreClass(value: number, level: number, isLightTheme: boolean): string {
+    if (Math.abs(value) < 0.005 || level === 0) {
+        return isLightTheme
+            ? 'bg-zinc-200/80 hover:bg-zinc-300'
+            : 'bg-zinc-900 hover:bg-zinc-800';
+    }
+
+    if (value > 0) {
+        return [
+            'bg-emerald-950 hover:bg-emerald-900',
+            'bg-emerald-800 hover:bg-emerald-700',
+            'bg-emerald-600 hover:bg-emerald-500',
+            'bg-emerald-400 hover:bg-emerald-300',
+        ][level - 1] || 'bg-emerald-400 hover:bg-emerald-300';
+    }
+
+    return [
+        'bg-red-950 hover:bg-red-900',
+        'bg-red-800 hover:bg-red-700',
+        'bg-red-600 hover:bg-red-500',
+        'bg-red-400 hover:bg-red-300',
+    ][level - 1] || 'bg-red-400 hover:bg-red-300';
+}
+
+function getDailyScoreTone(value: number): string {
+    if (value > 0) return 'positive';
+    if (value < 0) return 'negative';
+    return 'neutral';
 }
 
 
@@ -319,6 +394,7 @@ export function PerformanceChart({
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
+    const [hoveredDay, setHoveredDay] = useState<DailyScoreDay | null>(null);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -438,8 +514,87 @@ export function PerformanceChart({
         return { candleData, lineData, baselineData };
     }, [tasks, interval, gamificationPoints, gamificationPointsLastUpdatedAt]);
 
+    const dailyScoreData = useMemo(() => {
+        const now = Date.now();
+        const todayStart = getIstDayStart(now);
+        const firstVisibleDay = todayStart - (364 * DAY_MS);
+        const firstDayOfWeek = new Date(firstVisibleDay + IST_OFFSET_MS).getUTCDay();
+        const gridStart = firstVisibleDay - (firstDayOfWeek * DAY_MS);
+        const rawDays: DailyScoreDay[] = [];
+
+        for (let dayStart = gridStart; dayStart <= todayStart; dayStart += DAY_MS) {
+            if (dayStart < firstVisibleDay) continue;
+
+            const dayEnd = Math.min(dayStart + DAY_MS, now);
+            const startScore = getScoreAtTime(tasks, dayStart, gamificationPoints, gamificationPointsLastUpdatedAt);
+            const endScore = getScoreAtTime(tasks, dayEnd, gamificationPoints, gamificationPointsLastUpdatedAt);
+            const value = Math.round((endScore - startScore) * 100) / 100;
+            const istDate = new Date(dayStart + IST_OFFSET_MS);
+
+            rawDays.push({
+                dateKey: new Date(dayStart).toISOString(),
+                timestamp: dayStart,
+                value,
+                level: 0,
+                dayOfWeek: istDate.getUTCDay(),
+                monthLabel: formatIstMonth(dayStart),
+                formattedDate: formatIstDate(dayStart),
+            });
+        }
+
+        const maxPositive = Math.max(0, ...rawDays.map((day) => day.value));
+        const maxNegative = Math.max(0, ...rawDays.map((day) => Math.abs(Math.min(0, day.value))));
+        const days = rawDays.map((day) => {
+            const magnitude = Math.abs(day.value);
+            const maxMagnitude = day.value >= 0 ? maxPositive : maxNegative;
+            const level = magnitude < 0.005 || maxMagnitude === 0
+                ? 0
+                : Math.min(4, Math.max(1, Math.ceil((magnitude / maxMagnitude) * 4)));
+            return { ...day, level };
+        });
+
+        const dayMap = new Map(days.map((day) => [day.timestamp, day]));
+        const weeks: DailyScoreWeek[] = [];
+
+        for (let weekStart = gridStart; weekStart <= todayStart; weekStart += 7 * DAY_MS) {
+            const weekDays: Array<DailyScoreDay | null> = [];
+            for (let offset = 0; offset < 7; offset++) {
+                const day = weekStart + (offset * DAY_MS);
+                weekDays.push(dayMap.get(day) || null);
+            }
+
+            const firstRealDay = weekDays.find(Boolean);
+            const previousWeekFirstDay = weeks[weeks.length - 1]?.days.find(Boolean);
+            const monthLabel = firstRealDay && (!previousWeekFirstDay || firstRealDay.monthLabel !== previousWeekFirstDay.monthLabel)
+                ? firstRealDay.monthLabel
+                : undefined;
+
+            weeks.push({ weekStart, monthLabel, days: weekDays });
+        }
+
+        const positiveTotal = days.reduce((sum, day) => sum + Math.max(0, day.value), 0);
+        const negativeTotal = days.reduce((sum, day) => sum + Math.min(0, day.value), 0);
+        const netTotal = positiveTotal + negativeTotal;
+
+        return {
+            weeks,
+            positiveTotal: Math.round(positiveTotal * 100) / 100,
+            negativeTotal: Math.round(negativeTotal * 100) / 100,
+            netTotal: Math.round(netTotal * 100) / 100,
+        };
+    }, [tasks, gamificationPoints, gamificationPointsLastUpdatedAt, referenceNow]);
+
     // Create/update chart container and base settings
     useEffect(() => {
+        if (chartType === 'daily') {
+            if (chartRef.current) {
+                chartRef.current.remove();
+                chartRef.current = null;
+                seriesRef.current = null;
+            }
+            return;
+        }
+
         if (!chartContainerRef.current) return;
 
         // Clear previous chart
@@ -614,6 +769,7 @@ export function PerformanceChart({
 
     // Update data invisibly on poll (avoids calling fitContent and resetting pan)
     useEffect(() => {
+        if (chartType === 'daily') return;
         if (!seriesRef.current) return;
         
         if (chartType === 'candle') {
@@ -625,6 +781,7 @@ export function PerformanceChart({
 
     // Live native update cycle (No React state changes triggered!)
     useEffect(() => {
+        if (chartType === 'daily') return;
         const intervalMs = getIntervalMs(interval);
 
         const liveInterval = setInterval(() => {
@@ -702,6 +859,15 @@ export function PerformanceChart({
                         >
                             Candle
                         </button>
+                        <button
+                            onClick={() => setChartType('daily')}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${chartType === 'daily'
+                                ? (isLightTheme ? 'bg-white text-zinc-900 border border-black/10 shadow-sm' : 'bg-zinc-800 text-white shadow-md')
+                                : (isLightTheme ? 'text-zinc-600 hover:text-zinc-900' : 'text-zinc-500 hover:text-white')
+                                }`}
+                        >
+                            Daily score
+                        </button>
                     </div>
 
                     {/* Interval Selector (Candle Only) */}
@@ -728,7 +894,102 @@ export function PerformanceChart({
             </div >
 
             {/* Chart Container */}
-            < div ref={chartContainerRef} className="flex-1 w-full" />
+            {chartType === 'daily' ? (
+                <div className={`flex-1 rounded-xl border p-4 md:p-5 overflow-hidden ${isLightTheme ? 'bg-white/60 border-black/10' : 'bg-[#0d1117] border-zinc-700/70'}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+                        <div>
+                            <div className={`text-2xl md:text-3xl font-semibold tracking-tight ${isLightTheme ? 'text-zinc-950' : 'text-zinc-100'}`}>
+                                {dailyScoreData.netTotal >= 0 ? '+' : ''}{dailyScoreData.netTotal.toFixed(2)} daily score in the last year
+                            </div>
+                            <div className={`text-sm mt-1 ${isLightTheme ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                                +{dailyScoreData.positiveTotal.toFixed(2)} gained / {dailyScoreData.negativeTotal.toFixed(2)} lost
+                            </div>
+                        </div>
+                        <div className={`text-sm ${isLightTheme ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                            Daily score
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto pb-2">
+                        <div className="min-w-[900px]">
+                            <div
+                                className="ml-11 mb-2 grid"
+                                style={{ gridTemplateColumns: `repeat(${dailyScoreData.weeks.length}, 16px)` }}
+                            >
+                                {dailyScoreData.weeks.map((week) => (
+                                    <div
+                                        key={week.weekStart}
+                                        className={`h-5 text-sm font-medium ${isLightTheme ? 'text-zinc-700' : 'text-zinc-200'}`}
+                                    >
+                                        {week.monthLabel || ''}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex">
+                                <div className={`grid grid-rows-7 gap-1 pr-3 text-sm ${isLightTheme ? 'text-zinc-700' : 'text-zinc-200'}`}>
+                                    <div className="h-3" />
+                                    <div className="h-3 leading-3">Mon</div>
+                                    <div className="h-3" />
+                                    <div className="h-3 leading-3">Wed</div>
+                                    <div className="h-3" />
+                                    <div className="h-3 leading-3">Fri</div>
+                                    <div className="h-3" />
+                                </div>
+
+                                <div className="grid grid-flow-col grid-rows-7 gap-1">
+                                    {dailyScoreData.weeks.flatMap((week) => week.days.map((day, dayIndex) => {
+                                        if (!day) {
+                                            return <div key={`${week.weekStart}-${dayIndex}`} className="h-3 w-3 rounded-[3px]" />;
+                                        }
+
+                                        const tone = getDailyScoreTone(day.value);
+                                        const signedValue = `${day.value >= 0 ? '+' : ''}${day.value.toFixed(2)}`;
+
+                                        return (
+                                            <button
+                                                key={day.dateKey}
+                                                type="button"
+                                                onMouseEnter={() => setHoveredDay(day)}
+                                                onMouseLeave={() => setHoveredDay(null)}
+                                                className={`group relative h-3 w-3 rounded-[3px] outline-none ring-offset-2 ring-offset-black transition-transform hover:scale-125 focus-visible:ring-2 focus-visible:ring-white ${getDailyScoreClass(day.value, day.level, isLightTheme)}`}
+                                                aria-label={`${signedValue} points on ${day.formattedDate}`}
+                                            >
+                                                <span className={`pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold text-white shadow-xl group-hover:block ${
+                                                    tone === 'positive' ? 'bg-emerald-600' : tone === 'negative' ? 'bg-red-600' : 'bg-zinc-700'
+                                                }`}>
+                                                    {signedValue} points on {day.formattedDate}
+                                                </span>
+                                            </button>
+                                        );
+                                    }))}
+                                </div>
+                            </div>
+
+                            <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className={`text-sm ${isLightTheme ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                    {hoveredDay
+                                        ? `${hoveredDay.value >= 0 ? '+' : ''}${hoveredDay.value.toFixed(2)} points on ${hoveredDay.formattedDate}`
+                                        : 'Hover a day to inspect the score movement'}
+                                </div>
+                                <div className={`flex items-center gap-2 text-sm ${isLightTheme ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                                    <span>Loss</span>
+                                    {[4, 3, 2, 1].map((level) => (
+                                        <span key={`loss-${level}`} className={`h-3 w-3 rounded-[3px] ${getDailyScoreClass(-level, level, isLightTheme)}`} />
+                                    ))}
+                                    <span className={`h-3 w-3 rounded-[3px] ${getDailyScoreClass(0, 0, isLightTheme)}`} />
+                                    {[1, 2, 3, 4].map((level) => (
+                                        <span key={`gain-${level}`} className={`h-3 w-3 rounded-[3px] ${getDailyScoreClass(level, level, isLightTheme)}`} />
+                                    ))}
+                                    <span>Gain</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div ref={chartContainerRef} className="flex-1 w-full" />
+            )}
         </div >
     );
 }
