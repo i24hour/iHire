@@ -25,6 +25,7 @@ interface ITimeTask {
     enabled: boolean;
     completed: boolean;
     completedAt?: number;
+    cancelledAt?: number;
     targetTime?: number;
     isPublic?: boolean;
     milestones?: Milestone[];
@@ -169,8 +170,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
-    const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
+    const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt).length, [tasks]);
+    const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
     const liveScore = useMemo(
         () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),

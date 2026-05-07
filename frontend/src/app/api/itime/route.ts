@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
+import { autoCancelExpiredActiveTasks } from '@/lib/itime-runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,8 @@ export async function GET(request: NextRequest) {
         );
 
         console.log(`[DEBUG_LOG] User auto-registered/checked: ${session.user.email}, count after this might change.`);
+
+        await autoCancelExpiredActiveTasks({ userId: session.user.email });
 
         const tasks = await ITimeTask.find({
             userId: session.user.email
@@ -73,6 +76,7 @@ export async function PUT(request: NextRequest) {
         const { _id, ...updates } = body;
 
         await connectDB();
+        await autoCancelExpiredActiveTasks({ userId: session.user.email });
 
         const task = await ITimeTask.findOneAndUpdate(
             { _id, userId: session.user.email },

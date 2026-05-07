@@ -25,6 +25,7 @@ interface ITimeTask {
     enabled: boolean;
     completed: boolean;
     completedAt?: number; // timestamp when completed
+    cancelledAt?: number;
     targetTime?: number; // target time in seconds
     autoResumeAt?: number; // scheduled automatic resume timestamp
     isPublic?: boolean;
@@ -539,8 +540,8 @@ export default function ITimePage() {
         [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
     );
     const liveScoreColorClass = liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
-    const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
-    const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
+    const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt).length, [tasks]);
+    const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
 
     return (

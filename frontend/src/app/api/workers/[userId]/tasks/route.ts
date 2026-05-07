@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
+import { autoCancelExpiredActiveTasks } from '@/lib/itime-runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,7 @@ export async function GET(
         }
 
         await connectDB();
+        await autoCancelExpiredActiveTasks({ userId: targetUserId });
 
         const user = await User.findOne({ email: targetUserId }).lean() as any;
 

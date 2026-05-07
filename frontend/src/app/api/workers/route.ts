@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
 import { syncGithubForUserByEmail } from '@/lib/github-sync';
+import { autoCancelExpiredActiveTasks } from '@/lib/itime-runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ export async function GET() {
         }
 
         await connectDB();
+        await autoCancelExpiredActiveTasks();
 
         if (session?.user?.email) {
             try {
