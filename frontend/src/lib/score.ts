@@ -231,10 +231,8 @@ function getIdlePenaltyAtTime(tasks: ScoreTask[], t: number): number {
 
     let accumulatedPenalty = 0;
     for (const idle of idleIntervals) {
-        const scoreAtSegmentStart = computeBaseScore(tasks, idle.start);
-        const visibleBaseScore = Math.max(0, scoreAtSegmentStart - accumulatedPenalty);
         const rawPenalty = ((idle.end - idle.start) / 1000) * 0.001;
-        accumulatedPenalty += Math.min(rawPenalty, visibleBaseScore);
+        accumulatedPenalty += rawPenalty;
     }
 
     return accumulatedPenalty;
@@ -249,17 +247,18 @@ export function getScoreBreakdownAtTime(
     const pointsCheckpoint = getPointsCheckpointTimestamp(gamificationPointsLastUpdatedAt);
     const baseScore = computeBaseScore(tasks, t);
     const idlePenalty = getIdlePenaltyAtTime(tasks, t);
-    const penalizedBaseScore = Math.max(0, baseScore - idlePenalty);
+    const penalizedBaseScore = baseScore - idlePenalty;
     const githubPoints = gamificationPoints > 0 && (!pointsCheckpoint || t >= pointsCheckpoint)
         ? gamificationPoints
         : 0;
+    const totalScore = baseScore + githubPoints - idlePenalty;
 
     return {
         baseScore: roundScore(baseScore),
         idlePenalty: roundScore(idlePenalty),
         penalizedBaseScore: roundScore(penalizedBaseScore),
         githubPoints: Math.round(githubPoints),
-        totalScore: roundScore(penalizedBaseScore + githubPoints),
+        totalScore: roundScore(totalScore),
     };
 }
 
