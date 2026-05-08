@@ -395,7 +395,7 @@ export function PerformanceChart({
     gamificationPoints = 0,
     gamificationPointsLastUpdatedAt = null
 }: PerformanceChartProps) {
-    const [chartType, setChartType] = useState<ChartType>('line');
+    const [chartType, setChartType] = useState<ChartType>('daily');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
     const [isLightTheme, setIsLightTheme] = useState(false);
     const [referenceNow, setReferenceNow] = useState(() => Date.now());
