@@ -1,34 +1,267 @@
-# Infinwork (iHire) - All Features & Ideas to Date
+# Infinwork (iHire) - Developer Logic & Architecture
 
-This document outlines all the core features, modules, and ideas built into the Infinwork (formerly iHire) platform to date.
+Last updated: 9 May 2026  
+This is the source-of-truth doc for the current Infinwork smart-workspace codebase.
 
-## 1. iChain (Collaborative Productivity)
-- **Concept**: A multiplayer productivity tracker. Users form "chains" with their friends, colleagues, or peers.
-- **Mechanics**:
-  - **Active State**: The chain progresses as long as *at least one* member is actively working.
-  - **Idle State**: If no one is working, the chain enters an Idle state. 
-  - **Burst State**: If the chain remains idle for too long, it "bursts," breaking the streak.
-  - **Ranking**: Chains are ranked on the global dashboard based on `maxTime` (the longest unbroken amount of time accumulated before bursting).
-  - **Members & Invites**: Members can join via email/username search, and a shareable link allows users to easily invite others. WhatsApp integration (links) is also supported for group coordination.
+---
 
-## 2. GitHub Integration & Gamification
-- **GitHub Sync**: Users can connect their GitHub accounts directly to the platform (`/api/user/sync-github`).
-- **Commits to Points**: The system tracks and fetches the user's total GitHub commits and dynamically rewards them with "points."
-- **Leaderboards/Gamification**: Points encourage developers to maintain their open-source and coding consistency. Sync locks prevent API abuse.
+## 1) Product Scope (Current)
 
-## 3. Hiring & Worker Management (The "iHire" Core)
-- **Candidates & Campaigns**: A full suite for managing job candidates, tracking their progress, and organizing them into hiring campaigns.
-- **Workers Directory**: Tracking active workers and their status (`/app/workers`).
-- **Send-Assignment Module**: Automated workflows to send technical tests and assignments to candidates.
-- **SF-Tracker**: A specialized tracker (likely for Salesforce or specific funnel tracking) to monitor candidate progression.
+Active workspace modules in this repo:
 
-## 4. UI/UX & Design System
-- **Dark/Light Mode**: A custom, meticulously mapped theming system. The platform natively uses a "Liquid Glass" dark mode aesthetic (`liquid-glass-button`) but dynamically adapts to a clean, formal Light Mode by mapping deep zinc colors to light grays and whites.
-- **Responsive Animations**: Framer Motion is utilized heavily across dashboards and Chain Cards for micro-interactions (e.g., subtle shakes on "Burst" chains).
-- **Search & Auto-complete**: Fast, case-insensitive partial user searches via the database for seamless team building.
+1. **iTime** (`/itime`) - task timer + performance score engine
+2. **Workers** (`/workers`) - user leaderboard and per-user task analytics
+3. **iChain** (`/ichain`) - collaborative chain timer with burst mechanics
+4. **Ideas** (`/ideas`) - public/private idea board + replies
+5. **SF Tracker** (`/sf-tracker`) - success/failure target tracking
+6. **Settings** (`/settings`) - username + GitHub connect/sync
 
-## 5. Architecture & Tech Stack
-- **Frontend**: Next.js 14+ (App Router), Tailwind CSS, Framer Motion.
-- **Backend**: Next.js API Routes (Serverless), MongoDB (Mongoose).
-- **Authentication**: NextAuth.js.
-- **Data Models**: Distinct models for `User` (tracking github stats & points), `IChain` (tracking team time), and `ITimeTask` (tracking individual productivity).
+Legacy hiring/candidate APIs still exist in code, but the current product focus is the smart workspace features above.
+
+---
+
+## 2) Tech Stack
+
+### Frontend App
+- **Framework**: Next.js `16.1.1` (App Router)
+- **UI**: React `19.2.3`, Tailwind CSS `v4`, Framer Motion
+- **Charts**: `lightweight-charts` + custom daily heatmap renderer
+- **Auth**: NextAuth `v4` (Google, GitHub, Credentials provider)
+- **Mobile Packaging**: Capacitor (`@capacitor/android`)
+
+### Backend Layer (inside same Next.js app)
+- **API**: Next.js Route Handlers (`frontend/src/app/api/**`)
+- **Database**: MongoDB via Mongoose
+- **Email/Integrations**: Nodemailer, Resend, Google APIs (where required)
+
+### Deployment
+- Root `vercel.json` points to `frontend` as app root.
+- Frontend has its own `vercel.json` build settings.
+
+---
+
+## 3) Core Data Models
+
+### `User` (`frontend/src/models/User.ts`)
+- Identity: `email`, `username`, `image`
+- GitHub integration:
+  - `githubId`, `githubUsername`, `githubAccessToken`
+  - `githubConnectedAt`, `lastGithubSyncAt`, `githubSyncLockUntil`
+  - `githubCommitsTotal`
+  - `points` (authoritative GitHub points, rounded integer)
+  - `githubPointsLastUpdatedAt`
+  - `githubPointsHistory[]` = cumulative snapshots `{ timestamp, points }`
+
+### `ITimeTask` (`frontend/src/models/ITimeTask.ts`)
+- Task timing: `startTime`, `pausedElapsed`, `events[]`
+- State: `enabled`, `completed`, `completedAt`
+- Safety: `cancelledAt`, `cancelReason` (`runtime_limit`)
+- Extras: `autoResumeAt`, `targetTime`, `isPublic`, `milestones`
+
+### `IChain` (`frontend/src/models/IChain.ts`)
+- Chain state: `status` (`Active|Idle|Burst`), `totalTime`, `maxTime`, `lastStartedAt`, `burstAt`
+- Members: per-member `isWorking`, `contributionTime`, `lastStartedAt`, `lastVisitAt`, `parentId`, `isStarter`
+
+### `Idea`, `Reply`, `SFTracker`
+- Idea: title/details + public/private visibility
+- Reply: text/image + public/private visibility + edit tracking
+- SFTracker: target + success/failure + failure reason
+
+---
+
+## 4) iTime Score Logic (Exact)
+
+Implemented in `frontend/src/lib/score.ts`.
+
+### Base score
+```text
+CompletionRate = completedTasks / totalTasks
+AvgTimePerCompletedTask = (completedTaskHours + runningTaskHours) / completedTasks
+SpeedScore = 1 / max(AvgTimePerCompletedTask, 0.5)
+VolumeBonus = log10(completedTasks + 1) * 2
+
+BaseScore = CompletionRate * SpeedScore * VolumeBonus * 1000
+```
+
+### Idle penalty
+```text
+IdlePenalty accrues at 0.001 points / second
+```
+- Penalty starts from:
+  - `max(1 Apr 2026 00:00 IST, first tracked task start)`
+- If no tracked task exists, penalty is `0`.
+- Penalty is computed from merged idle intervals between active task intervals.
+
+### Total score
+```text
+TotalScore = BaseScore + GithubPointsAtTime - IdlePenalty
+```
+
+Important: **penalty is deducted from total score, not from GitHub points**.
+
+---
+
+## 5) GitHub Sync + Points (Current Behavior)
+
+Implemented in `frontend/src/lib/github-sync.ts`.
+
+### Constants
+- `COMMIT_REWARD_POINTS = 10`
+- `DEFAULT_GITHUB_SYNC_INTERVAL_MS = 15000` (15s cooldown)
+- `GITHUB_SYNC_LOCK_MS = 30000` (30s lock window)
+
+### Sync flow
+1. Validate user + GitHub connected.
+2. Respect cooldown unless `force`.
+3. Acquire DB lock (`githubSyncLockUntil`) to avoid race/double increments.
+4. Query GitHub GraphQL contributions (`contributionsCollection`) from `githubConnectedAt` to now.
+5. Compute:
+   - `commitsSinceConnection`
+   - `newCommits = max(0, commitsSinceConnection - githubCommitsTotal)`
+   - `pointsEarned = newCommits * 10`
+   - `authoritativeGithubPoints = commitsSinceConnection * 10`
+6. Persist:
+   - `points = authoritativeGithubPoints`
+   - `githubCommitsTotal = commitsSinceConnection`
+   - `lastGithubSyncAt = now`
+   - `githubPointsHistory[]` rebuilt from contribution days
+
+### Important fix (May 2026)
+`githubPointsHistory` is rebuilt from **GitHub day-wise contributions** (IST day-end anchors) + current `now` snapshot, so daily score reflects the **actual contribution day**, not just sync timestamp.
+
+This prevents the previous issue where one day looked negative and the next day got a large positive spike after late sync.
+
+---
+
+## 6) iTime Runtime Safety Rules
+
+Implemented in `frontend/src/lib/itime-runtime.ts`.
+
+- `ACTIVE_TASK_RUNTIME_LIMIT_SECONDS = 100 * 60 * 60` (100 hours)
+- Any active task crossing 100h is auto-cancelled:
+  - `enabled = false`
+  - `pausedElapsed = 100h`
+  - `cancelledAt = cutoff timestamp`
+  - `cancelReason = "runtime_limit"`
+  - pause event injected if needed for timeline consistency
+
+Enforced by:
+- `/api/itime`
+- `/api/workers`
+- `/api/workers/[userId]/tasks`
+- `/api/cron/ping`
+
+---
+
+## 7) iChain Logic
+
+Core logic: `frontend/src/lib/ichain.ts`, routes in `/api/ichain`.
+
+### States
+- `Active`: at least one member working
+- `Idle`: no active member (intermediate)
+- `Burst`: streak broken
+
+### Visit enforcement
+- `CHAIN_VISIT_WINDOW_MS = 3 * 60 * 60 * 1000` (3 hours)
+- If a member is working but does not revisit chain detail page in 3h:
+  - member auto-stopped
+  - contribution time is finalized to timeout moment
+- If no active members remain and chain was `Active`:
+  - chain auto-bursts
+  - `maxTime` updates if current run was highest
+
+### Ranking
+- Global ranking sorted by `maxTime` (with live active-chain adjustment in list fetch).
+
+### Member invite behavior
+- Add via email or username (case-insensitive exact username match via regex)
+- Missing users are rejected with explicit error.
+
+---
+
+## 8) Performance Chart Modes
+
+Component: `frontend/src/components/PerformanceChart.tsx`
+
+Modes:
+1. `Line`
+2. `Candle`
+3. `Daily score` (**default**)
+
+### Daily score heatmap
+- Year grid similar to GitHub contributions graph
+- Positive days: green scale (intensity by magnitude)
+- Negative days: red scale (intensity by magnitude)
+- Neutral: gray
+- Hover/tap tooltip shows exact `+/- points` and date
+- Theme-aware colors for dark/light mode
+- Mobile: auto-scrolls to latest/current month region for visibility
+
+---
+
+## 9) Polling / Refresh Strategy
+
+- Settings: refresh user data every **15s**
+- iTime: refresh profile/GitHub data every **15s**
+- Workers list: refresh every **15s**
+- iChain list/detail: refresh every **5s** (+ local 1s ticker on detail for smooth timers)
+- Chart live update loop: **1s** for line/candle rendering
+
+---
+
+## 10) Main APIs (Smart Workspace)
+
+### iTime / scoring
+- `GET/POST/PUT/DELETE /api/itime`
+- `GET /api/workers`
+- `GET /api/workers/[userId]/tasks`
+
+### GitHub/user settings
+- `GET/POST /api/user/settings`
+- `POST /api/user/sync-github`
+- `POST /api/user/disconnect-github`
+- `GET /api/user/search`
+- `GET /api/user/lookup`
+- `POST /api/user/profile`
+
+### iChain
+- `GET/POST /api/ichain`
+- `GET/PUT/DELETE /api/ichain/[chainId]`
+
+### Ideas
+- `GET/POST /api/ideas`
+- `GET/PATCH/DELETE /api/ideas/[ideaId]`
+- `GET/POST /api/ideas/[ideaId]/replies`
+- `PATCH/DELETE /api/replies/[replyId]`
+
+### SF Tracker
+- `GET/POST /api/sf-tracker`
+- `PUT/DELETE /api/sf-tracker/[id]`
+- `GET /api/sf-tracker/all`
+- `GET /api/sf-tracker/user/[userId]` (privacy-scrubbed read-only view)
+
+### Maintenance
+- `GET /api/cron/ping` (DB wake + runtime auto-cancel sweep)
+
+---
+
+## 11) Clarification on “Why score can still be negative”
+
+Even with new commits, total/live score can still be negative when:
+
+1. Idle penalty accumulated over long duration is larger than gains.
+2. Base score drops due completion/speed/volume dynamics.
+3. GitHub sync has not run yet after new commits.
+
+With current logic, once sync runs, commit gains are now attributed to the correct contribution day in daily mode.
+
+---
+
+## 12) Notes for New Developers
+
+1. Use `score.ts` as the canonical source for score math.
+2. Do not mutate GitHub points directly outside `github-sync.ts`.
+3. Keep all chart score calculations routed through `getScoreAtTime(...)` for consistency.
+4. If changing chain timer logic, update both `/api/ichain` list route and `/api/ichain/[chainId]` detail route behavior.
+5. If product rules change, update this file in the same PR.
