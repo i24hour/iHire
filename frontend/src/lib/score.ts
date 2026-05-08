@@ -212,14 +212,30 @@ function getIdlePenaltyAtTime(tasks: ScoreTask[], t: number): number {
 
     const istOffsetMs = 5.5 * 3600 * 1000;
     const april1st2026Ist = Date.UTC(2026, 3, 1, 0, 0, 0, 0) - istOffsetMs;
+    const firstTrackedTaskStart = tasks.reduce((earliest, task) => {
+        const taskStartTime = task.events?.[0]?.timestamp ?? task.startTime;
+        if (!taskStartTime || taskStartTime > t) return earliest;
+        return Math.min(earliest, taskStartTime);
+    }, Number.POSITIVE_INFINITY);
+
+    if (!Number.isFinite(firstTrackedTaskStart)) {
+        return 0;
+    }
+
+    const penaltyStart = Math.max(april1st2026Ist, firstTrackedTaskStart);
+    if (penaltyStart >= t) {
+        return 0;
+    }
 
     const idleIntervals: { start: number; end: number }[] = [];
-    let currentT = april1st2026Ist;
+    let currentT = penaltyStart;
 
     for (const active of mergedActive) {
-        if (active.end <= april1st2026Ist) continue;
-        if (active.start > currentT) {
-            idleIntervals.push({ start: currentT, end: Math.min(active.start, t) });
+        if (active.end <= penaltyStart) continue;
+
+        const activeStart = Math.max(active.start, penaltyStart);
+        if (activeStart > currentT) {
+            idleIntervals.push({ start: currentT, end: Math.min(activeStart, t) });
         }
         currentT = Math.max(currentT, active.end);
         if (currentT >= t) break;

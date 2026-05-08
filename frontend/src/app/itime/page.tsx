@@ -48,7 +48,8 @@ interface Milestone {
 export default function ITimePage() {
     const { data: session, status } = useSession();
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [hasLoadedTasksOnce, setHasLoadedTasksOnce] = useState(false);
+    const [hasLoadedProfileOnce, setHasLoadedProfileOnce] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
@@ -112,7 +113,7 @@ export default function ITimePage() {
             } catch (error) {
                 console.error('Failed to fetch tasks:', error);
             } finally {
-                setIsLoading(false);
+                setHasLoadedTasksOnce(true);
             }
         } else {
             // Load from localStorage for guest users
@@ -120,7 +121,7 @@ export default function ITimePage() {
                 const saved = localStorage.getItem('itime_tasks');
                 setTasks(saved ? JSON.parse(saved) : []);
             }
-            setIsLoading(false);
+            setHasLoadedTasksOnce(true);
         }
     }, [status]);
 
@@ -143,19 +144,25 @@ export default function ITimePage() {
             setGamificationPointsLastUpdatedAt(data.githubPointsLastUpdatedAt || null);
         } catch (err) {
             console.error('Error fetching profile:', err);
+        } finally {
+            setHasLoadedProfileOnce(true);
         }
     }, []);
 
     // Initial load
     useEffect(() => {
+        if (status === 'loading') return;
+
+        setHasLoadedTasksOnce(false);
+        setHasLoadedProfileOnce(status !== 'authenticated');
         fetchTasks();
-        if (session?.user?.email) {
+        if (status === 'authenticated' && session?.user?.email) {
             fetchUserProfile();
         }
-    }, [fetchTasks, fetchUserProfile, session]);
+    }, [fetchTasks, fetchUserProfile, session?.user?.email, status]);
 
     useEffect(() => {
-        if (!session?.user?.email) return;
+        if (status !== 'authenticated' || !session?.user?.email) return;
 
         const interval = setInterval(() => {
             fetchUserProfile();
@@ -173,7 +180,7 @@ export default function ITimePage() {
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [fetchUserProfile, session]);
+    }, [fetchUserProfile, session?.user?.email, status]);
 
     // Click outside to close pause menu
     useEffect(() => {
@@ -204,13 +211,13 @@ export default function ITimePage() {
 
     // Save tasks - MongoDB for authenticated, localStorage for guest
     useEffect(() => {
-        if (isLoading) return;
+        if (!hasLoadedTasksOnce) return;
 
         if (status === 'unauthenticated' && typeof window !== 'undefined') {
             // Guest mode - save to localStorage
             localStorage.setItem('itime_tasks', JSON.stringify(tasks));
         }
-    }, [tasks, status, isLoading]);
+    }, [tasks, status, hasLoadedTasksOnce]);
 
     const handleAddTask = async () => {
         if (!newTitle.trim()) return;
@@ -534,12 +541,16 @@ export default function ITimePage() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    const tasksReady = status !== 'loading' && hasLoadedTasksOnce;
+    const scoreReady = tasksReady && (status !== 'authenticated' || hasLoadedProfileOnce);
     const totalTime = useMemo(() => tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0), [tasks, getElapsedSeconds]);
-    const liveScore = useMemo(
-        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
-        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
+    const liveScore = useMemo<number | null>(
+        () => scoreReady
+            ? getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt)
+            : null,
+        [scoreReady, tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
     );
-    const liveScoreColorClass = liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
+    const liveScoreColorClass = liveScore !== null && liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
@@ -601,32 +612,48 @@ export default function ITimePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-gray-400'}`}>Total Tasks</div>
-                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{tasks.length}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
+                            {tasksReady ? tasks.length : <span className={`inline-block h-8 md:h-10 w-14 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
 
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Running</div>
-                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{activeTasks}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
+                            {tasksReady ? activeTasks : <span className={`inline-block h-8 md:h-10 w-14 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
 
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Completed</div>
-                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{completedTasks.length}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
+                            {tasksReady ? completedTasks.length : <span className={`inline-block h-8 md:h-10 w-14 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
 
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Live Score</div>
-                                        <div className={`text-2xl md:text-4xl font-bold ${liveScoreColorClass}`}>{liveScore.toFixed(2)}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${liveScoreColorClass}`}>
+                            {scoreReady && liveScore !== null
+                                ? liveScore.toFixed(2)
+                                : <span className={`inline-block h-8 md:h-10 w-28 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
                 </div>
 
                 {/* Performance Chart */}
                 <div className="mb-8 w-full max-w-none">
-                    <PerformanceChart
-                        tasks={tasks}
-                        gamificationPoints={gamificationPoints}
-                        gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
-                    />
+                    {scoreReady ? (
+                        <PerformanceChart
+                            tasks={tasks}
+                            gamificationPoints={gamificationPoints}
+                            gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
+                        />
+                    ) : (
+                        <div className={`h-[500px] rounded-2xl border p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
+                            <div className={`h-full w-full rounded-xl animate-pulse ${isLightTheme ? 'bg-black/5' : 'bg-white/5'}`} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Add Task Form */}
@@ -662,7 +689,11 @@ export default function ITimePage() {
                 <div className="bg-black  rounded-2xl border border-white/10 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Active Tasks</h2>
 
-                    {pendingTasks.length === 0 ? (
+                    {!tasksReady ? (
+                        <div className="text-center py-12">
+                            <div className="text-zinc-500 text-sm">Loading tasks...</div>
+                        </div>
+                    ) : pendingTasks.length === 0 ? (
                         <div className="text-center py-12">
                             <div className="text-6xl mb-4">⏱️</div>
                             <div className="text-zinc-400 text-lg mb-2">No active tasks</div>
