@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import dynamic from 'next/dynamic';
 import { LiveTimer } from '@/components/LiveTimer';
-import { getScoreAtTime } from '@/lib/score';
+import { getScoreAtTime, type GithubPointsSnapshot } from '@/lib/score';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -55,6 +55,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         image: string | null;
         points?: number;
         githubPointsLastUpdatedAt?: string | null;
+        githubPointsHistory?: GithubPointsSnapshot[] | null;
     } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const [scoreNow, setScoreNow] = useState(() => Date.now());
     const [gamificationPoints, setGamificationPoints] = useState(0);
     const [gamificationPointsLastUpdatedAt, setGamificationPointsLastUpdatedAt] = useState<string | null>(null);
+    const [githubPointsHistory, setGithubPointsHistory] = useState<GithubPointsSnapshot[] | null>(null);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -76,6 +78,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                     setUserData(data.user);
                     setGamificationPoints(data.user.points || 0);
                     setGamificationPointsLastUpdatedAt(data.user.githubPointsLastUpdatedAt || null);
+                    setGithubPointsHistory(Array.isArray(data.user.githubPointsHistory) ? data.user.githubPointsHistory : null);
                 }
             } else {
                 throw new Error('Failed to fetch tasks');
@@ -174,8 +177,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
     const liveScore = useMemo(
-        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
-        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
+        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory),
+        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory]
     );
     const liveScoreColorClass = liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
 
@@ -272,6 +275,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         tasks={tasks}
                         gamificationPoints={gamificationPoints}
                         gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
+                        githubPointsHistory={githubPointsHistory}
                     />
                 </div>
 

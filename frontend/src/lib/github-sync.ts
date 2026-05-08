@@ -22,6 +22,11 @@ interface SyncGithubOptions {
     minIntervalMs?: number;
 }
 
+interface GithubPointsHistoryEntry {
+    timestamp: Date;
+    points: number;
+}
+
 function isWithinInterval(value: Date | string | undefined, intervalMs: number) {
     if (!value) return false;
 
@@ -29,6 +34,42 @@ function isWithinInterval(value: Date | string | undefined, intervalMs: number) 
     if (Number.isNaN(timestamp)) return false;
 
     return Date.now() - timestamp < intervalMs;
+}
+
+function normalizePointsHistory(rawHistory: unknown): GithubPointsHistoryEntry[] {
+    if (!Array.isArray(rawHistory)) return [];
+
+    return rawHistory
+        .map((entry) => {
+            const timestamp = new Date((entry as any)?.timestamp);
+            const points = Math.max(0, Math.round(Number((entry as any)?.points || 0)));
+
+            if (Number.isNaN(timestamp.getTime())) return null;
+
+            return {
+                timestamp,
+                points,
+            };
+        })
+        .filter((entry): entry is GithubPointsHistoryEntry => !!entry)
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+}
+
+function appendPointsSnapshot(
+    history: GithubPointsHistoryEntry[],
+    timestamp: Date,
+    points: number
+): GithubPointsHistoryEntry[] {
+    const normalizedPoints = Math.max(0, Math.round(points));
+    const snapshots = [...history];
+    const lastSnapshot = snapshots[snapshots.length - 1];
+
+    if (!lastSnapshot || lastSnapshot.points !== normalizedPoints) {
+        snapshots.push({ timestamp, points: normalizedPoints });
+    }
+
+    // Keep the most recent snapshots only
+    return snapshots.slice(-2000);
 }
 
 async function releaseGithubSyncLock(userId: string) {
@@ -147,10 +188,17 @@ export async function syncGithubForUser(
         const previousCommitCheckpoint = Math.max(0, Number(lockedUser.githubCommitsTotal || 0));
 
         const query = `
-          query($login: String!, $connectionDate: DateTime!) {
+          query($login: String!, $connectionDate: DateTime!, $now: DateTime!) {
             user(login: $login) {
-              commitsSinceConnection: contributionsCollection(from: $connectionDate) {
-                totalCommitContributions
+              commitsSinceConnection: contributionsCollection(from: $connectionDate, to: $now) {
+                contributionCalendar {
+                  weeks {
+                    contributionDays {
+                      date
+                      contributionCount
+                    }
+                  }
+                }
               }
             }
           }
@@ -172,6 +220,7 @@ export async function syncGithubForUser(
                 variables: {
                     login: lockedUser.githubUsername,
                     connectionDate: connectionDate.toISOString(),
+                    now: now.toISOString(),
                 },
             }),
             cache: 'no-store',
@@ -190,12 +239,29 @@ export async function syncGithubForUser(
             throw new Error('Failed to query GitHub profile.');
         }
 
-        const commitsSinceConnection = jsonRes.data?.user?.commitsSinceConnection?.totalCommitContributions || 0;
+        const contributionDays = jsonRes.data?.user?.commitsSinceConnection?.contributionCalendar?.weeks
+            ?.flatMap((week: any) => week?.contributionDays || [])
+            ?.filter((day: any) => typeof day?.date === 'string')
+            ?.map((day: any) => ({
+                date: day.date,
+                commits: Math.max(0, Number(day.contributionCount || 0)),
+            })) || [];
+
+        const commitsSinceConnection = contributionDays.reduce((sum: number, day: { commits: number }) => sum + day.commits, 0);
         const newCommits = isFirstSync
             ? commitsSinceConnection
             : Math.max(0, commitsSinceConnection - previousCommitCheckpoint);
         const pointsEarned = newCommits * COMMIT_REWARD_POINTS;
         const authoritativeGithubPoints = commitsSinceConnection * COMMIT_REWARD_POINTS;
+
+        const existingHistory = normalizePointsHistory(lockedUser.githubPointsHistory);
+        const seededHistory = existingHistory.length > 0
+            ? existingHistory
+            : [{
+                timestamp: new Date(lockedUser.githubPointsLastUpdatedAt || lockedUser.githubConnectedAt || now),
+                points: Math.max(0, Math.round(Number(lockedUser.points || 0))),
+            }];
+        const updatedHistory = appendPointsSnapshot(seededHistory, now, authoritativeGithubPoints);
 
         if (lockedUser.points !== authoritativeGithubPoints) {
             lockedUser.points = authoritativeGithubPoints;
@@ -207,6 +273,7 @@ export async function syncGithubForUser(
         }
 
         lockedUser.githubCommitsTotal = Math.max(0, commitsSinceConnection);
+        lockedUser.githubPointsHistory = updatedHistory;
         lockedUser.lastGithubSyncAt = now;
         lockedUser.githubSyncLockUntil = undefined;
         await lockedUser.save();

@@ -13,6 +13,10 @@ export interface IUser {
     lastGithubSyncAt?: Date;
     githubCommitsTotal?: number;
     githubPointsLastUpdatedAt?: Date;
+    githubPointsHistory?: Array<{
+        timestamp: Date;
+        points: number;
+    }>;
     githubSyncLockUntil?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -64,6 +68,18 @@ const UserSchema = new mongoose.Schema<IUser>({
     githubPointsLastUpdatedAt: {
         type: Date,
     },
+    githubPointsHistory: [{
+        timestamp: {
+            type: Date,
+            required: true,
+        },
+        points: {
+            type: Number,
+            required: true,
+            min: 0,
+        },
+        _id: false,
+    }],
     githubSyncLockUntil: {
         type: Date,
     },

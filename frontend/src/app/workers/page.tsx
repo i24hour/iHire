@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
-import { getScoreAtTime } from '@/lib/score';
+import { getScoreAtTime, type GithubPointsSnapshot } from '@/lib/score';
 
 function useIsLightTheme() {
     const [isLightTheme, setIsLightTheme] = useState(false);
@@ -34,6 +34,7 @@ interface WorkerStats {
     tasks: any[]; // tasks attached by backend for scoring
     gamificationPoints?: number;
     gamificationPointsLastUpdatedAt?: string | null;
+    githubPointsHistory?: GithubPointsSnapshot[] | null;
 }
 
 function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
@@ -56,7 +57,8 @@ function LiveWorkerList({ initialWorkers }: { initialWorkers: WorkerStats[] }) {
                 w.tasks || [],
                 currentTime,
                 w.gamificationPoints || 0,
-                w.gamificationPointsLastUpdatedAt || null
+                w.gamificationPointsLastUpdatedAt || null,
+                w.githubPointsHistory || null
             );
             return { ...w, currentScore: score };
         });

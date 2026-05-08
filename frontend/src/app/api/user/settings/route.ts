@@ -27,7 +27,8 @@ export async function GET() {
             tasks,
             Date.now(),
             user?.points || 0,
-            user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null
+            user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null,
+            user?.githubPointsHistory || null
         );
 
         return NextResponse.json({ 
@@ -39,7 +40,8 @@ export async function GET() {
             idlePenalty: scoreBreakdown.idlePenalty,
             githubUsername: user?.githubUsername || null,
             lastGithubSyncAt: user?.lastGithubSyncAt || null,
-            githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null
+            githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null,
+            githubPointsHistory: user?.githubPointsHistory || []
         });
     } catch (error) {
         console.error('Error fetching settings:', error);

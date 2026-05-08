@@ -6,7 +6,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
-import { getScoreAtTime } from '@/lib/score';
+import { getScoreAtTime, type GithubPointsSnapshot } from '@/lib/score';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -130,6 +130,7 @@ export default function ITimePage() {
     const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
     const [gamificationPoints, setGamificationPoints] = useState(0);
     const [gamificationPointsLastUpdatedAt, setGamificationPointsLastUpdatedAt] = useState<string | null>(null);
+    const [githubPointsHistory, setGithubPointsHistory] = useState<GithubPointsSnapshot[] | null>(null);
 
     const fetchUserProfile = useCallback(async () => {
         try {
@@ -142,6 +143,7 @@ export default function ITimePage() {
                 setGamificationPoints(data.points || 0);
             }
             setGamificationPointsLastUpdatedAt(data.githubPointsLastUpdatedAt || null);
+            setGithubPointsHistory(Array.isArray(data.githubPointsHistory) ? data.githubPointsHistory : null);
         } catch (err) {
             console.error('Error fetching profile:', err);
         } finally {
@@ -155,6 +157,11 @@ export default function ITimePage() {
 
         setHasLoadedTasksOnce(false);
         setHasLoadedProfileOnce(status !== 'authenticated');
+        if (status !== 'authenticated') {
+            setGamificationPoints(0);
+            setGamificationPointsLastUpdatedAt(null);
+            setGithubPointsHistory(null);
+        }
         fetchTasks();
         if (status === 'authenticated' && session?.user?.email) {
             fetchUserProfile();
@@ -546,9 +553,9 @@ export default function ITimePage() {
     const totalTime = useMemo(() => tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0), [tasks, getElapsedSeconds]);
     const liveScore = useMemo<number | null>(
         () => scoreReady
-            ? getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt)
+            ? getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory)
             : null,
-        [scoreReady, tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
+        [scoreReady, tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory]
     );
     const liveScoreColorClass = liveScore !== null && liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt).length, [tasks]);
@@ -648,6 +655,7 @@ export default function ITimePage() {
                             tasks={tasks}
                             gamificationPoints={gamificationPoints}
                             gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
+                            githubPointsHistory={githubPointsHistory}
                         />
                     ) : (
                         <div className={`h-[500px] rounded-2xl border p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>

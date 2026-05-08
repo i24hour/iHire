@@ -36,7 +36,8 @@ export async function GET(
                 username: user?.username || targetUserId.split('@')[0],
                 image: user?.image || null,
                 points: user?.points || 0,
-                githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null
+                githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null,
+                githubPointsHistory: user?.githubPointsHistory || []
             } 
         });
     } catch (error) {

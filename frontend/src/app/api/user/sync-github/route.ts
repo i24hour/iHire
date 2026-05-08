@@ -34,7 +34,8 @@ export async function POST() {
             tasks,
             Date.now(),
             refreshedUser?.points || 0,
-            refreshedUser?.githubPointsLastUpdatedAt || refreshedUser?.githubConnectedAt || null
+            refreshedUser?.githubPointsLastUpdatedAt || refreshedUser?.githubConnectedAt || null,
+            refreshedUser?.githubPointsHistory || null
         );
 
         return NextResponse.json({
@@ -46,6 +47,7 @@ export async function POST() {
             isFirstSync: result.isFirstSync,
             lastGithubSyncAt: result.lastGithubSyncAt,
             githubPointsLastUpdatedAt: result.githubPointsLastUpdatedAt,
+            githubPointsHistory: refreshedUser?.githubPointsHistory || [],
         });
     } catch (error) {
         console.error('Error syncing GitHub:', error);

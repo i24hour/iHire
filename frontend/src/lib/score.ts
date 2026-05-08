@@ -20,6 +20,11 @@ export interface ScoreBreakdown {
     totalScore: number;
 }
 
+export interface GithubPointsSnapshot {
+    timestamp: Date | string | number;
+    points: number;
+}
+
 function roundScore(value: number): number {
     return Math.round(value * 100) / 100;
 }
@@ -180,16 +185,58 @@ function getAllActiveIntervals(tasks: ScoreTask[], t: number) {
     return allIntervals;
 }
 
-function getPointsCheckpointTimestamp(value?: Date | string | number | null): number | null {
-    if (value === null || value === undefined) return null;
+function getGithubPointsFromHistoryAtTime(
+    t: number,
+    githubPointsHistory?: GithubPointsSnapshot[] | null
+): number | null {
+    if (!Array.isArray(githubPointsHistory) || githubPointsHistory.length === 0) {
+        return null;
+    }
 
-    const timestamp = value instanceof Date
-        ? value.getTime()
-        : typeof value === 'number'
-            ? value
-            : new Date(value).getTime();
+    const normalized = githubPointsHistory
+        .map((entry) => {
+            const rawTimestamp = entry?.timestamp;
+            const timestamp = rawTimestamp instanceof Date
+                ? rawTimestamp.getTime()
+                : typeof rawTimestamp === 'number'
+                    ? rawTimestamp
+                    : new Date(rawTimestamp).getTime();
 
-    return Number.isNaN(timestamp) ? null : timestamp;
+            const points = Math.max(0, Math.round(Number(entry?.points || 0)));
+            if (!Number.isFinite(timestamp)) return null;
+
+            return { timestamp, points };
+        })
+        .filter((entry): entry is { timestamp: number; points: number } => !!entry)
+        .sort((a, b) => a.timestamp - b.timestamp);
+
+    if (normalized.length === 0) {
+        return null;
+    }
+
+    let effectivePoints = 0;
+    for (const snapshot of normalized) {
+        if (snapshot.timestamp > t) break;
+        effectivePoints = snapshot.points;
+    }
+
+    return effectivePoints;
+}
+
+function getGithubPointsAtTime(
+    t: number,
+    gamificationPoints: number,
+    _gamificationPointsLastUpdatedAt?: Date | string | number | null,
+    githubPointsHistory?: GithubPointsSnapshot[] | null
+): number {
+    const historyBasedPoints = getGithubPointsFromHistoryAtTime(t, githubPointsHistory);
+    if (historyBasedPoints !== null) {
+        return historyBasedPoints;
+    }
+
+    // Legacy fallback: if no history exists yet, use current GitHub points as a stable baseline
+    // so daily chart doesn't flip past days between syncs.
+    return Math.max(0, Math.round(gamificationPoints));
 }
 
 function getIdlePenaltyAtTime(tasks: ScoreTask[], t: number): number {
@@ -258,15 +305,18 @@ export function getScoreBreakdownAtTime(
     tasks: ScoreTask[],
     t: number,
     gamificationPoints: number = 0,
-    gamificationPointsLastUpdatedAt?: Date | string | number | null
+    gamificationPointsLastUpdatedAt?: Date | string | number | null,
+    githubPointsHistory?: GithubPointsSnapshot[] | null
 ): ScoreBreakdown {
-    const pointsCheckpoint = getPointsCheckpointTimestamp(gamificationPointsLastUpdatedAt);
     const baseScore = computeBaseScore(tasks, t);
     const idlePenalty = getIdlePenaltyAtTime(tasks, t);
     const penalizedBaseScore = baseScore - idlePenalty;
-    const githubPoints = gamificationPoints > 0 && (!pointsCheckpoint || t >= pointsCheckpoint)
-        ? gamificationPoints
-        : 0;
+    const githubPoints = getGithubPointsAtTime(
+        t,
+        gamificationPoints,
+        gamificationPointsLastUpdatedAt,
+        githubPointsHistory
+    );
     const totalScore = baseScore + githubPoints - idlePenalty;
 
     return {
@@ -282,7 +332,14 @@ export function getScoreAtTime(
     tasks: ScoreTask[],
     t: number,
     gamificationPoints: number = 0,
-    gamificationPointsLastUpdatedAt?: Date | string | number | null
+    gamificationPointsLastUpdatedAt?: Date | string | number | null,
+    githubPointsHistory?: GithubPointsSnapshot[] | null
 ): number {
-    return getScoreBreakdownAtTime(tasks, t, gamificationPoints, gamificationPointsLastUpdatedAt).totalScore;
+    return getScoreBreakdownAtTime(
+        tasks,
+        t,
+        gamificationPoints,
+        gamificationPointsLastUpdatedAt,
+        githubPointsHistory
+    ).totalScore;
 }

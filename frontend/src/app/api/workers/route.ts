@@ -68,7 +68,8 @@ export async function GET() {
                 username: u.username,
                 image: u.image,
                 points: u.points || 0,
-                githubPointsLastUpdatedAt: u.githubPointsLastUpdatedAt || u.githubConnectedAt || null
+                githubPointsLastUpdatedAt: u.githubPointsLastUpdatedAt || u.githubConnectedAt || null,
+                githubPointsHistory: u.githubPointsHistory || []
             });
         });
 
@@ -91,7 +92,8 @@ export async function GET() {
                     lastActive: task.updatedAt || new Date(0),
                     tasks: [], // Provide tasks to frontend for precise score calculation
                     gamificationPoints: userData?.points || 0,
-                    gamificationPointsLastUpdatedAt: userData?.githubPointsLastUpdatedAt || null
+                    gamificationPointsLastUpdatedAt: userData?.githubPointsLastUpdatedAt || null,
+                    githubPointsHistory: userData?.githubPointsHistory || []
                 });
             }
 
