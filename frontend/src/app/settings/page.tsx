@@ -11,6 +11,7 @@ export default function SettingsPage() {
     const [username, setUsername] = useState('');
     const [totalScore, setTotalScore] = useState(0);
     const [githubPoints, setGithubPoints] = useState(0);
+    const [chainPoints, setChainPoints] = useState(0);
     const [githubUsername, setGithubUsername] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -30,6 +31,9 @@ export default function SettingsPage() {
             }
             if (data.points !== undefined) {
                 setGithubPoints(data.points);
+            }
+            if (data.chainPoints !== undefined) {
+                setChainPoints(data.chainPoints);
             }
             if (data.githubUsername) {
                 setGithubUsername(data.githubUsername);
@@ -224,7 +228,9 @@ export default function SettingsPage() {
                                         <div className={`text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${totalScoreAccentClass}`}>
                                             {totalScore.toFixed(2)} <span className="text-sm text-zinc-500 font-normal">pts</span>
                                         </div>
-                                        <p className="text-xs text-zinc-500 mt-2">GitHub bonus stored separately: {githubPoints} pts</p>
+                                        <p className="text-xs text-zinc-500 mt-2">
+                                            GitHub bonus: {githubPoints} pts | iChain bonus: {chainPoints} pts
+                                        </p>
                                     </div>
                                 </div>
                             </div>

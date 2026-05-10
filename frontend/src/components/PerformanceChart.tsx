@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { createChart, ColorType, CandlestickSeries, BaselineSeries, type IChartApi, type ISeriesApi, type CandlestickData, type LineData, type BaselineData, type Time, LineStyle } from 'lightweight-charts';
-import { getScoreAtTime, type GithubPointsSnapshot } from '@/lib/score';
+import { getScoreAtTime, type GithubPointsSnapshot, type ChainPointsSnapshot } from '@/lib/score';
 
 export interface ChartEvent {
     type: 'start' | 'pause' | 'complete';
@@ -24,6 +24,8 @@ interface PerformanceChartProps {
     gamificationPoints?: number;
     gamificationPointsLastUpdatedAt?: Date | string | number | null;
     githubPointsHistory?: GithubPointsSnapshot[] | null;
+    chainPoints?: number;
+    chainPointsHistory?: ChainPointsSnapshot[] | null;
 }
 
 type ChartType = 'line' | 'candle' | 'daily';
@@ -395,7 +397,9 @@ export function PerformanceChart({
     tasks,
     gamificationPoints = 0,
     gamificationPointsLastUpdatedAt = null,
-    githubPointsHistory = null
+    githubPointsHistory = null,
+    chainPoints = 0,
+    chainPointsHistory = null
 }: PerformanceChartProps) {
     const [chartType, setChartType] = useState<ChartType>('daily');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
@@ -459,8 +463,8 @@ export function PerformanceChart({
     }, [referenceNow]);
 
     const previousCloseValue = useMemo(() => {
-        return getScoreAtTime(tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
-    }, [tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory]);
+        return getScoreAtTime(tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+    }, [tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]);
 
     // Generate OHLC data
     const chartData = useMemo(() => {
@@ -494,8 +498,8 @@ export function PerformanceChart({
             const T_end = Math.min(now, startTime + ((i + 1) * intervalMs));
             if (T_start >= now) break;
 
-            let open = getScoreAtTime(tasks, T_start, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
-            let close = getScoreAtTime(tasks, T_end, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
+            let open = getScoreAtTime(tasks, T_start, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+            let close = getScoreAtTime(tasks, T_end, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
             let high = Math.max(open, close);
             let low = Math.min(open, close);
 
@@ -504,8 +508,8 @@ export function PerformanceChart({
                 if (task.events) {
                     for (const ev of task.events) {
                         if (ev.timestamp > T_start && ev.timestamp <= T_end) {
-                            const val = getScoreAtTime(tasks, ev.timestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
-                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
+                            const val = getScoreAtTime(tasks, ev.timestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
                             high = Math.max(high, val, valBefore);
                             low = Math.min(low, val, valBefore);
                         }
@@ -536,7 +540,7 @@ export function PerformanceChart({
         }
 
         return { candleData, lineData, baselineData };
-    }, [tasks, interval, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory]);
+    }, [tasks, interval, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]);
 
     const dailyScoreData = useMemo(() => {
         const now = Date.now();
@@ -550,8 +554,8 @@ export function PerformanceChart({
             if (dayStart < firstVisibleDay) continue;
 
             const dayEnd = Math.min(dayStart + DAY_MS, now);
-            const startScore = getScoreAtTime(tasks, dayStart, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
-            const endScore = getScoreAtTime(tasks, dayEnd, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
+            const startScore = getScoreAtTime(tasks, dayStart, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+            const endScore = getScoreAtTime(tasks, dayEnd, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
             const value = Math.round((endScore - startScore) * 100) / 100;
             const istDate = new Date(dayStart + IST_OFFSET_MS);
 
@@ -606,7 +610,7 @@ export function PerformanceChart({
             negativeTotal: Math.round(negativeTotal * 100) / 100,
             netTotal: Math.round(netTotal * 100) / 100,
         };
-    }, [tasks, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, referenceNow]);
+    }, [tasks, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory, referenceNow]);
 
     const updateDailyTooltip = (event: React.MouseEvent<HTMLElement>, day: DailyScoreDay) => {
         const rect = dailyPanelRef.current?.getBoundingClientRect();
@@ -835,7 +839,7 @@ export function PerformanceChart({
             if (!seriesRef.current) return;
 
             const now = Date.now();
-            const currentScore = getScoreAtTime(tasks, now, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory);
+            const currentScore = getScoreAtTime(tasks, now, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
             const snappedNow = snapToInterval(now, interval);
             const timeSeconds = Math.floor(snappedNow / 1000) as Time;
 
@@ -872,7 +876,7 @@ export function PerformanceChart({
         }, 1000);
 
         return () => clearInterval(liveInterval);
-    }, [tasks, interval, chartType, chartData, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory]);
+    }, [tasks, interval, chartType, chartData, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]);
 
     return (
         <div className="bg-black rounded-2xl border border-white/10 p-6 flex flex-col w-full h-[500px]">

@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
 import User from '@/models/User';
 import { enforceChainVisitWindow } from '@/lib/ichain';
+import { recomputeChainPointsForUsers } from '@/lib/chain-points';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const normalizeIdentifier = (value: string) => value.trim().toLowerCase();
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
         await Promise.all(chainDocs.map(async (chainDoc: any) => {
             if (enforceChainVisitWindow(chainDoc, now)) {
                 await chainDoc.save();
+                await recomputeChainPointsForUsers((chainDoc.members || []).map((member: any) => member.userId));
             }
         }));
 

@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
 import User from '@/models/User';
 import { enforceChainVisitWindow } from '@/lib/ichain';
+import { recomputeChainPointsForUsers } from '@/lib/chain-points';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -26,9 +27,11 @@ export async function GET(
 
         const now = Date.now();
         let shouldPersist = false;
+        let shouldRecomputeChainPoints = false;
 
         if (chainDoc && enforceChainVisitWindow(chainDoc, now)) {
             shouldPersist = true;
+            shouldRecomputeChainPoints = true;
         }
 
         if (session?.user?.email && chainDoc?.members) {
@@ -39,8 +42,39 @@ export async function GET(
             }
         }
 
+        if (shouldPersist && chainDoc?.members) {
+            if (chainDoc.status === 'Active' && chainDoc.lastStartedAt) {
+                const chainElapsed = Math.floor((now - chainDoc.lastStartedAt) / 1000);
+                if (chainElapsed > 0) {
+                    chainDoc.totalTime += chainElapsed;
+                    if (chainDoc.totalTime > (chainDoc.maxTime || 0)) {
+                        chainDoc.maxTime = chainDoc.totalTime;
+                    }
+                    chainDoc.lastStartedAt = now;
+                }
+            }
+
+            let memberContributionUpdated = false;
+            chainDoc.members = chainDoc.members.map((member: any) => {
+                if (!member.isWorking || !member.lastStartedAt) return member;
+                const elapsed = Math.floor((now - member.lastStartedAt) / 1000);
+                if (elapsed <= 0) return member;
+                member.contributionTime += elapsed;
+                member.lastStartedAt = now;
+                memberContributionUpdated = true;
+                return member;
+            });
+
+            if (memberContributionUpdated) {
+                shouldRecomputeChainPoints = true;
+            }
+        }
+
         if (shouldPersist) {
             await chainDoc.save();
+            if (shouldRecomputeChainPoints) {
+                await recomputeChainPointsForUsers((chainDoc.members || []).map((member: any) => member.userId));
+            }
             const refreshed = chainDoc.toObject();
             chain.status = refreshed.status;
             chain.totalTime = refreshed.totalTime;
@@ -225,6 +259,7 @@ export async function PUT(
         }
 
         await chain.save();
+        await recomputeChainPointsForUsers((chain.members || []).map((member: any) => member.userId));
         return NextResponse.json({ chain });
     } catch (error) {
         console.error('Error updating chain/work status:', error);

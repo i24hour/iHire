@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
 import { autoCancelExpiredActiveTasks } from '@/lib/itime-runtime';
+import { recomputeChainPointsForUsers } from '@/lib/chain-points';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,7 @@ export async function GET(
 
         await connectDB();
         await autoCancelExpiredActiveTasks({ userId: targetUserId });
+        await recomputeChainPointsForUsers([targetUserId]);
 
         const user = await User.findOne({ email: targetUserId }).lean() as any;
 
@@ -37,7 +39,9 @@ export async function GET(
                 image: user?.image || null,
                 points: user?.points || 0,
                 githubPointsLastUpdatedAt: user?.githubPointsLastUpdatedAt || user?.githubConnectedAt || null,
-                githubPointsHistory: user?.githubPointsHistory || []
+                githubPointsHistory: user?.githubPointsHistory || [],
+                chainPoints: user?.chainPoints || 0,
+                chainPointsHistory: user?.chainPointsHistory || []
             } 
         });
     } catch (error) {

@@ -17,13 +17,17 @@ export interface ScoreBreakdown {
     idlePenalty: number;
     penalizedBaseScore: number;
     githubPoints: number;
+    chainPoints: number;
     totalScore: number;
 }
 
-export interface GithubPointsSnapshot {
+export interface BonusPointsSnapshot {
     timestamp: Date | string | number;
     points: number;
 }
+
+export type GithubPointsSnapshot = BonusPointsSnapshot;
+export type ChainPointsSnapshot = BonusPointsSnapshot;
 
 function roundScore(value: number): number {
     return Math.round(value * 100) / 100;
@@ -187,13 +191,13 @@ function getAllActiveIntervals(tasks: ScoreTask[], t: number) {
 
 function getGithubPointsFromHistoryAtTime(
     t: number,
-    githubPointsHistory?: GithubPointsSnapshot[] | null
+    history?: BonusPointsSnapshot[] | null
 ): number | null {
-    if (!Array.isArray(githubPointsHistory) || githubPointsHistory.length === 0) {
+    if (!Array.isArray(history) || history.length === 0) {
         return null;
     }
 
-    const normalized = githubPointsHistory
+    const normalized = history
         .map((entry) => {
             const rawTimestamp = entry?.timestamp;
             const timestamp = rawTimestamp instanceof Date
@@ -237,6 +241,19 @@ function getGithubPointsAtTime(
     // Legacy fallback: if no history exists yet, use current GitHub points as a stable baseline
     // so daily chart doesn't flip past days between syncs.
     return Math.max(0, Math.round(gamificationPoints));
+}
+
+function getChainPointsAtTime(
+    t: number,
+    chainPoints: number,
+    chainPointsHistory?: ChainPointsSnapshot[] | null
+): number {
+    const historyBasedPoints = getGithubPointsFromHistoryAtTime(t, chainPointsHistory);
+    if (historyBasedPoints !== null) {
+        return historyBasedPoints;
+    }
+
+    return Math.max(0, Math.round(chainPoints));
 }
 
 function getIdlePenaltyAtTime(tasks: ScoreTask[], t: number): number {
@@ -306,7 +323,9 @@ export function getScoreBreakdownAtTime(
     t: number,
     gamificationPoints: number = 0,
     gamificationPointsLastUpdatedAt?: Date | string | number | null,
-    githubPointsHistory?: GithubPointsSnapshot[] | null
+    githubPointsHistory?: GithubPointsSnapshot[] | null,
+    chainPoints: number = 0,
+    chainPointsHistory?: ChainPointsSnapshot[] | null
 ): ScoreBreakdown {
     const baseScore = computeBaseScore(tasks, t);
     const idlePenalty = getIdlePenaltyAtTime(tasks, t);
@@ -317,13 +336,15 @@ export function getScoreBreakdownAtTime(
         gamificationPointsLastUpdatedAt,
         githubPointsHistory
     );
-    const totalScore = baseScore + githubPoints - idlePenalty;
+    const chainPointsAtTime = getChainPointsAtTime(t, chainPoints, chainPointsHistory);
+    const totalScore = baseScore + githubPoints + chainPointsAtTime - idlePenalty;
 
     return {
         baseScore: roundScore(baseScore),
         idlePenalty: roundScore(idlePenalty),
         penalizedBaseScore: roundScore(penalizedBaseScore),
         githubPoints: Math.round(githubPoints),
+        chainPoints: Math.round(chainPointsAtTime),
         totalScore: roundScore(totalScore),
     };
 }
@@ -333,13 +354,17 @@ export function getScoreAtTime(
     t: number,
     gamificationPoints: number = 0,
     gamificationPointsLastUpdatedAt?: Date | string | number | null,
-    githubPointsHistory?: GithubPointsSnapshot[] | null
+    githubPointsHistory?: GithubPointsSnapshot[] | null,
+    chainPoints: number = 0,
+    chainPointsHistory?: ChainPointsSnapshot[] | null
 ): number {
     return getScoreBreakdownAtTime(
         tasks,
         t,
         gamificationPoints,
         gamificationPointsLastUpdatedAt,
-        githubPointsHistory
+        githubPointsHistory,
+        chainPoints,
+        chainPointsHistory
     ).totalScore;
 }

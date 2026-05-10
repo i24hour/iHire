@@ -1,6 +1,6 @@
 # Infinwork (iHire) - Developer Logic & Architecture
 
-Last updated: 9 May 2026  
+Last updated: 10 May 2026  
 This is the source-of-truth doc for the current Infinwork smart-workspace codebase.
 
 ---
@@ -94,7 +94,7 @@ IdlePenalty accrues at 0.001 points / second
 
 ### Total score
 ```text
-TotalScore = BaseScore + GithubPointsAtTime - IdlePenalty
+TotalScore = BaseScore + GithubPointsAtTime + ChainPointsAtTime - IdlePenalty
 ```
 
 Important: **penalty is deducted from total score, not from GitHub points**.
@@ -173,6 +173,21 @@ Core logic: `frontend/src/lib/ichain.ts`, routes in `/api/ichain`.
 
 ### Ranking
 - Global ranking sorted by `maxTime` (with live active-chain adjustment in list fetch).
+
+### Individual chain reward points
+- Reward is based on **individual member contribution time**, not chain total.
+- Contribution time is aggregated per user across all chains, then reward tiers are applied.
+- Block size: **3 hours** (`10,800s`) per block.
+- Progressive reward per completed block:
+  - 1st 3h block: `+10`
+  - 2nd 3h block: `+20`
+  - 3rd 3h block: `+30`
+  - ... and so on
+- Total reward after `n` completed 3h blocks:
+```text
+ChainRewardPoints = 10 * (1 + 2 + ... + n) = 10 * n * (n + 1) / 2
+```
+- These points are persisted per user (`User.chainPoints`) and included in total score.
 
 ### Member invite behavior
 - Add via email or username (case-insensitive exact username match via regex)

@@ -69,7 +69,9 @@ export async function GET() {
                 image: u.image,
                 points: u.points || 0,
                 githubPointsLastUpdatedAt: u.githubPointsLastUpdatedAt || u.githubConnectedAt || null,
-                githubPointsHistory: u.githubPointsHistory || []
+                githubPointsHistory: u.githubPointsHistory || [],
+                chainPoints: u.chainPoints || 0,
+                chainPointsHistory: u.chainPointsHistory || []
             });
         });
 
@@ -93,7 +95,9 @@ export async function GET() {
                     tasks: [], // Provide tasks to frontend for precise score calculation
                     gamificationPoints: userData?.points || 0,
                     gamificationPointsLastUpdatedAt: userData?.githubPointsLastUpdatedAt || null,
-                    githubPointsHistory: userData?.githubPointsHistory || []
+                    githubPointsHistory: userData?.githubPointsHistory || [],
+                    chainPoints: userData?.chainPoints || 0,
+                    chainPointsHistory: userData?.chainPointsHistory || []
                 });
             }
 

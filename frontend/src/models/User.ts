@@ -17,6 +17,12 @@ export interface IUser {
         timestamp: Date;
         points: number;
     }>;
+    chainPoints?: number;
+    chainPointsLastUpdatedAt?: Date;
+    chainPointsHistory?: Array<{
+        timestamp: Date;
+        points: number;
+    }>;
     githubSyncLockUntil?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -69,6 +75,25 @@ const UserSchema = new mongoose.Schema<IUser>({
         type: Date,
     },
     githubPointsHistory: [{
+        timestamp: {
+            type: Date,
+            required: true,
+        },
+        points: {
+            type: Number,
+            required: true,
+            min: 0,
+        },
+        _id: false,
+    }],
+    chainPoints: {
+        type: Number,
+        default: 0,
+    },
+    chainPointsLastUpdatedAt: {
+        type: Date,
+    },
+    chainPointsHistory: [{
         timestamp: {
             type: Date,
             required: true,

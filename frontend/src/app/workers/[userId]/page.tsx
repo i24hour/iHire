@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import dynamic from 'next/dynamic';
 import { LiveTimer } from '@/components/LiveTimer';
-import { getScoreAtTime, type GithubPointsSnapshot } from '@/lib/score';
+import { getScoreAtTime, type GithubPointsSnapshot, type ChainPointsSnapshot } from '@/lib/score';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -56,6 +56,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         points?: number;
         githubPointsLastUpdatedAt?: string | null;
         githubPointsHistory?: GithubPointsSnapshot[] | null;
+        chainPoints?: number;
+        chainPointsHistory?: ChainPointsSnapshot[] | null;
     } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -64,6 +66,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const [gamificationPoints, setGamificationPoints] = useState(0);
     const [gamificationPointsLastUpdatedAt, setGamificationPointsLastUpdatedAt] = useState<string | null>(null);
     const [githubPointsHistory, setGithubPointsHistory] = useState<GithubPointsSnapshot[] | null>(null);
+    const [chainPoints, setChainPoints] = useState(0);
+    const [chainPointsHistory, setChainPointsHistory] = useState<ChainPointsSnapshot[] | null>(null);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -79,6 +83,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                     setGamificationPoints(data.user.points || 0);
                     setGamificationPointsLastUpdatedAt(data.user.githubPointsLastUpdatedAt || null);
                     setGithubPointsHistory(Array.isArray(data.user.githubPointsHistory) ? data.user.githubPointsHistory : null);
+                    setChainPoints(data.user.chainPoints || 0);
+                    setChainPointsHistory(Array.isArray(data.user.chainPointsHistory) ? data.user.chainPointsHistory : null);
                 }
             } else {
                 throw new Error('Failed to fetch tasks');
@@ -177,8 +183,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
     const liveScore = useMemo(
-        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory),
-        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory]
+        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory),
+        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]
     );
     const liveScoreColorClass = liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
 
@@ -276,6 +282,8 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         gamificationPoints={gamificationPoints}
                         gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
                         githubPointsHistory={githubPointsHistory}
+                        chainPoints={chainPoints}
+                        chainPointsHistory={chainPointsHistory}
                     />
                 </div>
 
