@@ -29,12 +29,16 @@ interface ITimeTask {
     targetTime?: number; // target time in seconds
     autoResumeAt?: number; // scheduled automatic resume timestamp
     isPublic?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
     milestones?: Milestone[];
     events?: Array<{
         type: 'start' | 'pause' | 'complete';
         timestamp: number;
     }>;
 }
+
+const COMPLETED_TASKS_PAGE_SIZE = 10;
 
 interface Milestone {
     id: string;
@@ -58,6 +62,7 @@ export default function ITimePage() {
     const [targetMinutes, setTargetMinutes] = useState('');
     const [showSignInModal, setShowSignInModal] = useState(false);
     const [showPauseOptions, setShowPauseOptions] = useState<string | null>(null);
+    const [completedTasksPage, setCompletedTasksPage] = useState(1);
     const [scoreNow, setScoreNow] = useState<number>(() => Date.now());
     const [isLightTheme, setIsLightTheme] = useState(false);
 
@@ -566,7 +571,46 @@ export default function ITimePage() {
     const liveScoreColorClass = liveScore !== null && liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
     const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt).length, [tasks]);
     const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
-    const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
+    const completedTasks = useMemo(() => {
+        const getCompletedTimestamp = (task: ITimeTask): number => {
+            if (typeof task.completedAt === 'number' && Number.isFinite(task.completedAt)) {
+                return task.completedAt;
+            }
+
+            if (Array.isArray(task.events) && task.events.length > 0) {
+                const completionEvent = [...task.events].reverse().find((event) => event.type === 'complete');
+                if (completionEvent) return completionEvent.timestamp;
+            }
+
+            if (task.updatedAt) {
+                const updatedAtTs = new Date(task.updatedAt).getTime();
+                if (Number.isFinite(updatedAtTs)) return updatedAtTs;
+            }
+
+            if (task.createdAt) {
+                const createdAtTs = new Date(task.createdAt).getTime();
+                if (Number.isFinite(createdAtTs)) return createdAtTs;
+            }
+
+            return task.startTime || 0;
+        };
+
+        return tasks
+            .filter((task) => task.completed)
+            .sort((a, b) => getCompletedTimestamp(b) - getCompletedTimestamp(a));
+    }, [tasks]);
+    const completedTasksTotalPages = useMemo(
+        () => Math.max(1, Math.ceil(completedTasks.length / COMPLETED_TASKS_PAGE_SIZE)),
+        [completedTasks.length]
+    );
+    const paginatedCompletedTasks = useMemo(() => {
+        const startIndex = (completedTasksPage - 1) * COMPLETED_TASKS_PAGE_SIZE;
+        return completedTasks.slice(startIndex, startIndex + COMPLETED_TASKS_PAGE_SIZE);
+    }, [completedTasks, completedTasksPage]);
+
+    useEffect(() => {
+        setCompletedTasksPage((prev) => Math.min(prev, completedTasksTotalPages));
+    }, [completedTasksTotalPages]);
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
@@ -851,9 +895,29 @@ export default function ITimePage() {
                 {/* Completed Tasks */}
                 {completedTasks.length > 0 && (
                     <div className="bg-black  rounded-2xl border border-white/10 p-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Completed Tasks</h2>
+                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h2 className="text-lg font-semibold text-white">Completed Tasks</h2>
+                            <div className="flex items-center gap-2">
+                                <LiquidButton
+                                    size="sm"
+                                    onClick={() => setCompletedTasksPage((prev) => Math.max(1, prev - 1))}
+                                    className="px-3 text-zinc-400 hover:text-white disabled:opacity-40"
+                                    disabled={completedTasksPage <= 1}
+                                >
+                                    Newer
+                                </LiquidButton>
+                                <LiquidButton
+                                    size="sm"
+                                    onClick={() => setCompletedTasksPage((prev) => Math.min(completedTasksTotalPages, prev + 1))}
+                                    className="px-3 text-zinc-400 hover:text-white disabled:opacity-40"
+                                    disabled={completedTasksPage >= completedTasksTotalPages}
+                                >
+                                    Older
+                                </LiquidButton>
+                            </div>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {completedTasks.map((task) => (
+                            {paginatedCompletedTasks.map((task) => (
                                 <div
                                     key={task.id}
                                     className="bg-white/5 border border-white/20 rounded-lg p-4 space-y-3 opacity-75"
