@@ -8,9 +8,8 @@ import { LiquidButton } from '@/components/ui/liquid-glass-button';
 const navItems = [
     { href: '/itime', label: 'iTime' },
     { href: '/workers', label: 'WOrKers' },
-    { href: '/info', label: 'Rules' },
     { href: '/ideas', label: 'Ideas' },
-    { href: '/ichain', label: 'iChain' },
+    { href: '/ichain', label: 'Chain' },
     { href: '/sf-tracker', label: 'SF Tracker' },
     { href: '/settings', label: 'Settings' },
 ];

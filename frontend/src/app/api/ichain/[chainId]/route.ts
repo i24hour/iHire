@@ -173,6 +173,7 @@ export async function PUT(
                 userId: userId,
                 name: userToAdd?.username || userId.split('@')[0],
                 image: userToAdd?.image || null,
+                joinedAt: Date.now(),
                 isWorking: false,
                 contributionTime: 0,
                 lastVisitAt: Date.now(),

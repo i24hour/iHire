@@ -15,6 +15,7 @@ interface ChainCardProps {
         members: any[];
         burstAt?: number;
         createdBy?: string;
+        createdAt?: string | Date;
     };
     rank?: number;
     onDelete?: (chainId: string) => void;
@@ -71,6 +72,27 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
         const s = seconds % 60;
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
+
+    const formatCreatedAt = (value?: string | Date) => {
+        if (!value) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+
+        return {
+            date: date.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+            }),
+            time: date.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            }),
+        };
+    };
+
+    const createdAt = formatCreatedAt(chain.createdAt);
 
     return (
         <Link href={`/ichain/${chain._id}`}>
@@ -136,6 +158,11 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
                             <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border mt-2 ${statusColors[chain.status]}`}>
                                 {chain.status}
                             </div>
+                            {createdAt && (
+                                <div className="mt-2 text-[11px] text-zinc-500">
+                                    Created {createdAt.date}, {createdAt.time}
+                                </div>
+                            )}
                         </div>
                         <div className="text-right">
                             <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500">Total Chain Time</span>

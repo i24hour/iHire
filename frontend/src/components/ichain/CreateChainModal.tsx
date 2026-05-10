@@ -131,7 +131,7 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-white">Create New iChain</h2>
+                    <h2 className="text-xl font-bold text-white">Create New Chain</h2>
                     <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

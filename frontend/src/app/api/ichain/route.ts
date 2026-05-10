@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
                 userId: userId,
                 name: user?.username || userId.split('@')[0],
                 image: user?.image || null,
+                joinedAt: Date.now(),
                 isWorking: false,
                 contributionTime: 0,
                 lastVisitAt: Date.now(),

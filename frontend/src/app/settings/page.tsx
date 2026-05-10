@@ -18,6 +18,7 @@ export default function SettingsPage() {
     const [syncing, setSyncing] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [lastGithubSyncAt, setLastGithubSyncAt] = useState<string | null>(null);
+    const [isRulesOpen, setIsRulesOpen] = useState(false);
 
     const fetchSettings = useCallback(async () => {
         try {
@@ -229,7 +230,7 @@ export default function SettingsPage() {
                                             {totalScore.toFixed(2)} <span className="text-sm text-zinc-500 font-normal">pts</span>
                                         </div>
                                         <p className="text-xs text-zinc-500 mt-2">
-                                            GitHub bonus: {githubPoints} pts | iChain bonus: {chainPoints} pts
+                                            GitHub bonus: {githubPoints} pts | Chain bonus: {chainPoints} pts
                                         </p>
                                     </div>
                                 </div>
@@ -285,6 +286,69 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                             </div>
+                        </section>
+
+                        <div className="h-px bg-white/10 w-full" />
+
+                        <section className="space-y-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsRulesOpen((prev) => !prev)}
+                                className="w-full flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                            >
+                                <div>
+                                    <h2 className="text-xl font-semibold text-white">Rules & Formulas</h2>
+                                    <p className="text-sm text-zinc-400">Click to view how scoring works.</p>
+                                </div>
+                                <svg
+                                    className={`w-5 h-5 text-zinc-400 transition-transform ${isRulesOpen ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {isRulesOpen && (
+                                <div className="space-y-4">
+                                    <details className="rounded-xl border border-white/10 bg-white/5 p-4" open>
+                                        <summary className="cursor-pointer text-sm font-semibold text-white">Performance Score</summary>
+                                        <div className="mt-3 space-y-2 text-sm text-zinc-400">
+                                            <p className="font-mono text-zinc-300 bg-black/40 border border-white/10 rounded-md px-3 py-2 overflow-x-auto">
+                                                Score = CompletionRate x SpeedScore x VolumeBonus x 1000
+                                            </p>
+                                            <p>CompletionRate = CompletedTasks / TotalTasks</p>
+                                            <p>SpeedScore = 1 / max(AvgTimePerCompletedTaskHours, 0.5)</p>
+                                            <p>VolumeBonus = log10(CompletedTasks + 1) x 2</p>
+                                            <p className="text-xs text-zinc-500">If total tasks = 0 or completed tasks = 0, base score remains 0.</p>
+                                        </div>
+                                    </details>
+
+                                    <details className="rounded-xl border border-white/10 bg-white/5 p-4" open>
+                                        <summary className="cursor-pointer text-sm font-semibold text-white">Idle Penalty</summary>
+                                        <div className="mt-3 space-y-2 text-sm text-zinc-400">
+                                            <p>Penalty runs only when no task is active.</p>
+                                            <p>Rate: 0.001 points per second (about 3.6 points per hour).</p>
+                                            <p>Penalty timeline starts from the later of:</p>
+                                            <p>- 1 Apr 2026, 00:00 IST</p>
+                                            <p>- your first tracked task start time</p>
+                                        </div>
+                                    </details>
+
+                                    <details className="rounded-xl border border-white/10 bg-white/5 p-4" open>
+                                        <summary className="cursor-pointer text-sm font-semibold text-white">Bonus Points</summary>
+                                        <div className="mt-3 space-y-2 text-sm text-zinc-400">
+                                            <p>GitHub: +10 points per commit (from GitHub contribution data).</p>
+                                            <p>Chain rewards are individual and block-based:</p>
+                                            <p>- First 3h block: +10</p>
+                                            <p>- Next 3h block: +20</p>
+                                            <p>- Next 3h block: +30</p>
+                                            <p>...and so on for each completed 3h block.</p>
+                                        </div>
+                                    </details>
+                                </div>
+                            )}
                         </section>
                     </div>
                 </motion.div>
