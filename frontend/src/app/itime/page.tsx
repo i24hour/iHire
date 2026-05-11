@@ -897,23 +897,20 @@ export default function ITimePage() {
                     <div className="bg-black  rounded-2xl border border-white/10 p-6">
                         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <h2 className="text-lg font-semibold text-white">Completed Tasks</h2>
-                            <div className="flex items-center gap-2">
-                                <LiquidButton
-                                    size="sm"
-                                    onClick={() => setCompletedTasksPage((prev) => Math.max(1, prev - 1))}
-                                    className="px-3 text-zinc-400 hover:text-white disabled:opacity-40"
-                                    disabled={completedTasksPage <= 1}
-                                >
-                                    Newer
-                                </LiquidButton>
-                                <LiquidButton
-                                    size="sm"
-                                    onClick={() => setCompletedTasksPage((prev) => Math.min(completedTasksTotalPages, prev + 1))}
-                                    className="px-3 text-zinc-400 hover:text-white disabled:opacity-40"
-                                    disabled={completedTasksPage >= completedTasksTotalPages}
-                                >
-                                    Older
-                                </LiquidButton>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {Array.from({ length: completedTasksTotalPages }, (_, idx) => idx + 1).map((pageNo) => (
+                                    <LiquidButton
+                                        key={pageNo}
+                                        size="sm"
+                                        onClick={() => setCompletedTasksPage(pageNo)}
+                                        className={`min-w-[36px] px-3 ${completedTasksPage === pageNo
+                                                ? 'text-white border-white/30 bg-white/10'
+                                                : 'text-zinc-400 hover:text-white'
+                                            }`}
+                                    >
+                                        {pageNo}
+                                    </LiquidButton>
+                                ))}
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

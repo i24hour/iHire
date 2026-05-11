@@ -24,9 +24,46 @@ interface SyncGithubOptions {
     minIntervalMs?: number;
 }
 
+interface SyncableGithubUser {
+    _id: string;
+    email?: string;
+    githubUsername?: string;
+    githubAccessToken?: string;
+    githubConnectedAt?: Date | string;
+    githubPointsLastUpdatedAt?: Date | string;
+    githubPointsHistory?: unknown;
+    githubCommitsTotal?: number;
+    githubSyncLockUntil?: Date | string;
+    lastGithubSyncAt?: Date | string;
+    points?: number;
+    save: () => Promise<unknown>;
+}
+
 interface GithubPointsHistoryEntry {
     timestamp: Date;
     points: number;
+}
+
+function normalizeGithubPointsHistory(rawHistory: unknown): GithubPointsHistoryEntry[] {
+    if (!Array.isArray(rawHistory)) return [];
+
+    return rawHistory
+        .map((entry) => {
+            const safeEntry = (entry && typeof entry === 'object')
+                ? (entry as { timestamp?: unknown; points?: unknown })
+                : {};
+            const rawTimestamp = safeEntry.timestamp;
+            const timestamp = rawTimestamp instanceof Date
+                ? rawTimestamp
+                : typeof rawTimestamp === 'string' || typeof rawTimestamp === 'number'
+                    ? new Date(rawTimestamp)
+                    : new Date(Number.NaN);
+            const points = Math.max(0, Math.round(Number(safeEntry.points || 0)));
+            if (Number.isNaN(timestamp.getTime())) return null;
+            return { timestamp, points };
+        })
+        .filter((entry): entry is GithubPointsHistoryEntry => !!entry)
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 }
 
 function isWithinInterval(value: Date | string | undefined, intervalMs: number) {
@@ -54,10 +91,21 @@ function getIstDayEndFromGithubDate(dateString: string): Date | null {
     return new Date(istMidnightUtcMs + DAY_MS - 1);
 }
 
-function buildPointsHistoryFromContributionDays(
-    contributionDays: Array<{ date: string; commits: number }>,
+function getIstDateKeyFromTimestamp(timestampMs: number): string | null {
+    if (!Number.isFinite(timestampMs)) return null;
+    const istDate = new Date(timestampMs + IST_OFFSET_MS);
+    const y = istDate.getUTCFullYear();
+    const m = String(istDate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(istDate.getUTCDate()).padStart(2, '0');
+    if (!Number.isFinite(y)) return null;
+    return `${y}-${m}-${d}`;
+}
+
+function buildPointsHistoryFromCommitDays(
+    commitDays: Array<{ date: string; commits: number }>,
     connectionDate: Date,
-    now: Date
+    now: Date,
+    authoritativeCommits: number
 ): GithubPointsHistoryEntry[] {
     const pointsByTimestamp = new Map<number, number>();
 
@@ -67,7 +115,7 @@ function buildPointsHistoryFromContributionDays(
     }
 
     let cumulativeCommits = 0;
-    const normalizedDays = contributionDays
+    const normalizedDays = commitDays
         .filter((day) => typeof day.date === 'string')
         .map((day) => ({
             date: day.date,
@@ -90,7 +138,7 @@ function buildPointsHistoryFromContributionDays(
         }
     }
 
-    const authoritativePoints = cumulativeCommits * COMMIT_REWARD_POINTS;
+    const authoritativePoints = Math.max(0, Math.round(authoritativeCommits)) * COMMIT_REWARD_POINTS;
     pointsByTimestamp.set(now.getTime(), authoritativePoints);
 
     return Array.from(pointsByTimestamp.entries())
@@ -98,6 +146,30 @@ function buildPointsHistoryFromContributionDays(
             timestamp: new Date(timestamp),
             points: Math.max(0, Math.round(points)),
         }))
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+        .slice(-2000);
+}
+
+function buildPointsHistoryFromSnapshots(
+    rawExistingHistory: unknown,
+    connectionDate: Date,
+    now: Date,
+    authoritativeCommits: number
+): GithubPointsHistoryEntry[] {
+    const history = normalizeGithubPointsHistory(rawExistingHistory);
+    const connectionAt = connectionDate.getTime();
+    const authoritativePoints = Math.max(0, Math.round(authoritativeCommits)) * COMMIT_REWARD_POINTS;
+
+    if (history.length === 0 && Number.isFinite(connectionAt)) {
+        history.push({ timestamp: connectionDate, points: 0 });
+    }
+
+    const lastSnapshot = history[history.length - 1];
+    if (!lastSnapshot || lastSnapshot.points !== authoritativePoints) {
+        history.push({ timestamp: now, points: authoritativePoints });
+    }
+
+    return history
         .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
         .slice(-2000);
 }
@@ -129,7 +201,7 @@ export async function syncGithubForUserByEmail(
 }
 
 export async function syncGithubForUser(
-    user: any,
+    user: SyncableGithubUser,
     options: SyncGithubOptions = {}
 ): Promise<GithubSyncResult> {
     const minIntervalMs = options.minIntervalMs ?? DEFAULT_GITHUB_SYNC_INTERVAL_MS;
@@ -221,11 +293,15 @@ export async function syncGithubForUser(
           query($login: String!, $connectionDate: DateTime!, $now: DateTime!) {
             user(login: $login) {
               commitsSinceConnection: contributionsCollection(from: $connectionDate, to: $now) {
-                contributionCalendar {
-                  weeks {
-                    contributionDays {
-                      date
-                      contributionCount
+                totalCommitContributions
+                commitContributionsByRepository(maxRepositories: 100) {
+                  contributions(first: 100) {
+                    pageInfo {
+                      hasNextPage
+                    }
+                    nodes {
+                      occurredAt
+                      commitCount
                     }
                   }
                 }
@@ -269,26 +345,65 @@ export async function syncGithubForUser(
             throw new Error('Failed to query GitHub profile.');
         }
 
-        const contributionDays = jsonRes.data?.user?.commitsSinceConnection?.contributionCalendar?.weeks
-            ?.flatMap((week: any) => week?.contributionDays || [])
-            ?.filter((day: any) => typeof day?.date === 'string')
-            ?.map((day: any) => ({
-                date: day.date,
-                commits: Math.max(0, Number(day.contributionCount || 0)),
-            })) || [];
+        const commitsCollection = jsonRes.data?.user?.commitsSinceConnection;
+        const authoritativeCommitTotal = Math.max(0, Math.round(Number(commitsCollection?.totalCommitContributions || 0)));
+        const repoCommitContributions = Array.isArray(commitsCollection?.commitContributionsByRepository)
+            ? commitsCollection.commitContributionsByRepository
+            : [];
 
-        const commitsSinceConnection = contributionDays.reduce((sum: number, day: { commits: number }) => sum + day.commits, 0);
+        const commitDayMap = new Map<string, number>();
+        let contributionNodesCommitTotal = 0;
+        let hasPaginationTruncation = false;
+
+        for (const repoEntry of repoCommitContributions) {
+            const contributions = repoEntry?.contributions;
+            if (contributions?.pageInfo?.hasNextPage) {
+                hasPaginationTruncation = true;
+            }
+
+            const nodes = Array.isArray(contributions?.nodes) ? contributions.nodes : [];
+            for (const node of nodes) {
+                const commitCount = Math.max(0, Math.round(Number(node?.commitCount || 0)));
+                if (commitCount <= 0) continue;
+
+                const occurredAtMs = new Date(node.occurredAt).getTime();
+                if (!Number.isFinite(occurredAtMs)) continue;
+
+                const istDateKey = getIstDateKeyFromTimestamp(occurredAtMs);
+                if (!istDateKey) continue;
+
+                commitDayMap.set(istDateKey, (commitDayMap.get(istDateKey) || 0) + commitCount);
+                contributionNodesCommitTotal += commitCount;
+            }
+        }
+
+        const commitDays = Array.from(commitDayMap.entries())
+            .map(([date, commits]) => ({
+                date,
+                commits: Math.max(0, Math.round(commits)),
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+
+        const commitsSinceConnection = authoritativeCommitTotal;
         const newCommits = isFirstSync
             ? commitsSinceConnection
             : Math.max(0, commitsSinceConnection - previousCommitCheckpoint);
         const pointsEarned = newCommits * COMMIT_REWARD_POINTS;
         const authoritativeGithubPoints = commitsSinceConnection * COMMIT_REWARD_POINTS;
-
-        const updatedHistory = buildPointsHistoryFromContributionDays(
-            contributionDays,
-            connectionDate,
-            now
-        );
+        const canBuildCompleteDayHistory = !hasPaginationTruncation && contributionNodesCommitTotal === authoritativeCommitTotal;
+        const updatedHistory = canBuildCompleteDayHistory
+            ? buildPointsHistoryFromCommitDays(
+                commitDays,
+                connectionDate,
+                now,
+                authoritativeCommitTotal
+            )
+            : buildPointsHistoryFromSnapshots(
+                lockedUser.githubPointsHistory,
+                connectionDate,
+                now,
+                authoritativeCommitTotal
+            );
 
         if (lockedUser.points !== authoritativeGithubPoints) {
             lockedUser.points = authoritativeGithubPoints;
