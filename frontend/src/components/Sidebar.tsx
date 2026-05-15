@@ -9,6 +9,7 @@ const navItems = [
     { href: '/itime', label: 'iTime' },
     { href: '/workers', label: 'WOrKers' },
     { href: '/ideas', label: 'Ideas' },
+    { href: '/products', label: 'Products' },
     { href: '/ichain', label: 'Chain' },
     { href: '/sf-tracker', label: 'SF Tracker' },
     { href: '/settings', label: 'Settings' },
