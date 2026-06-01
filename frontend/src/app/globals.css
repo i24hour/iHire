@@ -345,3 +345,143 @@ body {
 }
 :root[data-theme='light'] .profile-card-glow { background: rgba(37, 99, 235, 0.12); }
 
+/* ===== Founder OS portfolio (PortfolioView) ===== */
+/* Dark tokens (default) */
+.folio {
+  --folio-bg: #050505;
+  --folio-panel: rgba(255, 255, 255, 0.025);
+  --folio-panel-hover: rgba(255, 255, 255, 0.05);
+  --folio-border: rgba(255, 255, 255, 0.1);
+  --folio-fg: #ededed;
+  --folio-muted: #8b8b92;
+  --folio-accent: #22c55e;
+  --folio-accent-strong: #16a34a;
+  --folio-grid: rgba(255, 255, 255, 0.045);
+  color: var(--folio-fg);
+}
+
+/* Light tokens — the current white theme */
+:root[data-theme='light'] .folio {
+  --folio-bg: #ffffff;
+  --folio-panel: #ffffff;
+  --folio-panel-hover: #f9fafb;
+  --folio-border: #e5e7eb;
+  --folio-fg: #0a0a0a;
+  --folio-muted: #6b7280;
+  --folio-accent: #16a34a;
+  --folio-accent-strong: #15803d;
+  --folio-grid: rgba(10, 10, 10, 0.05);
+}
+
+.folio-mono { font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace; }
+.folio-muted { color: var(--folio-muted); }
+.folio-accent-text { color: var(--folio-accent-strong); }
+.folio-headline { color: var(--folio-fg); }
+.folio-divider { border-color: var(--folio-border); }
+
+.folio-bg {
+  background-image:
+    linear-gradient(var(--folio-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--folio-grid) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 35%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 35%, transparent 80%);
+}
+
+.folio-card {
+  border-color: var(--folio-border);
+  background: var(--folio-panel);
+  transition: border-color 0.25s, background 0.25s, transform 0.25s;
+}
+.folio-card:hover { border-color: color-mix(in srgb, var(--folio-accent) 45%, var(--folio-border)); }
+
+.folio-card-strip {
+  background: linear-gradient(90deg, var(--folio-accent), transparent 70%);
+  opacity: 0.5;
+  transition: opacity 0.25s;
+}
+.folio-card:hover .folio-card-strip { opacity: 1; }
+
+.folio-icon {
+  border-color: var(--folio-border);
+  background: color-mix(in srgb, var(--folio-accent) 12%, transparent);
+  color: var(--folio-accent-strong);
+}
+.folio-avatar {
+  border-color: var(--folio-border);
+  background: color-mix(in srgb, var(--folio-accent) 10%, transparent);
+  color: var(--folio-fg);
+}
+
+.folio-badge {
+  border: 1px solid color-mix(in srgb, var(--folio-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--folio-accent) 14%, transparent);
+  color: var(--folio-accent-strong);
+}
+
+.folio-chip {
+  border-color: var(--folio-border);
+  background: color-mix(in srgb, var(--folio-fg) 4%, transparent);
+  color: var(--folio-muted);
+}
+
+.folio-link { color: var(--folio-muted); }
+.folio-link:hover { color: var(--folio-accent-strong); }
+
+.folio-cta {
+  background: var(--folio-accent);
+  color: #04140a;
+  border: 1px solid var(--folio-accent);
+  transition: filter 0.2s, transform 0.2s;
+}
+.folio-cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+.folio-btn-ghost {
+  border-color: var(--folio-border);
+  color: var(--folio-fg);
+  background: transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+.folio-btn-ghost:hover {
+  border-color: color-mix(in srgb, var(--folio-accent) 50%, var(--folio-border));
+  background: var(--folio-panel-hover);
+}
+
+.folio-dot {
+  background: var(--folio-accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--folio-accent) 70%, transparent);
+  animation: folio-pulse 1.8s ease-out infinite;
+}
+@keyframes folio-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--folio-accent) 60%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.folio-cursor::after {
+  content: '_';
+  margin-left: 2px;
+  animation: folio-blink 1.05s steps(1) infinite;
+}
+@keyframes folio-blink { 50% { opacity: 0; } }
+
+.folio-spinner { border-color: var(--folio-border); border-bottom-color: var(--folio-accent); }
+
+/* GitHub heatmap cells — dark palette by default */
+.folio-heat-0 { background: rgba(255, 255, 255, 0.06); }
+.folio-heat-1 { background: #0e4429; }
+.folio-heat-2 { background: #006d32; }
+.folio-heat-3 { background: #26a641; }
+.folio-heat-4 { background: #39d353; }
+
+/* GitHub heatmap cells — light (white theme) GitHub palette */
+:root[data-theme='light'] .folio-heat-0 { background: #ebedf0; }
+:root[data-theme='light'] .folio-heat-1 { background: #9be9a8; }
+:root[data-theme='light'] .folio-heat-2 { background: #40c463; }
+:root[data-theme='light'] .folio-heat-3 { background: #30a14e; }
+:root[data-theme='light'] .folio-heat-4 { background: #216e39; }
+
+@media (prefers-reduced-motion: reduce) {
+  .folio-dot, .folio-cursor::after, .folio-spinner { animation: none; }
+}
+
