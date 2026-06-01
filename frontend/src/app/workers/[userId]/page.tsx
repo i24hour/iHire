@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import dynamic from 'next/dynamic';
 import { LiveTimer } from '@/components/LiveTimer';
-import { getScoreAtTime } from '@/components/PerformanceChart';
+import { getScoreAtTime, type GithubPointsSnapshot, type ChainPointsSnapshot } from '@/lib/score';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -25,6 +25,7 @@ interface ITimeTask {
     enabled: boolean;
     completed: boolean;
     completedAt?: number;
+    cancelledAt?: number;
     targetTime?: number;
     isPublic?: boolean;
     milestones?: Milestone[];
@@ -54,6 +55,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         image: string | null;
         points?: number;
         githubPointsLastUpdatedAt?: string | null;
+        githubPointsHistory?: GithubPointsSnapshot[] | null;
+        chainPoints?: number;
+        chainPointsHistory?: ChainPointsSnapshot[] | null;
     } | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -61,6 +65,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
     const [scoreNow, setScoreNow] = useState(() => Date.now());
     const [gamificationPoints, setGamificationPoints] = useState(0);
     const [gamificationPointsLastUpdatedAt, setGamificationPointsLastUpdatedAt] = useState<string | null>(null);
+    const [githubPointsHistory, setGithubPointsHistory] = useState<GithubPointsSnapshot[] | null>(null);
+    const [chainPoints, setChainPoints] = useState(0);
+    const [chainPointsHistory, setChainPointsHistory] = useState<ChainPointsSnapshot[] | null>(null);
 
     const fetchTasks = useCallback(async () => {
         try {
@@ -75,6 +82,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                     setUserData(data.user);
                     setGamificationPoints(data.user.points || 0);
                     setGamificationPointsLastUpdatedAt(data.user.githubPointsLastUpdatedAt || null);
+                    setGithubPointsHistory(Array.isArray(data.user.githubPointsHistory) ? data.user.githubPointsHistory : null);
+                    setChainPoints(data.user.chainPoints || 0);
+                    setChainPointsHistory(Array.isArray(data.user.chainPointsHistory) ? data.user.chainPointsHistory : null);
                 }
             } else {
                 throw new Error('Failed to fetch tasks');
@@ -169,13 +179,14 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
-    const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
+    const activeTasksCount = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt).length, [tasks]);
+    const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
     const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
     const liveScore = useMemo(
-        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
-        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
+        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory),
+        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]
     );
+    const liveScoreColorClass = liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
 
     if (isLoading) {
         return (
@@ -258,7 +269,7 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
 
                     <div className="bg-black  rounded-2xl border border-white/10 p-6 flex flex-col justify-center">
                         <div className="text-xs uppercase tracking-wider font-semibold text-zinc-400 mb-1">Score</div>
-                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#4CAF50] truncate tracking-tight">
+                        <div className={`text-2xl sm:text-3xl lg:text-4xl font-bold truncate tracking-tight ${liveScoreColorClass}`}>
                             {liveScore.toFixed(2)}
                         </div>
                     </div>
@@ -270,6 +281,9 @@ export default function WorkerTasksPage({ params }: { params: Promise<{ userId: 
                         tasks={tasks}
                         gamificationPoints={gamificationPoints}
                         gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
+                        githubPointsHistory={githubPointsHistory}
+                        chainPoints={chainPoints}
+                        chainPointsHistory={chainPointsHistory}
                     />
                 </div>
 

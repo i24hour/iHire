@@ -4,6 +4,7 @@ export interface IChainMember {
     userId: string; // email or id from next-auth
     name: string;
     image?: string;
+    joinedAt?: number; // timestamp when user joined this chain
     isWorking: boolean;
     contributionTime: number; // total seconds
     lastStartedAt?: number; // timestamp
@@ -31,6 +32,7 @@ const ChainMemberSchema = new mongoose.Schema({
     userId: { type: String, required: true },
     name: { type: String, required: true },
     image: { type: String },
+    joinedAt: { type: Number },
     isWorking: { type: Boolean, default: false },
     contributionTime: { type: Number, default: 0 },
     lastStartedAt: { type: Number },

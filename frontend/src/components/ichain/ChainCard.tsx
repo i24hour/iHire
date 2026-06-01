@@ -15,6 +15,7 @@ interface ChainCardProps {
         members: any[];
         burstAt?: number;
         createdBy?: string;
+        createdAt?: string | Date;
     };
     rank?: number;
     onDelete?: (chainId: string) => void;
@@ -24,7 +25,7 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
     const { data: session } = useSession();
     const [isDeleting, setIsDeleting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
-    const activeMembers = chain.members.filter(m => m.isWorking).length;
+    const activeMembers = (chain.members || []).filter(m => m.isWorking).length;
     
     const canDelete = !chain.createdBy || chain.createdBy === session?.user?.email;
 
@@ -71,6 +72,27 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
         const s = seconds % 60;
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
+
+    const formatCreatedAt = (value?: string | Date) => {
+        if (!value) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+
+        return {
+            date: date.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+            }),
+            time: date.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            }),
+        };
+    };
+
+    const createdAt = formatCreatedAt(chain.createdAt);
 
     return (
         <Link href={`/ichain/${chain._id}`}>
@@ -136,6 +158,11 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
                             <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border mt-2 ${statusColors[chain.status]}`}>
                                 {chain.status}
                             </div>
+                            {createdAt && (
+                                <div className="mt-2 text-[11px] text-zinc-500">
+                                    Created {createdAt.date}, {createdAt.time}
+                                </div>
+                            )}
                         </div>
                         <div className="text-right">
                             <span className="block text-[10px] uppercase tracking-wider font-semibold text-zinc-500">Total Chain Time</span>
@@ -148,19 +175,19 @@ export function ChainCard({ chain, rank, onDelete }: ChainCardProps) {
                     <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <div className="flex -space-x-2">
-                                {chain.members.slice(0, 3).map((member, i) => (
+                                {(chain.members || []).slice(0, 3).map((member, i) => (
                                     <div key={i} className="w-8 h-8 rounded-full border-2 border-black bg-white/10 flex items-center justify-center text-[10px] text-white overflow-hidden">
-                                        {member.image ? <img src={member.image} alt="" /> : member.name[0]}
+                                        {member.image ? <img src={member.image} alt="" /> : (member.name || '?')[0]}
                                     </div>
                                 ))}
-                                {chain.members.length > 3 && (
+                                {(chain.members || []).length > 3 && (
                                     <div className="w-8 h-8 rounded-full border-2 border-black bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-400">
-                                        +{chain.members.length - 3}
+                                        +{(chain.members || []).length - 3}
                                     </div>
                                 )}
                             </div>
                             <span className="text-xs text-zinc-400">
-                                {activeMembers} / {chain.members.length} Active
+                                {activeMembers} / {(chain.members || []).length} Active
                             </span>
                         </div>
                         

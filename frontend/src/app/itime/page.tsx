@@ -6,7 +6,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
-import { getScoreAtTime } from '@/components/PerformanceChart';
+import { getScoreAtTime, type GithubPointsSnapshot, type ChainPointsSnapshot } from '@/lib/score';
 
 const PerformanceChart = dynamic(
     () => import('@/components/PerformanceChart').then(mod => mod.PerformanceChart),
@@ -25,15 +25,20 @@ interface ITimeTask {
     enabled: boolean;
     completed: boolean;
     completedAt?: number; // timestamp when completed
+    cancelledAt?: number;
     targetTime?: number; // target time in seconds
     autoResumeAt?: number; // scheduled automatic resume timestamp
     isPublic?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
     milestones?: Milestone[];
     events?: Array<{
         type: 'start' | 'pause' | 'complete';
         timestamp: number;
     }>;
 }
+
+const COMPLETED_TASKS_PAGE_SIZE = 10;
 
 interface Milestone {
     id: string;
@@ -47,7 +52,8 @@ interface Milestone {
 export default function ITimePage() {
     const { data: session, status } = useSession();
     const [tasks, setTasks] = useState<ITimeTask[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [hasLoadedTasksOnce, setHasLoadedTasksOnce] = useState(false);
+    const [hasLoadedProfileOnce, setHasLoadedProfileOnce] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
     const [selectedTask, setSelectedTask] = useState<ITimeTask | null>(null);
@@ -56,6 +62,7 @@ export default function ITimePage() {
     const [targetMinutes, setTargetMinutes] = useState('');
     const [showSignInModal, setShowSignInModal] = useState(false);
     const [showPauseOptions, setShowPauseOptions] = useState<string | null>(null);
+    const [completedTasksPage, setCompletedTasksPage] = useState(1);
     const [scoreNow, setScoreNow] = useState<number>(() => Date.now());
     const [isLightTheme, setIsLightTheme] = useState(false);
 
@@ -111,7 +118,7 @@ export default function ITimePage() {
             } catch (error) {
                 console.error('Failed to fetch tasks:', error);
             } finally {
-                setIsLoading(false);
+                setHasLoadedTasksOnce(true);
             }
         } else {
             // Load from localStorage for guest users
@@ -119,7 +126,7 @@ export default function ITimePage() {
                 const saved = localStorage.getItem('itime_tasks');
                 setTasks(saved ? JSON.parse(saved) : []);
             }
-            setIsLoading(false);
+            setHasLoadedTasksOnce(true);
         }
     }, [status]);
 
@@ -128,6 +135,9 @@ export default function ITimePage() {
     const [userProfile, setUserProfile] = useState<{ username?: string; image?: string }>({});
     const [gamificationPoints, setGamificationPoints] = useState(0);
     const [gamificationPointsLastUpdatedAt, setGamificationPointsLastUpdatedAt] = useState<string | null>(null);
+    const [githubPointsHistory, setGithubPointsHistory] = useState<GithubPointsSnapshot[] | null>(null);
+    const [chainPoints, setChainPoints] = useState(0);
+    const [chainPointsHistory, setChainPointsHistory] = useState<ChainPointsSnapshot[] | null>(null);
 
     const fetchUserProfile = useCallback(async () => {
         try {
@@ -140,25 +150,41 @@ export default function ITimePage() {
                 setGamificationPoints(data.points || 0);
             }
             setGamificationPointsLastUpdatedAt(data.githubPointsLastUpdatedAt || null);
+            setGithubPointsHistory(Array.isArray(data.githubPointsHistory) ? data.githubPointsHistory : null);
+            setChainPoints(data.chainPoints || 0);
+            setChainPointsHistory(Array.isArray(data.chainPointsHistory) ? data.chainPointsHistory : null);
         } catch (err) {
             console.error('Error fetching profile:', err);
+        } finally {
+            setHasLoadedProfileOnce(true);
         }
     }, []);
 
     // Initial load
     useEffect(() => {
+        if (status === 'loading') return;
+
+        setHasLoadedTasksOnce(false);
+        setHasLoadedProfileOnce(status !== 'authenticated');
+        if (status !== 'authenticated') {
+            setGamificationPoints(0);
+            setGamificationPointsLastUpdatedAt(null);
+            setGithubPointsHistory(null);
+            setChainPoints(0);
+            setChainPointsHistory(null);
+        }
         fetchTasks();
-        if (session?.user?.email) {
+        if (status === 'authenticated' && session?.user?.email) {
             fetchUserProfile();
         }
-    }, [fetchTasks, fetchUserProfile, session]);
+    }, [fetchTasks, fetchUserProfile, session?.user?.email, status]);
 
     useEffect(() => {
-        if (!session?.user?.email) return;
+        if (status !== 'authenticated' || !session?.user?.email) return;
 
         const interval = setInterval(() => {
             fetchUserProfile();
-        }, 60000);
+        }, 15000);
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
@@ -172,7 +198,7 @@ export default function ITimePage() {
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [fetchUserProfile, session]);
+    }, [fetchUserProfile, session?.user?.email, status]);
 
     // Click outside to close pause menu
     useEffect(() => {
@@ -203,13 +229,13 @@ export default function ITimePage() {
 
     // Save tasks - MongoDB for authenticated, localStorage for guest
     useEffect(() => {
-        if (isLoading) return;
+        if (!hasLoadedTasksOnce) return;
 
         if (status === 'unauthenticated' && typeof window !== 'undefined') {
             // Guest mode - save to localStorage
             localStorage.setItem('itime_tasks', JSON.stringify(tasks));
         }
-    }, [tasks, status, isLoading]);
+    }, [tasks, status, hasLoadedTasksOnce]);
 
     const handleAddTask = async () => {
         if (!newTitle.trim()) return;
@@ -533,14 +559,58 @@ export default function ITimePage() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    const tasksReady = status !== 'loading' && hasLoadedTasksOnce;
+    const scoreReady = tasksReady && (status !== 'authenticated' || hasLoadedProfileOnce);
     const totalTime = useMemo(() => tasks.reduce((sum, task) => sum + getElapsedSeconds(task), 0), [tasks, getElapsedSeconds]);
-    const liveScore = useMemo(
-        () => getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt),
-        [tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt]
+    const liveScore = useMemo<number | null>(
+        () => scoreReady
+            ? getScoreAtTime(tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory)
+            : null,
+        [scoreReady, tasks, scoreNow, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]
     );
-    const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed).length, [tasks]);
-    const pendingTasks = useMemo(() => tasks.filter((task) => !task.completed), [tasks]);
-    const completedTasks = useMemo(() => tasks.filter((task) => task.completed), [tasks]);
+    const liveScoreColorClass = liveScore !== null && liveScore < 0 ? 'text-red-500' : 'text-[#4CAF50]';
+    const activeTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt).length, [tasks]);
+    const pendingTasks = useMemo(() => tasks.filter((task) => task.enabled && !task.completed && !task.cancelledAt), [tasks]);
+    const completedTasks = useMemo(() => {
+        const getCompletedTimestamp = (task: ITimeTask): number => {
+            if (typeof task.completedAt === 'number' && Number.isFinite(task.completedAt)) {
+                return task.completedAt;
+            }
+
+            if (Array.isArray(task.events) && task.events.length > 0) {
+                const completionEvent = [...task.events].reverse().find((event) => event.type === 'complete');
+                if (completionEvent) return completionEvent.timestamp;
+            }
+
+            if (task.updatedAt) {
+                const updatedAtTs = new Date(task.updatedAt).getTime();
+                if (Number.isFinite(updatedAtTs)) return updatedAtTs;
+            }
+
+            if (task.createdAt) {
+                const createdAtTs = new Date(task.createdAt).getTime();
+                if (Number.isFinite(createdAtTs)) return createdAtTs;
+            }
+
+            return task.startTime || 0;
+        };
+
+        return tasks
+            .filter((task) => task.completed)
+            .sort((a, b) => getCompletedTimestamp(b) - getCompletedTimestamp(a));
+    }, [tasks]);
+    const completedTasksTotalPages = useMemo(
+        () => Math.max(1, Math.ceil(completedTasks.length / COMPLETED_TASKS_PAGE_SIZE)),
+        [completedTasks.length]
+    );
+    const paginatedCompletedTasks = useMemo(() => {
+        const startIndex = (completedTasksPage - 1) * COMPLETED_TASKS_PAGE_SIZE;
+        return completedTasks.slice(startIndex, startIndex + COMPLETED_TASKS_PAGE_SIZE);
+    }, [completedTasks, completedTasksPage]);
+
+    useEffect(() => {
+        setCompletedTasksPage((prev) => Math.min(prev, completedTasksTotalPages));
+    }, [completedTasksTotalPages]);
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-black">
@@ -599,32 +669,51 @@ export default function ITimePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-gray-400'}`}>Total Tasks</div>
-                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{tasks.length}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
+                            {tasksReady ? tasks.length : <span className={`inline-block h-8 md:h-10 w-14 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
 
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Running</div>
-                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{activeTasks}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
+                            {tasksReady ? activeTasks : <span className={`inline-block h-8 md:h-10 w-14 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
 
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Completed</div>
-                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>{completedTasks.length}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${isLightTheme ? 'text-zinc-900' : 'text-white'}`}>
+                            {tasksReady ? completedTasks.length : <span className={`inline-block h-8 md:h-10 w-14 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
 
                     <div className={`rounded-2xl border p-4 md:p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
                         <div className={`text-sm mb-2 ${isLightTheme ? 'text-zinc-700' : 'text-zinc-300'}`}>Live Score</div>
-                        <div className="text-2xl md:text-4xl font-bold text-[#4CAF50]">{liveScore.toFixed(2)}</div>
+                        <div className={`text-2xl md:text-4xl font-bold ${liveScoreColorClass}`}>
+                            {scoreReady && liveScore !== null
+                                ? liveScore.toFixed(2)
+                                : <span className={`inline-block h-8 md:h-10 w-28 animate-pulse rounded ${isLightTheme ? 'bg-black/10' : 'bg-white/10'}`} />}
+                        </div>
                     </div>
                 </div>
 
                 {/* Performance Chart */}
                 <div className="mb-8 w-full max-w-none">
-                    <PerformanceChart
-                        tasks={tasks}
-                        gamificationPoints={gamificationPoints}
-                        gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
-                    />
+                    {scoreReady ? (
+                        <PerformanceChart
+                            tasks={tasks}
+                            gamificationPoints={gamificationPoints}
+                            gamificationPointsLastUpdatedAt={gamificationPointsLastUpdatedAt}
+                            githubPointsHistory={githubPointsHistory}
+                            chainPoints={chainPoints}
+                            chainPointsHistory={chainPointsHistory}
+                        />
+                    ) : (
+                        <div className={`h-[500px] rounded-2xl border p-6 ${isLightTheme ? 'bg-black/5 border-black/10' : 'bg-black border-white/10'}`}>
+                            <div className={`h-full w-full rounded-xl animate-pulse ${isLightTheme ? 'bg-black/5' : 'bg-white/5'}`} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Add Task Form */}
@@ -660,7 +749,11 @@ export default function ITimePage() {
                 <div className="bg-black  rounded-2xl border border-white/10 p-6 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4">Active Tasks</h2>
 
-                    {pendingTasks.length === 0 ? (
+                    {!tasksReady ? (
+                        <div className="text-center py-12">
+                            <div className="text-zinc-500 text-sm">Loading tasks...</div>
+                        </div>
+                    ) : pendingTasks.length === 0 ? (
                         <div className="text-center py-12">
                             <div className="text-6xl mb-4">⏱️</div>
                             <div className="text-zinc-400 text-lg mb-2">No active tasks</div>
@@ -802,9 +895,26 @@ export default function ITimePage() {
                 {/* Completed Tasks */}
                 {completedTasks.length > 0 && (
                     <div className="bg-black  rounded-2xl border border-white/10 p-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Completed Tasks</h2>
+                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h2 className="text-lg font-semibold text-white">Completed Tasks</h2>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {Array.from({ length: completedTasksTotalPages }, (_, idx) => idx + 1).map((pageNo) => (
+                                    <LiquidButton
+                                        key={pageNo}
+                                        size="sm"
+                                        onClick={() => setCompletedTasksPage(pageNo)}
+                                        className={`min-w-[36px] px-3 ${completedTasksPage === pageNo
+                                                ? 'text-white border-white/30 bg-white/10'
+                                                : 'text-zinc-400 hover:text-white'
+                                            }`}
+                                    >
+                                        {pageNo}
+                                    </LiquidButton>
+                                ))}
+                            </div>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {completedTasks.map((task) => (
+                            {paginatedCompletedTasks.map((task) => (
                                 <div
                                     key={task.id}
                                     className="bg-white/5 border border-white/20 rounded-lg p-4 space-y-3 opacity-75"

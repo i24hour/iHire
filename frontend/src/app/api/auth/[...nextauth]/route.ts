@@ -109,6 +109,7 @@ export const authOptions: NextAuthOptions = {
                             userUpdate.$unset = {
                                 lastGithubSyncAt: '',
                                 githubPointsLastUpdatedAt: '',
+                                githubPointsHistory: '',
                                 githubSyncLockUntil: '',
                             };
                         }

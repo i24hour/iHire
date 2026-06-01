@@ -4,54 +4,10 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Chain from '@/models/IChain';
 import User from '@/models/User';
+import { enforceChainVisitWindow } from '@/lib/ichain';
+import { recomputeChainPointsForUsers } from '@/lib/chain-points';
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const VISIT_WINDOW_MS = 3 * 60 * 60 * 1000;
-
-const enforceVisitWindow = (chain: any, now: number) => {
-    let hasTimedOutMember = false;
-    let earliestTimeoutAt = now;
-
-    chain.members = chain.members.map((member: any) => {
-        if (!member.isWorking || !member.lastStartedAt) return member;
-
-        const lastVisitAt = member.lastVisitAt || member.lastStartedAt;
-        const timeoutAt = lastVisitAt + VISIT_WINDOW_MS;
-        if (now <= timeoutAt) return member;
-
-        const contributedUntil = Math.max(member.lastStartedAt, timeoutAt);
-        const elapsed = Math.floor((contributedUntil - member.lastStartedAt) / 1000);
-        if (elapsed > 0) {
-            member.contributionTime += elapsed;
-        }
-
-        member.isWorking = false;
-        member.lastStartedAt = undefined;
-        hasTimedOutMember = true;
-        earliestTimeoutAt = Math.min(earliestTimeoutAt, timeoutAt);
-        return member;
-    });
-
-    if (hasTimedOutMember) {
-        const activeMembers = chain.members.filter((member: any) => member.isWorking).length;
-        if (activeMembers === 0 && chain.status === 'Active') {
-            if (chain.lastStartedAt) {
-                const chainElapsed = Math.floor((Math.max(chain.lastStartedAt, earliestTimeoutAt) - chain.lastStartedAt) / 1000);
-                if (chainElapsed > 0) {
-                    chain.totalTime += chainElapsed;
-                    if (chain.totalTime > (chain.maxTime || 0)) {
-                        chain.maxTime = chain.totalTime;
-                    }
-                }
-            }
-            chain.status = 'Burst';
-            chain.burstAt = earliestTimeoutAt;
-            chain.lastStartedAt = undefined;
-        }
-    }
-
-    return hasTimedOutMember;
-};
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +27,12 @@ export async function GET(
 
         const now = Date.now();
         let shouldPersist = false;
+        let shouldRecomputeChainPoints = false;
+
+        if (chainDoc && enforceChainVisitWindow(chainDoc, now)) {
+            shouldPersist = true;
+            shouldRecomputeChainPoints = true;
+        }
 
         if (session?.user?.email && chainDoc?.members) {
             const visitingMember = chainDoc.members.find((member: any) => member.userId === session.user?.email);
@@ -80,12 +42,39 @@ export async function GET(
             }
         }
 
-        if (chainDoc && enforceVisitWindow(chainDoc, now)) {
-            shouldPersist = true;
+        if (shouldPersist && chainDoc?.members) {
+            if (chainDoc.status === 'Active' && chainDoc.lastStartedAt) {
+                const chainElapsed = Math.floor((now - chainDoc.lastStartedAt) / 1000);
+                if (chainElapsed > 0) {
+                    chainDoc.totalTime += chainElapsed;
+                    if (chainDoc.totalTime > (chainDoc.maxTime || 0)) {
+                        chainDoc.maxTime = chainDoc.totalTime;
+                    }
+                    chainDoc.lastStartedAt = now;
+                }
+            }
+
+            let memberContributionUpdated = false;
+            chainDoc.members = chainDoc.members.map((member: any) => {
+                if (!member.isWorking || !member.lastStartedAt) return member;
+                const elapsed = Math.floor((now - member.lastStartedAt) / 1000);
+                if (elapsed <= 0) return member;
+                member.contributionTime += elapsed;
+                member.lastStartedAt = now;
+                memberContributionUpdated = true;
+                return member;
+            });
+
+            if (memberContributionUpdated) {
+                shouldRecomputeChainPoints = true;
+            }
         }
 
         if (shouldPersist) {
             await chainDoc.save();
+            if (shouldRecomputeChainPoints) {
+                await recomputeChainPointsForUsers((chainDoc.members || []).map((member: any) => member.userId));
+            }
             const refreshed = chainDoc.toObject();
             chain.status = refreshed.status;
             chain.totalTime = refreshed.totalTime;
@@ -184,6 +173,7 @@ export async function PUT(
                 userId: userId,
                 name: userToAdd?.username || userId.split('@')[0],
                 image: userToAdd?.image || null,
+                joinedAt: Date.now(),
                 isWorking: false,
                 contributionTime: 0,
                 lastVisitAt: Date.now(),
@@ -200,7 +190,7 @@ export async function PUT(
         }
 
         const now = Date.now();
-        enforceVisitWindow(chain, now);
+        enforceChainVisitWindow(chain, now);
         const member = chain.members[memberIndex];
 
         // Calculation logic
@@ -270,6 +260,7 @@ export async function PUT(
         }
 
         await chain.save();
+        await recomputeChainPointsForUsers((chain.members || []).map((member: any) => member.userId));
         return NextResponse.json({ chain });
     } catch (error) {
         console.error('Error updating chain/work status:', error);

@@ -23,6 +23,22 @@ export default function IChainPage() {
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    const formatCreatedAt = (value?: string | Date) => {
+        if (!value) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+
+        return `${date.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        })}, ${date.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+        })}`;
+    };
+
     const fetchChains = async () => {
         try {
             const response = await fetch('/api/ichain');
@@ -63,7 +79,7 @@ export default function IChainPage() {
                     {/* Header Section */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                         <div className="space-y-2">
-                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">iChain</h1>
+                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">Chain</h1>
                             <p className="text-zinc-400 text-lg">Collaborative productivity chains where progress continues as long as someone is working.</p>
                         </div>
                         <LiquidButton 
@@ -108,8 +124,8 @@ export default function IChainPage() {
                             </div>
                         ) : (() => {
                             const myChains = chains
-                                .filter(chain => chain.members.some((m: any) => m.userId === session?.user?.email))
-                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                                .filter(chain => (chain.members || []).some((m: any) => m.userId === session?.user?.email))
+                                .sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0));
                                 
                             const displayChains = activeTab === 'my' ? myChains : chains;
 
@@ -165,7 +181,7 @@ export default function IChainPage() {
                                                         </button>
                                                     </div>
                                                     <p className="text-sm text-zinc-400">
-                                                        {chain.members.length} Members • Status: {chain.status === 'Burst' ? <span className="text-red-500 font-medium tracking-wide">Burst</span> : chain.status === 'Active' ? <span className="text-emerald-500 font-medium tracking-wide">Active</span> : <span className="text-amber-500 font-medium tracking-wide">Idle</span>}
+                                                        {(chain.members || []).length} Members • Status: {chain.status === 'Burst' ? <span className="text-red-500 font-medium tracking-wide">Burst</span> : chain.status === 'Active' ? <span className="text-emerald-500 font-medium tracking-wide">Active</span> : <span className="text-amber-500 font-medium tracking-wide">Idle</span>}
                                                     </p>
                                                 </div>
                                             </div>
@@ -174,6 +190,11 @@ export default function IChainPage() {
                                                 <p className="text-2xl font-mono text-white tracking-widest bg-white/5 px-4 py-2 rounded-lg border border-white/10 inline-block">
                                                     {formatTime(chain.maxTime || chain.totalTime || 0)}
                                                 </p>
+                                                {formatCreatedAt(chain.createdAt) && (
+                                                    <p className="text-xs text-zinc-500 mt-2">
+                                                        Created {formatCreatedAt(chain.createdAt)}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     ))}

@@ -232,6 +232,22 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    const formatCreatedAt = (value?: string | Date) => {
+        if (!value) return null;
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return null;
+
+        return `${date.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        })}, ${date.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+        })}`;
+    };
+
     // Recursive component to render the tree
     const renderNodeTree = (parentId: string | null = null) => {
         const children = chain.members.filter((m: any) => m.parentId === parentId || (!m.parentId && parentId === null && m.userId === chain.createdBy));
@@ -356,7 +372,7 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                     <div className="space-y-4">
                         <Link href="/ichain" className="text-zinc-500 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                            Back to iChains
+                            Back to Chains
                         </Link>
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">{chain.name}</h1>
                         <div className="flex items-center gap-4">
@@ -379,6 +395,11 @@ export default function ChainDetailPage({ params }: { params: Promise<{ chainId:
                                 </a>
                             )}
                         </div>
+                        {formatCreatedAt(chain.createdAt) && (
+                            <p className="text-xs text-zinc-500">
+                                Created {formatCreatedAt(chain.createdAt)}
+                            </p>
+                        )}
                         <p className="text-xs text-zinc-500 max-w-xl">
                             Timer rule: har 3 ghante ke block mein chain page par kam se kam 1 visit zaroori hai. Visit miss hone par running member stop hoga; agar sab stop ho gaye toh chain auto-burst ho jayegi.
                         </p>

@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import ITimeTask from '@/models/ITimeTask';
 import User from '@/models/User';
 import { syncGithubForUserByEmail } from '@/lib/github-sync';
+import { autoCancelExpiredActiveTasks } from '@/lib/itime-runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ export async function GET() {
         }
 
         await connectDB();
+        await autoCancelExpiredActiveTasks();
 
         if (session?.user?.email) {
             try {
@@ -66,7 +68,10 @@ export async function GET() {
                 username: u.username,
                 image: u.image,
                 points: u.points || 0,
-                githubPointsLastUpdatedAt: u.githubPointsLastUpdatedAt || u.githubConnectedAt || null
+                githubPointsLastUpdatedAt: u.githubPointsLastUpdatedAt || u.githubConnectedAt || null,
+                githubPointsHistory: u.githubPointsHistory || [],
+                chainPoints: u.chainPoints || 0,
+                chainPointsHistory: u.chainPointsHistory || []
             });
         });
 
@@ -89,7 +94,10 @@ export async function GET() {
                     lastActive: task.updatedAt || new Date(0),
                     tasks: [], // Provide tasks to frontend for precise score calculation
                     gamificationPoints: userData?.points || 0,
-                    gamificationPointsLastUpdatedAt: userData?.githubPointsLastUpdatedAt || null
+                    gamificationPointsLastUpdatedAt: userData?.githubPointsLastUpdatedAt || null,
+                    githubPointsHistory: userData?.githubPointsHistory || [],
+                    chainPoints: userData?.chainPoints || 0,
+                    chainPointsHistory: userData?.chainPointsHistory || []
                 });
             }
 

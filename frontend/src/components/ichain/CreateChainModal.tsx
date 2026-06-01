@@ -20,9 +20,9 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
     const [isCheckingMember, setIsCheckingMember] = useState(false);
     const [memberError, setMemberError] = useState('');
 
-    if (!isOpen) return null;
-
     useEffect(() => {
+        if (!isOpen) return;
+
         const fetchSuggestions = async () => {
             const query = memberInput.trim();
             if (!query) {
@@ -49,7 +49,9 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
 
         const timeoutId = setTimeout(fetchSuggestions, 300);
         return () => clearTimeout(timeoutId);
-    }, [memberInput]);
+    }, [memberInput, isOpen]);
+
+    if (!isOpen) return null;
 
     const handleAddMember = async () => {
         const identifier = memberInput.trim();
@@ -129,7 +131,7 @@ export function CreateChainModal({ isOpen, onClose, onChainCreated }: CreateChai
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-white">Create New iChain</h2>
+                    <h2 className="text-xl font-bold text-white">Create New Chain</h2>
                     <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

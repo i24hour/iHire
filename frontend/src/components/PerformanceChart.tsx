@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { createChart, ColorType, CandlestickSeries, LineSeries, BaselineSeries, type IChartApi, type ISeriesApi, type CandlestickData, type LineData, type BaselineData, type Time, LineStyle } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries, BaselineSeries, type IChartApi, type ISeriesApi, type CandlestickData, type LineData, type BaselineData, type Time, LineStyle } from 'lightweight-charts';
+import { getScoreAtTime, type GithubPointsSnapshot, type ChainPointsSnapshot } from '@/lib/score';
 
 export interface ChartEvent {
     type: 'start' | 'pause' | 'complete';
@@ -22,29 +23,31 @@ interface PerformanceChartProps {
     tasks: ChartTask[];
     gamificationPoints?: number;
     gamificationPointsLastUpdatedAt?: Date | string | number | null;
+    githubPointsHistory?: GithubPointsSnapshot[] | null;
+    chainPoints?: number;
+    chainPointsHistory?: ChainPointsSnapshot[] | null;
 }
 
-type ChartType = 'line' | 'candle';
+type ChartType = 'line' | 'candle' | 'daily';
 type CandleInterval = '1m' | '5m' | '10m' | '15m' | '1h' | '1d';
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const IDLE_GRACE_SECONDS = 8 * 60;
-const IDLE_BASE_PENALTY_RATE_PER_SEC = 0.0002;
-const LONG_IDLE_THRESHOLD_SECONDS = 45 * 60;
-const LONG_IDLE_PENALTY_RATE_PER_SEC = 0.00035;
 
-function calculateIdlePenalty(idleMs: number): number {
-    const idleSeconds = Math.max(0, idleMs / 1000);
-    const effectiveIdleSeconds = Math.max(0, idleSeconds - IDLE_GRACE_SECONDS);
+type DailyScoreDay = {
+    dateKey: string;
+    timestamp: number;
+    value: number;
+    level: number;
+    dayOfWeek: number;
+    monthLabel: string;
+    formattedDate: string;
+};
 
-    if (effectiveIdleSeconds === 0) return 0;
-
-    const baseBucketSeconds = Math.min(effectiveIdleSeconds, LONG_IDLE_THRESHOLD_SECONDS);
-    const longIdleSeconds = Math.max(0, effectiveIdleSeconds - LONG_IDLE_THRESHOLD_SECONDS);
-
-    return (baseBucketSeconds * IDLE_BASE_PENALTY_RATE_PER_SEC)
-        + (longIdleSeconds * LONG_IDLE_PENALTY_RATE_PER_SEC);
-}
+type DailyScoreWeek = {
+    weekStart: number;
+    monthLabel?: string;
+    days: Array<DailyScoreDay | null>;
+};
 
 const getIntervalMs = (interval: CandleInterval) => {
     switch (interval) {
@@ -77,7 +80,74 @@ function getNext5PmIstTimestamp(referenceTime: number): number {
     return getMostRecent5PmIstTimestamp(referenceTime) + DAY_MS;
 }
 
+function getIstDayStart(timestamp: number): number {
+    const istDate = new Date(timestamp + IST_OFFSET_MS);
+    return Date.UTC(
+        istDate.getUTCFullYear(),
+        istDate.getUTCMonth(),
+        istDate.getUTCDate(),
+        0,
+        0,
+        0,
+        0
+    ) - IST_OFFSET_MS;
+}
 
+function formatIstDate(timestamp: number): string {
+    return new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(new Date(timestamp));
+}
+
+function formatIstMonth(timestamp: number): string {
+    return new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        month: 'short',
+    }).format(new Date(timestamp));
+}
+
+function getDailyScoreClass(value: number, level: number, isLightTheme: boolean): string {
+    if (Math.abs(value) < 0.005 || level === 0) {
+        return isLightTheme
+            ? 'bg-[#ebedf0] hover:bg-[#d8dee4]'
+            : 'bg-[#161b22] hover:bg-[#21262d]';
+    }
+
+    if (value > 0) {
+        const colors = isLightTheme
+            ? [
+                'bg-[#9be9a8] hover:bg-[#7ee787]',
+                'bg-[#40c463] hover:bg-[#2da44e]',
+                'bg-[#30a14e] hover:bg-[#238636]',
+                'bg-[#216e39] hover:bg-[#1a5d32]',
+            ]
+            : [
+                'bg-[#0e4429] hover:bg-[#006d32]',
+                'bg-[#006d32] hover:bg-[#26a641]',
+                'bg-[#26a641] hover:bg-[#39d353]',
+                'bg-[#39d353] hover:bg-[#56d364]',
+            ];
+        return colors[level - 1] || colors[colors.length - 1];
+    }
+
+    const colors = isLightTheme
+        ? [
+            'bg-[#ffaba8] hover:bg-[#ff938a]',
+            'bg-[#ff7b72] hover:bg-[#f85149]',
+            'bg-[#da3633] hover:bg-[#cf222e]',
+            'bg-[#a40e26] hover:bg-[#82071e]',
+        ]
+        : [
+            'bg-[#4c0519] hover:bg-[#7f1d1d]',
+            'bg-[#7f1d1d] hover:bg-[#b91c1c]',
+            'bg-[#dc2626] hover:bg-[#ef4444]',
+            'bg-[#ff5a5f] hover:bg-[#ff7378]',
+        ];
+    return colors[level - 1] || colors[colors.length - 1];
+}
 
 function getFocusedRange(values: number[], referenceValue?: number): { minValue: number; maxValue: number } | null {
     if (!values.length) return null;
@@ -302,95 +372,6 @@ function getAllActiveIntervals(tasks: ChartTask[], t: number) {
     return allIntervals;
 }
 
-function getPointsCheckpointTimestamp(value?: Date | string | number | null): number | null {
-    if (value === null || value === undefined) return null;
-
-    const timestamp = value instanceof Date
-        ? value.getTime()
-        : typeof value === 'number'
-            ? value
-            : new Date(value).getTime();
-
-    return Number.isNaN(timestamp) ? null : timestamp;
-}
-
-export function getScoreAtTime(
-    tasks: ChartTask[],
-    t: number,
-    gamificationPoints: number = 0,
-    gamificationPointsLastUpdatedAt?: Date | string | number | null
-): number {
-    const allIntervals = getAllActiveIntervals(tasks, t);
-    allIntervals.sort((a, b) => a.start - b.start);
-
-    // Merge active intervals
-    const mergedActive: { start: number; end: number }[] = [];
-    for (const iv of allIntervals) {
-        if (mergedActive.length === 0) {
-            mergedActive.push({ ...iv });
-        } else {
-            const last = mergedActive[mergedActive.length - 1];
-            if (iv.start <= last.end) {
-                last.end = Math.max(last.end, iv.end);
-            } else {
-                mergedActive.push({ ...iv });
-            }
-        }
-    }
-
-    // Fixed Continuous Penalty rule: only applies from April 1, 2026 IST onwards.
-    const IST_OFFSET_MS = 5.5 * 3600 * 1000;
-    const APRIL_1_2026_IST = Date.UTC(2026, 3, 1, 0, 0, 0, 0) - IST_OFFSET_MS;
-    const penaltyWindowStart = APRIL_1_2026_IST; // Constant date window start!
-
-    // Find strictly idle periods within the penalty window (penaltyWindowStart -> t)
-    const idleIntervals: { start: number; end: number }[] = [];
-    let currentT = penaltyWindowStart;
-
-    for (const active of mergedActive) {
-        if (active.end <= penaltyWindowStart) continue;
-        if (active.start > currentT) {
-            idleIntervals.push({ start: currentT, end: Math.min(active.start, t) });
-        }
-        currentT = Math.max(currentT, active.end);
-        if (currentT >= t) break;
-    }
-    if (currentT < t) {
-        idleIntervals.push({ start: currentT, end: t });
-    }
-
-    // Accumulate penalty iteratively, locking penalty if the "visible score" goes to 0
-    const pointsCheckpoint = getPointsCheckpointTimestamp(gamificationPointsLastUpdatedAt);
-    let p_accum = 0;
-    for (const idle of idleIntervals) {
-        const segments = pointsCheckpoint && pointsCheckpoint > idle.start && pointsCheckpoint < idle.end
-            ? [
-                { start: idle.start, end: pointsCheckpoint },
-                { start: pointsCheckpoint, end: idle.end }
-            ]
-            : [idle];
-
-        for (const segment of segments) {
-            const includeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || segment.start >= pointsCheckpoint);
-            const s = computeBaseScore(tasks, segment.start) + (includeGithubPoints ? gamificationPoints : 0);
-            const v = Math.max(0, s - p_accum);
-
-            // Slow decay: brief breaks are free, then apply gentle idle drain.
-            const rawPenalty = calculateIdlePenalty(segment.end - segment.start);
-
-            // Penalty can only drain existing visible points at this checkpoint.
-            const actualPenalty = Math.min(rawPenalty, v);
-            p_accum += actualPenalty;
-        }
-    }
-
-    const activeGithubPoints = gamificationPoints > 0 && (!pointsCheckpoint || t >= pointsCheckpoint)
-        ? gamificationPoints
-        : 0;
-    const finalVisibleScore = computeBaseScore(tasks, t) + activeGithubPoints;
-    return Math.round(Math.max(0, finalVisibleScore - p_accum) * 100) / 100;
-}
-
 function snapToInterval(timestamp: number, interval: CandleInterval): number {
     const d = new Date(timestamp);
     if (interval === '1m') {
@@ -415,15 +396,23 @@ function snapToInterval(timestamp: number, interval: CandleInterval): number {
 export function PerformanceChart({
     tasks,
     gamificationPoints = 0,
-    gamificationPointsLastUpdatedAt = null
+    gamificationPointsLastUpdatedAt = null,
+    githubPointsHistory = null,
+    chainPoints = 0,
+    chainPointsHistory = null
 }: PerformanceChartProps) {
-    const [chartType, setChartType] = useState<ChartType>('line');
+    const [chartType, setChartType] = useState<ChartType>('daily');
     const [interval, setIntervalVal] = useState<CandleInterval>('15m');
     const [isLightTheme, setIsLightTheme] = useState(false);
     const [referenceNow, setReferenceNow] = useState(() => Date.now());
     const chartContainerRef = useRef<HTMLDivElement>(null);
+    const dailyPanelRef = useRef<HTMLDivElement>(null);
+    const dailyScrollRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | ISeriesApi<'Baseline'> | null>(null);
+    const [hoveredDay, setHoveredDay] = useState<DailyScoreDay | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 240, y: 120 });
+    const [isMobileViewport, setIsMobileViewport] = useState(false);
 
     useEffect(() => {
         const root = document.documentElement;
@@ -435,6 +424,16 @@ export function PerformanceChart({
         const observer = new MutationObserver(syncTheme);
         observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
         return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        const syncViewport = () => {
+            setIsMobileViewport(window.innerWidth < 768);
+        };
+
+        syncViewport();
+        window.addEventListener('resize', syncViewport);
+        return () => window.removeEventListener('resize', syncViewport);
     }, []);
 
     useEffect(() => {
@@ -464,8 +463,8 @@ export function PerformanceChart({
     }, [referenceNow]);
 
     const previousCloseValue = useMemo(() => {
-        return getScoreAtTime(tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt);
-    }, [tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt]);
+        return getScoreAtTime(tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+    }, [tasks, previousCloseTimestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]);
 
     // Generate OHLC data
     const chartData = useMemo(() => {
@@ -499,8 +498,8 @@ export function PerformanceChart({
             const T_end = Math.min(now, startTime + ((i + 1) * intervalMs));
             if (T_start >= now) break;
 
-            let open = getScoreAtTime(tasks, T_start, gamificationPoints, gamificationPointsLastUpdatedAt);
-            let close = getScoreAtTime(tasks, T_end, gamificationPoints, gamificationPointsLastUpdatedAt);
+            let open = getScoreAtTime(tasks, T_start, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+            let close = getScoreAtTime(tasks, T_end, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
             let high = Math.max(open, close);
             let low = Math.min(open, close);
 
@@ -509,8 +508,8 @@ export function PerformanceChart({
                 if (task.events) {
                     for (const ev of task.events) {
                         if (ev.timestamp > T_start && ev.timestamp <= T_end) {
-                            const val = getScoreAtTime(tasks, ev.timestamp, gamificationPoints, gamificationPointsLastUpdatedAt);
-                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1, gamificationPoints, gamificationPointsLastUpdatedAt);
+                            const val = getScoreAtTime(tasks, ev.timestamp, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+                            const valBefore = getScoreAtTime(tasks, ev.timestamp - 1, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
                             high = Math.max(high, val, valBefore);
                             low = Math.min(low, val, valBefore);
                         }
@@ -541,10 +540,112 @@ export function PerformanceChart({
         }
 
         return { candleData, lineData, baselineData };
-    }, [tasks, interval, gamificationPoints, gamificationPointsLastUpdatedAt]);
+    }, [tasks, interval, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]);
+
+    const dailyScoreData = useMemo(() => {
+        const now = Date.now();
+        const todayStart = getIstDayStart(now);
+        const firstVisibleDay = todayStart - (364 * DAY_MS);
+        const firstDayOfWeek = new Date(firstVisibleDay + IST_OFFSET_MS).getUTCDay();
+        const gridStart = firstVisibleDay - (firstDayOfWeek * DAY_MS);
+        const rawDays: DailyScoreDay[] = [];
+
+        for (let dayStart = gridStart; dayStart <= todayStart; dayStart += DAY_MS) {
+            if (dayStart < firstVisibleDay) continue;
+
+            const dayEnd = Math.min(dayStart + DAY_MS, now);
+            const startScore = getScoreAtTime(tasks, dayStart, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+            const endScore = getScoreAtTime(tasks, dayEnd, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
+            const value = Math.round((endScore - startScore) * 100) / 100;
+            const istDate = new Date(dayStart + IST_OFFSET_MS);
+
+            rawDays.push({
+                dateKey: new Date(dayStart).toISOString(),
+                timestamp: dayStart,
+                value,
+                level: 0,
+                dayOfWeek: istDate.getUTCDay(),
+                monthLabel: formatIstMonth(dayStart),
+                formattedDate: formatIstDate(dayStart),
+            });
+        }
+
+        const maxPositive = Math.max(0, ...rawDays.map((day) => day.value));
+        const maxNegative = Math.max(0, ...rawDays.map((day) => Math.abs(Math.min(0, day.value))));
+        const days = rawDays.map((day) => {
+            const magnitude = Math.abs(day.value);
+            const maxMagnitude = day.value >= 0 ? maxPositive : maxNegative;
+            const level = magnitude < 0.005 || maxMagnitude === 0
+                ? 0
+                : Math.min(4, Math.max(1, Math.ceil((magnitude / maxMagnitude) * 4)));
+            return { ...day, level };
+        });
+
+        const dayMap = new Map(days.map((day) => [day.timestamp, day]));
+        const weeks: DailyScoreWeek[] = [];
+
+        for (let weekStart = gridStart; weekStart <= todayStart; weekStart += 7 * DAY_MS) {
+            const weekDays: Array<DailyScoreDay | null> = [];
+            for (let offset = 0; offset < 7; offset++) {
+                const day = weekStart + (offset * DAY_MS);
+                weekDays.push(dayMap.get(day) || null);
+            }
+
+            const firstRealDay = weekDays.find(Boolean);
+            const previousWeekFirstDay = weeks[weeks.length - 1]?.days.find(Boolean);
+            const monthLabel = firstRealDay && (!previousWeekFirstDay || firstRealDay.monthLabel !== previousWeekFirstDay.monthLabel)
+                ? firstRealDay.monthLabel
+                : undefined;
+
+            weeks.push({ weekStart, monthLabel, days: weekDays });
+        }
+
+        const positiveTotal = days.reduce((sum, day) => sum + Math.max(0, day.value), 0);
+        const negativeTotal = days.reduce((sum, day) => sum + Math.min(0, day.value), 0);
+        const netTotal = positiveTotal + negativeTotal;
+
+        return {
+            weeks,
+            positiveTotal: Math.round(positiveTotal * 100) / 100,
+            negativeTotal: Math.round(negativeTotal * 100) / 100,
+            netTotal: Math.round(netTotal * 100) / 100,
+        };
+    }, [tasks, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory, referenceNow]);
+
+    const updateDailyTooltip = (event: React.MouseEvent<HTMLElement>, day: DailyScoreDay) => {
+        const rect = dailyPanelRef.current?.getBoundingClientRect();
+        if (rect) {
+            const x = Math.min(Math.max(event.clientX - rect.left, 130), rect.width - 130);
+            const y = Math.min(Math.max(event.clientY - rect.top - 42, 74), rect.height - 64);
+            setTooltipPosition({ x, y });
+        }
+        setHoveredDay(day);
+    };
+
+    useEffect(() => {
+        if (chartType !== 'daily' || !isMobileViewport) return;
+        const scrollEl = dailyScrollRef.current;
+        if (!scrollEl) return;
+
+        // On phones, open the heatmap from the most recent weeks (right edge).
+        const raf = window.requestAnimationFrame(() => {
+            scrollEl.scrollLeft = scrollEl.scrollWidth;
+        });
+
+        return () => window.cancelAnimationFrame(raf);
+    }, [chartType, isMobileViewport, dailyScoreData.weeks.length]);
 
     // Create/update chart container and base settings
     useEffect(() => {
+        if (chartType === 'daily') {
+            if (chartRef.current) {
+                chartRef.current.remove();
+                chartRef.current = null;
+                seriesRef.current = null;
+            }
+            return;
+        }
+
         if (!chartContainerRef.current) return;
 
         // Clear previous chart
@@ -719,6 +820,7 @@ export function PerformanceChart({
 
     // Update data invisibly on poll (avoids calling fitContent and resetting pan)
     useEffect(() => {
+        if (chartType === 'daily') return;
         if (!seriesRef.current) return;
         
         if (chartType === 'candle') {
@@ -730,13 +832,14 @@ export function PerformanceChart({
 
     // Live native update cycle (No React state changes triggered!)
     useEffect(() => {
+        if (chartType === 'daily') return;
         const intervalMs = getIntervalMs(interval);
 
         const liveInterval = setInterval(() => {
             if (!seriesRef.current) return;
 
             const now = Date.now();
-            const currentScore = getScoreAtTime(tasks, now, gamificationPoints, gamificationPointsLastUpdatedAt);
+            const currentScore = getScoreAtTime(tasks, now, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory);
             const snappedNow = snapToInterval(now, interval);
             const timeSeconds = Math.floor(snappedNow / 1000) as Time;
 
@@ -773,7 +876,7 @@ export function PerformanceChart({
         }, 1000);
 
         return () => clearInterval(liveInterval);
-    }, [tasks, interval, chartType, chartData, gamificationPoints, gamificationPointsLastUpdatedAt]);
+    }, [tasks, interval, chartType, chartData, gamificationPoints, gamificationPointsLastUpdatedAt, githubPointsHistory, chainPoints, chainPointsHistory]);
 
     return (
         <div className="bg-black rounded-2xl border border-white/10 p-6 flex flex-col w-full h-[500px]">
@@ -807,6 +910,15 @@ export function PerformanceChart({
                         >
                             Candle
                         </button>
+                        <button
+                            onClick={() => setChartType('daily')}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${chartType === 'daily'
+                                ? (isLightTheme ? 'bg-white text-zinc-900 border border-black/10 shadow-sm' : 'bg-zinc-800 text-white shadow-md')
+                                : (isLightTheme ? 'text-zinc-600 hover:text-zinc-900' : 'text-zinc-500 hover:text-white')
+                                }`}
+                        >
+                            Daily score
+                        </button>
                     </div>
 
                     {/* Interval Selector (Candle Only) */}
@@ -833,7 +945,140 @@ export function PerformanceChart({
             </div >
 
             {/* Chart Container */}
-            < div ref={chartContainerRef} className="flex-1 w-full" />
+            {chartType === 'daily' ? (
+                <div
+                    ref={dailyPanelRef}
+                    className={`relative flex-1 rounded-lg border px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5 overflow-hidden ${
+                        isLightTheme
+                            ? 'border-zinc-300 bg-white text-zinc-950'
+                            : 'border-[#30363d] bg-[#0d1117] text-[#e6edf3]'
+                    }`}
+                >
+                    {hoveredDay && (
+                        <div
+                            className={`pointer-events-none absolute z-30 max-w-[220px] -translate-x-1/2 rounded-md border px-2.5 py-1.5 text-xs shadow-lg ${
+                                isLightTheme
+                                    ? 'border-zinc-300 bg-white/95 text-zinc-900'
+                                    : 'border-zinc-600 bg-[#161b22]/95 text-zinc-100'
+                            }`}
+                            style={{ left: tooltipPosition.x, top: tooltipPosition.y }}
+                        >
+                            <div className="flex items-center gap-1.5 font-semibold leading-tight">
+                                <span
+                                    className={`inline-block h-2 w-2 rounded-full ${
+                                        hoveredDay.value > 0
+                                            ? 'bg-[#2da44e]'
+                                            : hoveredDay.value < 0
+                                                ? 'bg-[#f85149]'
+                                                : 'bg-zinc-400'
+                                    }`}
+                                />
+                                <span>{hoveredDay.value >= 0 ? '+' : ''}{hoveredDay.value.toFixed(2)} points</span>
+                            </div>
+                            <div className={`mt-0.5 text-[11px] leading-tight ${isLightTheme ? 'text-zinc-600' : 'text-zinc-300'}`}>
+                                {hoveredDay.formattedDate}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+                        <div>
+                            <div className={`text-[22px] leading-tight sm:text-2xl md:text-[26px] font-semibold tracking-tight ${isLightTheme ? 'text-zinc-950' : 'text-[#e6edf3]'}`}>
+                                {dailyScoreData.netTotal >= 0 ? '+' : ''}{dailyScoreData.netTotal.toFixed(2)} points in the last year
+                            </div>
+                            <div className={`text-xs sm:text-sm mt-1 ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
+                                +{dailyScoreData.positiveTotal.toFixed(2)} gained / {dailyScoreData.negativeTotal.toFixed(2)} lost
+                            </div>
+                        </div>
+                        <div className={`text-xs sm:text-sm ${isLightTheme ? 'text-zinc-500' : 'text-[#8b949e]'}`}>
+                            Daily score
+                        </div>
+                    </div>
+
+                    <div
+                        ref={dailyScrollRef}
+                        className="overflow-x-auto md:overflow-visible pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    >
+                        <div className={`w-max ${isMobileViewport ? '' : 'md:w-full'}`}>
+                            <div
+                                className="ml-7 sm:ml-9 mb-1 grid gap-x-[3px]"
+                                style={{ gridTemplateColumns: `repeat(${dailyScoreData.weeks.length}, ${isMobileViewport ? 11 : 12}px)` }}
+                            >
+                                {dailyScoreData.weeks.map((week) => (
+                                    <div
+                                        key={week.weekStart}
+                                        className={`h-5 text-xs sm:text-sm font-medium ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}
+                                    >
+                                        {week.monthLabel || ''}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex">
+                                <div className={`grid grid-rows-7 gap-[3px] pr-2 sm:pr-3 text-xs sm:text-sm ${isLightTheme ? 'text-zinc-700' : 'text-[#e6edf3]'}`}>
+                                    <div className="h-[11px] sm:h-3" />
+                                    <div className="h-[11px] sm:h-3 leading-[11px] sm:leading-3">Mon</div>
+                                    <div className="h-[11px] sm:h-3" />
+                                    <div className="h-[11px] sm:h-3 leading-[11px] sm:leading-3">Wed</div>
+                                    <div className="h-[11px] sm:h-3" />
+                                    <div className="h-[11px] sm:h-3 leading-[11px] sm:leading-3">Fri</div>
+                                    <div className="h-[11px] sm:h-3" />
+                                </div>
+
+                                <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
+                                    {dailyScoreData.weeks.flatMap((week) => week.days.map((day, dayIndex) => {
+                                        if (!day) {
+                                            return <div key={`${week.weekStart}-${dayIndex}`} className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px]`} />;
+                                        }
+
+                                        const signedValue = `${day.value >= 0 ? '+' : ''}${day.value.toFixed(2)}`;
+
+                                        return (
+                                            <button
+                                                key={day.dateKey}
+                                                type="button"
+                                                onMouseEnter={(event) => updateDailyTooltip(event, day)}
+                                                onMouseMove={(event) => updateDailyTooltip(event, day)}
+                                                onClick={(event) => updateDailyTooltip(event, day)}
+                                                onMouseLeave={() => setHoveredDay(null)}
+                                                className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] outline-none ring-offset-2 transition-transform hover:scale-125 focus-visible:ring-2 ${
+                                                    isLightTheme
+                                                        ? 'ring-offset-white focus-visible:ring-zinc-950'
+                                                        : 'ring-offset-[#0d1117] focus-visible:ring-[#e6edf3]'
+                                                } ${getDailyScoreClass(day.value, day.level, isLightTheme)}`}
+                                                aria-label={`${signedValue} points on ${day.formattedDate}`}
+                                            >
+                                                <span className="sr-only">{signedValue} points on {day.formattedDate}</span>
+                                            </button>
+                                        );
+                                    }))}
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div className={`text-xs sm:text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
+                                    {hoveredDay
+                                        ? `${hoveredDay.value >= 0 ? '+' : ''}${hoveredDay.value.toFixed(2)} points on ${hoveredDay.formattedDate}`
+                                        : (isMobileViewport ? 'Tap a day to inspect the score movement' : 'Hover a day to inspect the score movement')}
+                                </div>
+                                <div className={`flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm ${isLightTheme ? 'text-zinc-600' : 'text-[#8b949e]'}`}>
+                                    <span>Loss</span>
+                                    {[4, 3, 2, 1].map((level) => (
+                                        <span key={`loss-${level}`} className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] ${getDailyScoreClass(-level, level, isLightTheme)}`} />
+                                    ))}
+                                    <span className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] ${getDailyScoreClass(0, 0, isLightTheme)}`} />
+                                    {[1, 2, 3, 4].map((level) => (
+                                        <span key={`gain-${level}`} className={`${isMobileViewport ? 'h-[11px] w-[11px]' : 'h-3 w-3'} rounded-[3px] ${getDailyScoreClass(level, level, isLightTheme)}`} />
+                                    ))}
+                                    <span>Gain</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div ref={chartContainerRef} className="flex-1 w-full" />
+            )}
         </div >
     );
 }

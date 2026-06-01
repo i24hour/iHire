@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
@@ -9,9 +9,8 @@ const navItems = [
     { href: '/profile', label: 'Profile' },
     { href: '/itime', label: 'iTime' },
     { href: '/workers', label: 'WOrKers' },
-    { href: '/info', label: 'Rules' },
     { href: '/ideas', label: 'Ideas' },
-    { href: '/ichain', label: 'iChain' },
+    { href: '/ichain', label: 'Chain' },
     { href: '/sf-tracker', label: 'SF Tracker' },
     { href: '/settings', label: 'Settings' },
 ];
@@ -29,12 +28,6 @@ export function Sidebar() {
     }, [pathname]);
 
     useEffect(() => {
-        if (session?.user?.email) {
-            fetchUserProfile();
-        }
-    }, [session]);
-
-    useEffect(() => {
         const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('app-theme') : null;
         setTheme(savedTheme === 'light' ? 'light' : 'dark');
     }, []);
@@ -49,7 +42,7 @@ export function Sidebar() {
         }
     }, [theme]);
 
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = useCallback(async () => {
         try {
             const res = await fetch('/api/user/settings');
             const data = await res.json();
@@ -59,7 +52,30 @@ export function Sidebar() {
         } catch (err) {
             console.error('Error fetching profile in sidebar:', err);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (!session?.user?.email) return;
+
+        fetchUserProfile();
+
+        const interval = setInterval(() => {
+            fetchUserProfile();
+        }, 15000);
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                fetchUserProfile();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchUserProfile, session?.user?.email]);
 
     return (
         <>
