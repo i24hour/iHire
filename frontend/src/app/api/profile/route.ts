@@ -4,7 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { ensureUserHasDefaultUsername } from '@/lib/username';
-import { sanitizeProjects, serializeProject, serializePublicProfile } from '@/lib/profile-utils';
+import { sanitizeProjects, isValidHttpUrl, serializeProject, serializePublicProfile } from '@/lib/profile-utils';
 import type { ProfileUpdatePayload } from '@/types/profile';
 
 export async function GET() {
@@ -50,10 +50,10 @@ export async function PUT(request: NextRequest) {
         if (Array.isArray(body.projects)) {
             const sanitized = sanitizeProjects(body.projects);
             for (const project of sanitized) {
-                if (project.siteUrl && !project.siteUrl.startsWith('http')) {
+                if (project.siteUrl && !isValidHttpUrl(project.siteUrl)) {
                     return NextResponse.json({ error: 'Invalid site URL' }, { status: 400 });
                 }
-                if (project.githubUrl && !project.githubUrl.startsWith('http')) {
+                if (project.githubUrl && !isValidHttpUrl(project.githubUrl)) {
                     return NextResponse.json({ error: 'Invalid GitHub URL' }, { status: 400 });
                 }
             }

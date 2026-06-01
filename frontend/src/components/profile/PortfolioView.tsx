@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PublicProfile, ProfileProject } from '@/types/profile';
 import type { GithubContributionCalendar } from '@/types/github-contributions';
 import { getContributionLevel } from '@/lib/github-contributions';
+import { sanitizeProjects, isValidHttpUrl } from '@/lib/profile-utils';
 import { cn } from '@/lib/utils';
 
 const emptyProject = (): ProfileProject => ({
@@ -324,15 +325,15 @@ export function PortfolioView({
     const [dirty, setDirty] = useState(false);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
+    const savingRef = useRef(false);
 
     useEffect(() => {
-        if (!editMode) return;
+        if (!editMode || dirty) return;
         setHeadline(profile.headline || '');
         setBio(profile.bio || '');
         setProjects(profile.projects || []);
         setShowGithubContributions(profile.showGithubContributions !== false);
-        setDirty(false);
-    }, [profile, editMode]);
+    }, [profile, editMode, dirty]);
 
     const displayProfile = editMode
         ? { ...profile, headline, bio, projects, showGithubContributions }
@@ -396,28 +397,65 @@ export function PortfolioView({
         setTechInputs((prev) => ({ ...prev, [index]: '' }));
     };
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
+        if (savingRef.current) return;
+
+        for (const project of projects) {
+            if (project.siteUrl?.trim() && !isValidHttpUrl(project.siteUrl)) {
+                setMessage('Invalid site URL — use a full link like https://yoursite.com');
+                return;
+            }
+            if (project.githubUrl?.trim() && !isValidHttpUrl(project.githubUrl)) {
+                setMessage('Invalid GitHub URL — use a full link like github.com/you/repo');
+                return;
+            }
+        }
+
+        const hasDraftProject = projects.some(
+            (p) =>
+                !p.title.trim() &&
+                (p.description?.trim() || p.siteUrl?.trim() || p.githubUrl?.trim() || (p.technologies?.length ?? 0) > 0)
+        );
+        if (hasDraftProject) {
+            setMessage('Add a project title before saving');
+            return;
+        }
+
+        const sanitized = sanitizeProjects(projects);
+
+        savingRef.current = true;
         setSaving(true);
         setMessage('');
         try {
             const res = await fetch('/api/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ headline, bio, projects, showGithubContributions }),
+                body: JSON.stringify({ headline, bio, projects: sanitized, showGithubContributions }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Save failed');
             onProfileSaved?.(data.profile);
-            setProjects(data.profile?.projects || []);
+            setHeadline(data.profile?.headline || headline);
+            setBio(data.profile?.bio || bio);
+            setProjects(data.profile?.projects || sanitized);
             setDirty(false);
             setMessage('Saved');
             setTimeout(() => setMessage(''), 2500);
         } catch (err: unknown) {
             setMessage(err instanceof Error ? err.message : 'Save failed');
         } finally {
+            savingRef.current = false;
             setSaving(false);
         }
-    };
+    }, [headline, bio, projects, showGithubContributions, onProfileSaved]);
+
+    useEffect(() => {
+        if (!editMode || !dirty || saving) return;
+        const timer = setTimeout(() => {
+            void handleSave();
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, [editMode, dirty, saving, headline, bio, projects, showGithubContributions, handleSave]);
 
     return (
         <div className="folio relative min-h-full">

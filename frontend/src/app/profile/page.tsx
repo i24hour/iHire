@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { Sidebar } from '@/components/Sidebar';
 import { PortfolioView } from '@/components/profile/PortfolioView';
@@ -32,17 +32,23 @@ export default function ProfileEditorPage() {
         }
     }, []);
 
+    const userEmail = session?.user?.email;
+    const loadedRef = useRef(false);
+
     useEffect(() => {
-        if (!session) {
+        if (!userEmail) {
             setLoading(false);
             return;
         }
+        if (loadedRef.current) return;
+
         async function load() {
             try {
                 const res = await fetch('/api/profile');
                 if (!res.ok) throw new Error('Failed to load');
                 const data = await res.json();
                 setProfile(data.profile);
+                loadedRef.current = true;
                 if (data.profile?.githubUsername && data.profile?.showGithubContributions !== false) {
                     await loadGithub(data.profile.username);
                 }
@@ -53,7 +59,7 @@ export default function ProfileEditorPage() {
             }
         }
         load();
-    }, [session, loadGithub]);
+    }, [userEmail, loadGithub]);
 
     const handleConnectGithub = () => {
         if (session?.user?.email) {
