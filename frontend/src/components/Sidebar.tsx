@@ -6,6 +6,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 
 const navItems = [
+    { href: '/profile', label: 'Profile' },
     { href: '/itime', label: 'iTime' },
     { href: '/workers', label: 'WOrKers' },
     { href: '/info', label: 'Rules' },

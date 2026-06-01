@@ -203,6 +203,17 @@ body {
   }
 }
 
+@keyframes flow-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(12px, -18px) scale(1.04); }
+}
+
 .animate-spin-slow {
   animation: spin-slow 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin-slow {
+    animation: none;
+  }
 }

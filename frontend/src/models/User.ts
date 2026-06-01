@@ -1,10 +1,23 @@
 import mongoose from 'mongoose';
 
+export interface IUserProject {
+    _id?: string;
+    title: string;
+    description?: string;
+    siteUrl?: string;
+    githubUrl?: string;
+    technologies?: string[];
+    createdAt?: Date;
+}
+
 export interface IUser {
     _id?: string;
     email: string;
     username?: string;
     image?: string;
+    headline?: string;
+    bio?: string;
+    projects?: IUserProject[];
     points?: number;
     githubId?: string;
     githubUsername?: string;
@@ -36,6 +49,22 @@ const UserSchema = new mongoose.Schema<IUser>({
     image: {
         type: String,
     },
+    headline: {
+        type: String,
+        maxlength: 120,
+    },
+    bio: {
+        type: String,
+        maxlength: 500,
+    },
+    projects: [{
+        title: { type: String, required: true, maxlength: 80 },
+        description: { type: String, maxlength: 300 },
+        siteUrl: { type: String, maxlength: 500 },
+        githubUrl: { type: String, maxlength: 500 },
+        technologies: [{ type: String, maxlength: 40 }],
+        createdAt: { type: Date, default: Date.now },
+    }],
     points: {
         type: Number,
         default: 0,
