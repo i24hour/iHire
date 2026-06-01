@@ -583,6 +583,7 @@ export function PerformanceChart({
 
         const dayMap = new Map(days.map((day) => [day.timestamp, day]));
         const weeks: DailyScoreWeek[] = [];
+        let lastLabeledMonth: string | undefined;
 
         for (let weekStart = gridStart; weekStart <= todayStart; weekStart += 7 * DAY_MS) {
             const weekDays: Array<DailyScoreDay | null> = [];
@@ -591,11 +592,15 @@ export function PerformanceChart({
                 weekDays.push(dayMap.get(day) || null);
             }
 
-            const firstRealDay = weekDays.find(Boolean);
-            const previousWeekFirstDay = weeks[weeks.length - 1]?.days.find(Boolean);
-            const monthLabel = firstRealDay && (!previousWeekFirstDay || firstRealDay.monthLabel !== previousWeekFirstDay.monthLabel)
-                ? firstRealDay.monthLabel
-                : undefined;
+            let monthLabel: string | undefined;
+            for (const day of weekDays) {
+                if (!day) continue;
+                if (day.monthLabel !== lastLabeledMonth) {
+                    monthLabel = day.monthLabel;
+                    lastLabeledMonth = day.monthLabel;
+                    break;
+                }
+            }
 
             weeks.push({ weekStart, monthLabel, days: weekDays });
         }

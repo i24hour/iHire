@@ -32,15 +32,17 @@ function GithubHeatmap({ calendar, username }: { calendar: GithubContributionCal
         const labels: { label: string; index: number }[] = [];
         let lastMonth = -1;
         calendar.weeks.forEach((week, weekIndex) => {
-            const firstDay = week.days[0];
-            if (!firstDay) return;
-            const month = new Date(`${firstDay.date}T00:00:00Z`).getUTCMonth();
-            if (month !== lastMonth) {
-                labels.push({
-                    label: new Date(`${firstDay.date}T00:00:00Z`).toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }),
-                    index: weekIndex,
-                });
-                lastMonth = month;
+            for (const day of week.days) {
+                if (!day?.date) continue;
+                const month = new Date(`${day.date}T00:00:00Z`).getUTCMonth();
+                if (month !== lastMonth) {
+                    labels.push({
+                        label: new Date(`${day.date}T00:00:00Z`).toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }),
+                        index: weekIndex,
+                    });
+                    lastMonth = month;
+                    break;
+                }
             }
         });
         return labels;
