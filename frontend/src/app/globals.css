@@ -233,3 +233,115 @@ body {
     animation: none;
   }
 }
+
+/* Flowing background blobs */
+.flow-blob-1 { background: rgba(59, 130, 246, 0.18); }
+.flow-blob-2 { background: rgba(168, 85, 247, 0.14); }
+.flow-blob-3 { background: rgba(34, 211, 238, 0.12); }
+.flow-blob-4 { background: rgba(255, 255, 255, 0.06); }
+
+:root[data-theme='light'] .flow-blob-1 { background: rgba(37, 99, 235, 0.12); }
+:root[data-theme='light'] .flow-blob-2 { background: rgba(124, 58, 237, 0.08); }
+:root[data-theme='light'] .flow-blob-3 { background: rgba(6, 182, 212, 0.08); }
+:root[data-theme='light'] .flow-blob-4 { background: rgba(17, 24, 39, 0.04); }
+
+/* Profile builder — dark */
+.profile-builder { color: var(--foreground); }
+.profile-kicker { color: #71717a; }
+.profile-muted { color: #a1a1aa; }
+.profile-link { color: #60a5fa; border-color: rgba(255,255,255,0.12); }
+.profile-link:hover { color: #93c5fd; border-color: rgba(255,255,255,0.2); }
+.profile-glass-hero,
+.profile-glass-card,
+.profile-stat {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+.profile-glass-hero:hover,
+.profile-glass-card:hover { border-color: rgba(255, 255, 255, 0.16); }
+.profile-hero-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+.profile-avatar {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+.profile-hero-headline,
+.profile-hero-bio,
+.profile-field-title,
+.profile-field-body { color: #fafafa; }
+.profile-field-input {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+  color: #e4e4e7;
+}
+.profile-field-input:focus { border-color: rgba(96, 165, 250, 0.4); }
+.profile-tech-tag {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #d4d4d8;
+}
+.profile-tech-tag:hover { border-color: rgba(248, 113, 113, 0.4); color: #fca5a5; }
+.profile-add-btn,
+.profile-add-inline {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d4d4d8;
+}
+.profile-add-btn:hover { border-color: rgba(255, 255, 255, 0.22); color: #fff; }
+.profile-empty {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
+}
+.profile-empty:hover { border-color: rgba(96, 165, 250, 0.3); background: rgba(255, 255, 255, 0.04); }
+.profile-card-glow { background: rgba(59, 130, 246, 0.15); opacity: 0; transition: opacity 0.3s; }
+.profile-glass-card:hover .profile-card-glow { opacity: 1; }
+.profile-toast {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+}
+
+/* Profile builder — light */
+:root[data-theme='light'] .profile-kicker { color: #71717a; }
+:root[data-theme='light'] .profile-muted { color: #52525b; }
+:root[data-theme='light'] .profile-link { color: #2563eb; border-color: rgba(24, 24, 27, 0.12); }
+:root[data-theme='light'] .profile-glass-hero,
+:root[data-theme='light'] .profile-glass-card,
+:root[data-theme='light'] .profile-stat {
+  border-color: rgba(24, 24, 27, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 32px -8px rgba(17, 24, 39, 0.08);
+}
+:root[data-theme='light'] .profile-hero-grid {
+  background-image: radial-gradient(circle at 1px 1px, rgba(17,24,39,0.06) 1px, transparent 0);
+}
+:root[data-theme='light'] .profile-avatar {
+  border-color: rgba(24, 24, 27, 0.12);
+  background: #f4f4f5;
+}
+:root[data-theme='light'] .profile-hero-headline,
+:root[data-theme='light'] .profile-hero-bio,
+:root[data-theme='light'] .profile-field-title,
+:root[data-theme='light'] .profile-field-body { color: #0d0d0d; }
+:root[data-theme='light'] .profile-field-input {
+  border-color: rgba(24, 24, 27, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: #18181b;
+}
+:root[data-theme='light'] .profile-tech-tag {
+  border-color: rgba(24, 24, 27, 0.1);
+  background: rgba(17, 24, 39, 0.04);
+  color: #3f3f46;
+}
+:root[data-theme='light'] .profile-add-btn,
+:root[data-theme='light'] .profile-add-inline {
+  border-color: rgba(24, 24, 27, 0.12);
+  color: #3f3f46;
+}
+:root[data-theme='light'] .profile-empty {
+  border-color: rgba(24, 24, 27, 0.14);
+  background: rgba(255, 255, 255, 0.5);
+}
+:root[data-theme='light'] .profile-card-glow { background: rgba(37, 99, 235, 0.12); }
+

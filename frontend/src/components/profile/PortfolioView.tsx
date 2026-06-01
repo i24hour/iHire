@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import type { PublicProfile } from '@/types/profile';
 import type { GithubContributionCalendar } from '@/types/github-contributions';
 import { getContributionLevel } from '@/lib/github-contributions';
+import { FlowingBackground } from '@/components/profile/FlowingBackground';
 import { ProjectCard } from '@/components/profile/ProfileShowcaseCard';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import { cn } from '@/lib/utils';
@@ -20,9 +21,9 @@ const LEVEL_CLASSES = [
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
     return (
-        <div className="rounded-2xl border border-white/10 bg-black p-5">
-            <p className="text-[11px] uppercase tracking-widest text-zinc-500">{label}</p>
-            <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+        <div className="profile-stat rounded-2xl border p-5 backdrop-blur-xl">
+            <p className="text-[11px] uppercase tracking-widest profile-muted">{label}</p>
+            <p className="mt-2 text-2xl font-semibold">{value}</p>
         </div>
     );
 }
@@ -141,20 +142,16 @@ export function PortfolioView({
     const memberYear = profile.memberSince ? new Date(profile.memberSince).getFullYear() : '—';
 
     return (
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-5xl space-y-10 pb-20">
+        <div className="profile-builder relative">
+            <FlowingBackground />
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 mx-auto max-w-5xl space-y-10 pb-20">
             <Link href="/profiles" className="inline-flex text-sm text-zinc-400 transition-colors hover:text-white">
                 ← All profiles
             </Link>
 
             {/* Hero */}
-            <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-black p-8 md:p-10">
-                <div
-                    className="pointer-events-none absolute inset-0 opacity-30"
-                    style={{
-                        backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0)',
-                        backgroundSize: '24px 24px',
-                    }}
-                />
+            <section className="profile-glass-hero relative overflow-hidden rounded-3xl border p-8 backdrop-blur-2xl md:p-10">
+                <div className="profile-hero-grid pointer-events-none absolute inset-0 opacity-40" />
                 <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
                     <div className="flex gap-5">
                         <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/10">
@@ -278,6 +275,7 @@ export function PortfolioView({
                     </div>
                 )}
             </section>
-        </motion.div>
+            </motion.div>
+        </div>
     );
 }

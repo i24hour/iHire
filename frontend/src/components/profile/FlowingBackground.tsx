@@ -11,10 +11,10 @@ export function FlowingBackground({ className }: FlowingBackgroundProps) {
     const reduceMotion = useReducedMotion();
 
     const blobs = [
-        { color: 'rgba(59,130,246,0.18)', size: '42vw', x: '-10%', y: '8%', duration: 22 },
-        { color: 'rgba(168,85,247,0.14)', size: '36vw', x: '62%', y: '-6%', duration: 26 },
-        { color: 'rgba(34,211,238,0.12)', size: '30vw', x: '28%', y: '58%', duration: 20 },
-        { color: 'rgba(255,255,255,0.06)', size: '24vw', x: '72%', y: '42%', duration: 18 },
+        { className: 'flow-blob flow-blob-1', size: '42vw', x: '-10%', y: '8%', duration: 22 },
+        { className: 'flow-blob flow-blob-2', size: '36vw', x: '62%', y: '-6%', duration: 26 },
+        { className: 'flow-blob flow-blob-3', size: '30vw', x: '28%', y: '58%', duration: 20 },
+        { className: 'flow-blob flow-blob-4', size: '24vw', x: '72%', y: '42%', duration: 18 },
     ];
 
     return (
@@ -23,13 +23,12 @@ export function FlowingBackground({ className }: FlowingBackgroundProps) {
             {blobs.map((blob, index) => (
                 <motion.div
                     key={index}
-                    className="absolute rounded-full blur-3xl"
+                    className={cn('absolute rounded-full blur-3xl', blob.className)}
                     style={{
                         width: blob.size,
                         height: blob.size,
                         left: blob.x,
                         top: blob.y,
-                        background: blob.color,
                     }}
                     animate={
                         reduceMotion
