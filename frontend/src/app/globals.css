@@ -467,6 +467,15 @@ body {
 
 .folio-spinner { border-color: var(--folio-border); border-bottom-color: var(--folio-accent); }
 
+.folio-edit-headline::placeholder { opacity: 0.35; }
+.folio-edit-input::placeholder { opacity: 0.4; }
+.folio-edit-field {
+  border-color: var(--folio-border);
+  background: color-mix(in srgb, var(--folio-fg) 3%, transparent);
+  color: var(--folio-fg);
+}
+.folio-edit-field:focus { border-color: color-mix(in srgb, var(--folio-accent) 50%, var(--folio-border)); outline: none; }
+
 /* GitHub heatmap cells — dark palette by default */
 .folio-heat-0 { background: rgba(255, 255, 255, 0.06); }
 .folio-heat-1 { background: #0e4429; }
