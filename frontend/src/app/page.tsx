@@ -1,15 +1,15 @@
-import { HomeShowcase } from '@/components/profile/HomeShowcase';
+import { permanentRedirect } from 'next/navigation';
 
 export async function generateMetadata() {
     return {
-        title: 'Builder Profiles',
-        description: 'Discover builder profiles, projects, site links, and GitHub repos on Infinwork.',
+        title: 'AI Workspace That Measures Your Work',
+        description: 'Set targets, build chains, track time, and analyze productivity using human performance charts.',
         alternates: {
-            canonical: '/',
+            canonical: '/workers',
         },
     };
 }
 
 export default function Home() {
-    return <HomeShowcase />;
+    permanentRedirect('/workers');
 }

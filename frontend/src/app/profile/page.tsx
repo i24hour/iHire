@@ -27,6 +27,7 @@ export default function ProfileEditorPage() {
     const [headline, setHeadline] = useState('');
     const [bio, setBio] = useState('');
     const [projects, setProjects] = useState<ProfileProject[]>([]);
+    const [showGithubContributions, setShowGithubContributions] = useState(true);
     const [techInputs, setTechInputs] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -42,6 +43,7 @@ export default function ProfileEditorPage() {
             setHeadline(p?.headline || '');
             setBio(p?.bio || '');
             setProjects(p?.projects?.length ? p.projects : []);
+            setShowGithubContributions(p?.showGithubContributions !== false);
         } catch (err) {
             console.error(err);
         } finally {
@@ -92,7 +94,7 @@ export default function ProfileEditorPage() {
             const res = await fetch('/api/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ headline, bio, projects }),
+                body: JSON.stringify({ headline, bio, projects, showGithubContributions }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Save failed');
@@ -181,6 +183,29 @@ export default function ProfileEditorPage() {
                                 className={`${inputClass} resize-none`}
                             />
                         </div>
+                    </section>
+
+                    <section className={cardClass}>
+                        <h2 className="text-xl font-semibold text-white">GitHub on portfolio</h2>
+                        <p className="text-sm text-zinc-400">
+                            Show your GitHub contribution board on your public portfolio page.
+                        </p>
+                        <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 bg-black px-4 py-3">
+                            <span className="text-sm text-zinc-300">Display GitHub contributions</span>
+                            <input
+                                type="checkbox"
+                                checked={showGithubContributions}
+                                onChange={(e) => setShowGithubContributions(e.target.checked)}
+                                className="h-4 w-4 cursor-pointer accent-white"
+                            />
+                        </label>
+                        <p className="text-xs text-zinc-500">
+                            Connect GitHub from{' '}
+                            <Link href="/settings" className="text-blue-400 hover:text-blue-300">
+                                Settings
+                            </Link>{' '}
+                            if you have not linked your account yet.
+                        </p>
                     </section>
 
                     <section className="space-y-4">

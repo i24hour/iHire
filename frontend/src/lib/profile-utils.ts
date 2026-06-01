@@ -22,7 +22,11 @@ export function serializePublicProfile(user: IUser): PublicProfile | null {
         headline: user.headline || '',
         bio: user.bio || '',
         githubUsername: user.githubUsername,
+        showGithubContributions: user.showGithubContributions !== false,
+        githubCommitsTotal: user.githubCommitsTotal || 0,
         points: user.points || 0,
+        chainPoints: user.chainPoints || 0,
+        memberSince: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
         projects: (user.projects || []).map(serializeProject),
     };
 }

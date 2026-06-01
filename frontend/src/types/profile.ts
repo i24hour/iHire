@@ -14,7 +14,11 @@ export interface PublicProfile {
     headline?: string;
     bio?: string;
     githubUsername?: string;
+    showGithubContributions?: boolean;
+    githubCommitsTotal?: number;
     points?: number;
+    chainPoints?: number;
+    memberSince?: string;
     projects: ProfileProject[];
 }
 
@@ -22,4 +26,5 @@ export interface ProfileUpdatePayload {
     headline?: string;
     bio?: string;
     projects?: ProfileProject[];
+    showGithubContributions?: boolean;
 }

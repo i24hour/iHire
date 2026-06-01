@@ -41,11 +41,11 @@ export function HomeShowcase() {
                         <span className="font-semibold tracking-tight">Infinwork</span>
                     </Link>
                     <div className="landing-header-actions flex items-center gap-3 sm:gap-4">
+                        <Link href="/" className="landing-directory-link text-sm text-zinc-400 transition-colors hover:text-white">
+                            Home
+                        </Link>
                         <Link href="/profile" className="landing-directory-link text-sm text-zinc-400 transition-colors hover:text-white">
                             Profile
-                        </Link>
-                        <Link href="/itime" className="hidden text-sm text-zinc-400 transition-colors hover:text-white sm:inline">
-                            iTime
                         </Link>
                         {session ? (
                             <Link href="/profile">

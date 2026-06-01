@@ -37,6 +37,7 @@ export interface IUser {
         points: number;
     }>;
     githubSyncLockUntil?: Date;
+    showGithubContributions?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -136,6 +137,10 @@ const UserSchema = new mongoose.Schema<IUser>({
     }],
     githubSyncLockUntil: {
         type: Date,
+    },
+    showGithubContributions: {
+        type: Boolean,
+        default: true,
     },
 }, {
     timestamps: true,

@@ -1,20 +1,56 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { useSession, signIn } from 'next-auth/react';
 import { Sidebar } from '@/components/Sidebar';
-import { ProjectCard } from '@/components/profile/ProfileShowcaseCard';
+import { PortfolioView } from '@/components/profile/PortfolioView';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
+import Link from 'next/link';
 import type { PublicProfile } from '@/types/profile';
+import type { GithubContributionCalendar } from '@/types/github-contributions';
 
 export default function PublicProfilePage() {
     const params = useParams();
     const username = decodeURIComponent(params.username as string);
+    const { data: session } = useSession();
+
     const [profile, setProfile] = useState<PublicProfile | null>(null);
+    const [githubCalendar, setGithubCalendar] = useState<GithubContributionCalendar | null>(null);
     const [loading, setLoading] = useState(true);
+    const [githubLoading, setGithubLoading] = useState(false);
     const [notFound, setNotFound] = useState(false);
+    const [ownerUsername, setOwnerUsername] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!session) {
+            setOwnerUsername(null);
+            return;
+        }
+        fetch('/api/profile')
+            .then((r) => r.ok ? r.json() : null)
+            .then((data) => setOwnerUsername(data?.profile?.username || null))
+            .catch(() => setOwnerUsername(null));
+    }, [session]);
+
+    const isProfileOwner = !!ownerUsername && ownerUsername === profile?.username;
+
+    const loadGithub = useCallback(async (uname: string) => {
+        setGithubLoading(true);
+        try {
+            const res = await fetch(`/api/profiles/${encodeURIComponent(uname)}/github`);
+            const data = await res.json();
+            if (data.hidden) {
+                setGithubCalendar(null);
+                return;
+            }
+            setGithubCalendar(data.calendar || null);
+        } catch {
+            setGithubCalendar(null);
+        } finally {
+            setGithubLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         async function load() {
@@ -26,17 +62,46 @@ export default function PublicProfilePage() {
                 }
                 const data = await res.json();
                 setProfile(data.profile);
-            } catch (err) {
-                console.error(err);
+                if (data.profile?.githubUsername && data.profile?.showGithubContributions !== false) {
+                    await loadGithub(username);
+                }
+            } catch {
                 setNotFound(true);
             } finally {
                 setLoading(false);
             }
         }
         load();
-    }, [username]);
+    }, [username, loadGithub]);
 
-    const initial = username.charAt(0).toUpperCase();
+    const handleHideGithub = async () => {
+        if (!isProfileOwner) return;
+        await fetch('/api/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ showGithubContributions: false }),
+        });
+        setProfile((p) => (p ? { ...p, showGithubContributions: false } : p));
+        setGithubCalendar(null);
+    };
+
+    const handleShowGithub = async () => {
+        if (!isProfileOwner) return;
+        await fetch('/api/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ showGithubContributions: true }),
+        });
+        setProfile((p) => (p ? { ...p, showGithubContributions: true } : p));
+        await loadGithub(username);
+    };
+
+    const handleConnectGithub = () => {
+        if (session?.user?.email) {
+            document.cookie = `github_link_email=${encodeURIComponent(session.user.email)}; path=/; max-age=300`;
+        }
+        signIn('github');
+    };
 
     return (
         <div className="flex min-h-screen flex-col bg-black md:flex-row">
@@ -49,59 +114,21 @@ export default function PublicProfilePage() {
                 ) : notFound || !profile ? (
                     <div className="mx-auto max-w-lg py-20 text-center">
                         <h1 className="text-2xl font-bold text-white">Profile not found</h1>
-                        <Link href="/" className="mt-6 inline-block">
+                        <Link href="/profiles" className="mt-6 inline-block">
                             <LiquidButton className="text-white">Back to profiles</LiquidButton>
                         </Link>
                     </div>
                 ) : (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl space-y-8 pb-20">
-                        <Link href="/" className="inline-flex text-sm text-zinc-400 transition-colors hover:text-white">
-                            ← All profiles
-                        </Link>
-
-                        <section className="rounded-2xl border border-white/10 bg-black p-6 md:p-8">
-                            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                                <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/10">
-                                    {profile.image ? (
-                                        <img src={profile.image} alt="" className="h-full w-full object-cover" />
-                                    ) : (
-                                        <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-white">{initial}</div>
-                                    )}
-                                </div>
-                                <div className="min-w-0">
-                                    <h1 className="text-3xl font-bold tracking-tight text-white">{profile.username}</h1>
-                                    {profile.headline && <p className="mt-2 text-lg text-zinc-400">{profile.headline}</p>}
-                                    {profile.githubUsername && (
-                                        <a
-                                            href={`https://github.com/${profile.githubUsername}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="mt-2 inline-block cursor-pointer text-sm text-blue-400 hover:text-blue-300"
-                                        >
-                                            github.com/{profile.githubUsername}
-                                        </a>
-                                    )}
-                                    {profile.bio && <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400">{profile.bio}</p>}
-                                </div>
-                            </div>
-                        </section>
-
-                        <section>
-                            <h2 className="mb-5 text-xl font-semibold text-white">
-                                Projects
-                                <span className="ml-2 text-sm font-normal text-zinc-500">({profile.projects.length})</span>
-                            </h2>
-                            {profile.projects.length === 0 ? (
-                                <p className="text-zinc-500">No projects shared yet.</p>
-                            ) : (
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    {profile.projects.map((project) => (
-                                        <ProjectCard key={project._id || project.title} project={project} />
-                                    ))}
-                                </div>
-                            )}
-                        </section>
-                    </motion.div>
+                    <PortfolioView
+                        profile={profile}
+                        isOwner={isProfileOwner}
+                        githubCalendar={githubCalendar}
+                        githubLoading={githubLoading}
+                        githubHidden={profile.showGithubContributions === false}
+                        onConnectGithub={handleConnectGithub}
+                        onHideGithub={handleHideGithub}
+                        onShowGithub={handleShowGithub}
+                    />
                 )}
             </main>
         </div>

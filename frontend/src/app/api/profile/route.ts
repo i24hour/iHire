@@ -66,6 +66,9 @@ export async function PUT(request: NextRequest) {
                 createdAt: new Date(),
             }));
         }
+        if (typeof body.showGithubContributions === 'boolean') {
+            update.showGithubContributions = body.showGithubContributions;
+        }
 
         const updatedUser = await User.findOneAndUpdate(
             { email: session.user.email },
