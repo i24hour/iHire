@@ -154,7 +154,7 @@ export function ProjectCard({ project }: { project: ProfileProject }) {
         <motion.div
             whileHover={{ y: -4 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md"
+            className="overflow-hidden rounded-2xl border border-white/10 bg-black"
         >
             <div className="p-5">
                 <div className="flex items-start justify-between gap-3">
