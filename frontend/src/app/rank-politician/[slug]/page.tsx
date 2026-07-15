@@ -371,7 +371,7 @@ export default function RankPoliticianDetailPage() {
                                 {posts.length === 0 ? (
                                     <div className={`${panel} p-6 space-y-3`}>
                                         <p className={muted}>
-                                            No posts yet. Wait for the 8h cron, or scrape this profile if you&apos;re an admin.
+                                            No posts yet. Wait for the daily cron, or scrape this profile if you&apos;re an admin.
                                         </p>
                                         {isAdmin && (
                                             <LiquidButton

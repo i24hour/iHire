@@ -287,7 +287,7 @@ Modes:
 - `GET /api/cron/rank-politician` (scheduled scrape+score batch; auth via `CRON_SECRET`)
 - UI polish: scrape-status badges, filter chips, category breakdown bars, admin Seed/Scrape buttons
 - Env: `FIRECRAWL_API_KEY`, `CRON_SECRET` (plus existing `MONGODB_URI`)
-- Vercel cron: every 8 hours → `/api/cron/rank-politician`
+- Vercel cron: daily at 03:00 UTC → `/api/cron/rank-politician` (Hobby plan limit: 1 run/day)
 
 ### Maintenance
 - `GET /api/cron/ping` (DB wake + runtime auto-cancel sweep)
