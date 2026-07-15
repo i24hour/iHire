@@ -9,6 +9,7 @@ const navItems = [
     { href: '/profile', label: 'Profile' },
     { href: '/itime', label: 'iTime' },
     { href: '/workers', label: 'WOrKers' },
+    { href: '/rank-politician', label: 'Rank Politician' },
     { href: '/ideas', label: 'Ideas' },
     { href: '/ichain', label: 'Chain' },
     { href: '/sf-tracker', label: 'SF Tracker' },

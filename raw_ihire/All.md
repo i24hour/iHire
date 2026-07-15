@@ -11,10 +11,11 @@ Active workspace modules in this repo:
 
 1. **iTime** (`/itime`) - task timer + performance score engine
 2. **Workers** (`/workers`) - user leaderboard and per-user task analytics
-3. **iChain** (`/ichain`) - collaborative chain timer with burst mechanics
-4. **Ideas** (`/ideas`) - public/private idea board + replies
-5. **SF Tracker** (`/sf-tracker`) - success/failure target tracking
-6. **Settings** (`/settings`) - username + GitHub connect/sync
+3. **Rank Politician** (`/rank-politician`) - Indian politician X communication focus rankings (Phase A: models, seed, leaderboard UI)
+4. **iChain** (`/ichain`) - collaborative chain timer with burst mechanics
+5. **Ideas** (`/ideas`) - public/private idea board + replies
+6. **SF Tracker** (`/sf-tracker`) - success/failure target tracking
+7. **Settings** (`/settings`) - username + GitHub connect/sync
 
 Legacy hiring/candidate APIs still exist in code, but the current product focus is the smart workspace features above.
 
@@ -66,6 +67,14 @@ Legacy hiring/candidate APIs still exist in code, but the current product focus 
 - Idea: title/details + public/private visibility
 - Reply: text/image + public/private visibility + edit tracking
 - SFTracker: target + success/failure + failure reason
+
+### `Politician`, `PoliticianPost` (Rank Politician)
+- Politician: name/slug, party, portfolio, `portfolioTopics[]`, X handle/url, scrape status, cached `stats`
+- PoliticianPost: text, externalId, category, score, scoreReason (populated in later scrape phases)
+- Seed list: `frontend/src/lib/rank-politician/seed.ts` (~38 Indian leaders)
+- Score helpers: `frontend/src/lib/rank-politician/score.ts`
+  - Categories: `on_portfolio(+2)`, `related(+1)`, `off_topic(-1)`, `attack(-2)`, `personal(-1)`, `unknown(0)`
+  - Leaderboard default sort: `% on-portfolio`, then net score
 
 ---
 
@@ -255,6 +264,12 @@ Modes:
 - `PUT/DELETE /api/sf-tracker/[id]`
 - `GET /api/sf-tracker/all`
 - `GET /api/sf-tracker/user/[userId]` (privacy-scrubbed read-only view)
+
+### Rank Politician
+- `GET /api/rank-politician` (leaderboard; query: `party`, `q`, `sortBy=onPortfolioPct|netScore`)
+- `GET /api/rank-politician/[slug]` (detail + scored posts)
+- `POST /api/rank-politician/seed` (admin-only upsert of starter politicians)
+- Scraping cron via Firecrawl is Phase B (not shipped yet)
 
 ### Maintenance
 - `GET /api/cron/ping` (DB wake + runtime auto-cancel sweep)
