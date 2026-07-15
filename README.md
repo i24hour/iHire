@@ -31,6 +31,8 @@ Required environment variables (see your Vercel project settings):
 - `NEXTAUTH_URL`
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (optional, for Google sign-in)
 - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` (optional, for GitHub sync)
+- `FIRECRAWL_API_KEY` (for Rank Politician X scrape)
+- `CRON_SECRET` (protects `/api/cron/rank-politician`)
 
 ## Project Structure
 

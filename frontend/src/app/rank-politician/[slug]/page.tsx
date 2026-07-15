@@ -196,8 +196,8 @@ export default function RankPoliticianDetailPage() {
                                 {posts.length === 0 ? (
                                     <div className={`${panel} p-6`}>
                                         <p className={muted}>
-                                            No posts yet. Phase B will scrape X via Firecrawl; until then this
-                                            detail view stays empty after seed.
+                                            No posts yet. Run admin seed, then wait for the 8h cron or trigger
+                                            <code className="text-zinc-300"> POST /api/rank-politician/scrape</code>.
                                         </p>
                                     </div>
                                 ) : (

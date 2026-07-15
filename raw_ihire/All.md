@@ -11,7 +11,7 @@ Active workspace modules in this repo:
 
 1. **iTime** (`/itime`) - task timer + performance score engine
 2. **Workers** (`/workers`) - user leaderboard and per-user task analytics
-3. **Rank Politician** (`/rank-politician`) - Indian politician X communication focus rankings (Phase A: models, seed, leaderboard UI)
+3. **Rank Politician** (`/rank-politician`) - Indian politician X communication focus rankings (seed + Firecrawl scrape/score pipeline + leaderboard)
 4. **iChain** (`/ichain`) - collaborative chain timer with burst mechanics
 5. **Ideas** (`/ideas`) - public/private idea board + replies
 6. **SF Tracker** (`/sf-tracker`) - success/failure target tracking
@@ -70,11 +70,16 @@ Legacy hiring/candidate APIs still exist in code, but the current product focus 
 
 ### `Politician`, `PoliticianPost` (Rank Politician)
 - Politician: name/slug, party, portfolio, `portfolioTopics[]`, X handle/url, scrape status, cached `stats`
-- PoliticianPost: text, externalId, category, score, scoreReason (populated in later scrape phases)
+- PoliticianPost: text, externalId, category, score, scoreReason
 - Seed list: `frontend/src/lib/rank-politician/seed.ts` (~38 Indian leaders)
 - Score helpers: `frontend/src/lib/rank-politician/score.ts`
   - Categories: `on_portfolio(+2)`, `related(+1)`, `off_topic(-1)`, `attack(-2)`, `personal(-1)`, `unknown(0)`
   - Leaderboard default sort: `% on-portfolio`, then net score
+- Scrape pipeline: `frontend/src/lib/rank-politician/scrape.ts` + `pipeline.ts`
+  - Firecrawl `POST /v2/scrape` with `markdown` + `links`
+  - Parse `x.com/{handle}/status/{id}` URLs into posts (markdown-block fallback)
+  - Classify + upsert posts, recompute politician `stats`
+  - Batch size default: 10 oldest-`lastScrapedAt` politicians per run
 
 ---
 
@@ -269,7 +274,10 @@ Modes:
 - `GET /api/rank-politician` (leaderboard; query: `party`, `q`, `sortBy=onPortfolioPct|netScore`)
 - `GET /api/rank-politician/[slug]` (detail + scored posts)
 - `POST /api/rank-politician/seed` (admin-only upsert of starter politicians)
-- Scraping cron via Firecrawl is Phase B (not shipped yet)
+- `POST /api/rank-politician/scrape` (admin-only manual Firecrawl batch; body: `{ limit?, slugs? }`)
+- `GET /api/cron/rank-politician` (scheduled scrape+score batch; auth via `CRON_SECRET`)
+- Env: `FIRECRAWL_API_KEY`, `CRON_SECRET` (plus existing `MONGODB_URI`)
+- Vercel cron: every 8 hours → `/api/cron/rank-politician`
 
 ### Maintenance
 - `GET /api/cron/ping` (DB wake + runtime auto-cancel sweep)
