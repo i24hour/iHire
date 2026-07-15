@@ -1,6 +1,6 @@
 # Infinwork (iHire) - Developer Logic & Architecture
 
-Last updated: 10 May 2026  
+Last updated: 15 Jul 2026  
 This is the source-of-truth doc for the current Infinwork smart-workspace codebase.
 
 ---
@@ -271,11 +271,12 @@ Modes:
 - `GET /api/sf-tracker/user/[userId]` (privacy-scrubbed read-only view)
 
 ### Rank Politician
-- `GET /api/rank-politician` (leaderboard; query: `party`, `q`, `sortBy=onPortfolioPct|netScore`)
+- `GET /api/rank-politician` (leaderboard; query: `party`, `q`, `scrapeStatus`, `sortBy=onPortfolioPct|netScore`; includes `meta` scrape health summary)
 - `GET /api/rank-politician/[slug]` (detail + scored posts)
 - `POST /api/rank-politician/seed` (admin-only upsert of starter politicians)
 - `POST /api/rank-politician/scrape` (admin-only manual Firecrawl batch; body: `{ limit?, slugs? }`)
 - `GET /api/cron/rank-politician` (scheduled scrape+score batch; auth via `CRON_SECRET`)
+- UI polish: scrape-status badges, filter chips, category breakdown bars, admin Seed/Scrape buttons
 - Env: `FIRECRAWL_API_KEY`, `CRON_SECRET` (plus existing `MONGODB_URI`)
 - Vercel cron: every 8 hours → `/api/cron/rank-politician`
 
