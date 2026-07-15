@@ -1,18 +1,14 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { requireAdminSession } from '@/lib/admin';
 import { buildDefaultUsernameFromEmail, getAvailableUsername } from '@/lib/username';
 
 export async function GET() {
     try {
-        const session = await getServerSession(authOptions);
-        
-        // Simple security check: check if the user is Priyanshu (adjust as needed)
-        const allowedAdmins = ['priyanshu85953@gmail.com', 'admin@infinwork.app'];
-        if (!session || !session.user || !allowedAdmins.includes(session.user.email || '')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const admin = await requireAdminSession();
+        if (!admin.ok) {
+            return NextResponse.json({ error: admin.error }, { status: admin.status });
         }
 
         await connectDB();

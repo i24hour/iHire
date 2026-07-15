@@ -10,7 +10,6 @@ import {
     categoryClass,
     categoryLabel,
     formatRelativeTime,
-    isRankPoliticianAdmin,
     scrapeStatusClass,
     scrapeStatusLabel,
 } from '@/lib/rank-politician/ui';
@@ -74,9 +73,9 @@ export default function RankPoliticianDetailPage() {
     const params = useParams();
     const slug = typeof params?.slug === 'string' ? params.slug : '';
     const isLightTheme = useIsLightTheme();
-    const { data: session } = useSession();
-    const isAdmin = isRankPoliticianAdmin(session?.user?.email);
+    const { data: session, status: authStatus } = useSession();
 
+    const [isAdmin, setIsAdmin] = useState(false);
     const [politician, setPolitician] = useState<PoliticianDetail | null>(null);
     const [posts, setPosts] = useState<ScoredPost[]>([]);
     const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
@@ -107,6 +106,29 @@ export default function RankPoliticianDetailPage() {
         setLoading(true);
         fetchDetail();
     }, [fetchDetail]);
+
+    useEffect(() => {
+        if (authStatus !== 'authenticated' || !session?.user?.email) {
+            setIsAdmin(false);
+            return;
+        }
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch('/api/user/settings');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!cancelled) setIsAdmin(Boolean(data.isAdmin));
+            } catch {
+                if (!cancelled) setIsAdmin(false);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [authStatus, session?.user?.email]);
 
     const filteredPosts = useMemo(() => {
         if (categoryFilter === 'all') return posts;

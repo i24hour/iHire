@@ -45,6 +45,7 @@ Legacy hiring/candidate APIs still exist in code, but the current product focus 
 
 ### `User` (`frontend/src/models/User.ts`)
 - Identity: `email`, `username`, `image`
+- Authz: `isAdmin` (boolean, indexed) — source of truth for admin actions
 - GitHub integration:
   - `githubId`, `githubUsername`, `githubAccessToken`
   - `githubConnectedAt`, `lastGithubSyncAt`, `githubSyncLockUntil`
@@ -269,6 +270,14 @@ Modes:
 - `PUT/DELETE /api/sf-tracker/[id]`
 - `GET /api/sf-tracker/all`
 - `GET /api/sf-tracker/user/[userId]` (privacy-scrubbed read-only view)
+
+### Admin authz
+- Canonical check: `User.isAdmin` via `frontend/src/lib/admin.ts` (`requireAdminSession`)
+- Bootstrap: `POST /api/admin/claim-first` (only when zero admins exist)
+- Grant/revoke: `PATCH /api/admin/users` body `{ email, isAdmin }` (admin-only; cannot remove last admin)
+- Status: `GET /api/admin/status` → `{ hasAdmin, adminCount }`
+- Settings exposes `isAdmin` for UI controls
+- Do **not** hardcode admin emails in source
 
 ### Rank Politician
 - `GET /api/rank-politician` (leaderboard; query: `party`, `q`, `scrapeStatus`, `sortBy=onPortfolioPct|netScore`; includes `meta` scrape health summary)

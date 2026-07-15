@@ -38,6 +38,7 @@ export interface IUser {
     }>;
     githubSyncLockUntil?: Date;
     showGithubContributions?: boolean;
+    isAdmin?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -141,6 +142,11 @@ const UserSchema = new mongoose.Schema<IUser>({
     showGithubContributions: {
         type: Boolean,
         default: true,
+    },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+        index: true,
     },
 }, {
     timestamps: true,

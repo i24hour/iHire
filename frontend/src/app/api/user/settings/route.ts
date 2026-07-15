@@ -38,6 +38,7 @@ export async function GET() {
         return NextResponse.json({ 
             username: user?.username || '', 
             email: session.user.email,
+            isAdmin: Boolean(user?.isAdmin),
             points: scoreBreakdown.githubPoints,
             chainPoints: scoreBreakdown.chainPoints,
             totalScore: scoreBreakdown.totalScore,

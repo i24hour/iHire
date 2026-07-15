@@ -8,7 +8,6 @@ import { Sidebar } from '@/components/Sidebar';
 import { LiquidButton } from '@/components/ui/liquid-glass-button';
 import {
     formatRelativeTime,
-    isRankPoliticianAdmin,
     scrapeStatusClass,
     scrapeStatusLabel,
 } from '@/lib/rank-politician/ui';
@@ -65,9 +64,10 @@ type ScrapeFilter = 'all' | 'never' | 'success' | 'error' | 'partial';
 
 export default function RankPoliticianPage() {
     const isLightTheme = useIsLightTheme();
-    const { data: session } = useSession();
-    const isAdmin = isRankPoliticianAdmin(session?.user?.email);
+    const { data: session, status: authStatus } = useSession();
 
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [hasAdmin, setHasAdmin] = useState(true);
     const [politicians, setPoliticians] = useState<PoliticianRow[]>([]);
     const [meta, setMeta] = useState<LeaderboardMeta | null>(null);
     const [parties, setParties] = useState<string[]>([]);
@@ -78,13 +78,50 @@ export default function RankPoliticianPage() {
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [actionLoading, setActionLoading] = useState<'seed' | 'scrape' | null>(null);
+    const [actionLoading, setActionLoading] = useState<'seed' | 'scrape' | 'claim' | null>(null);
     const [actionMessage, setActionMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setQ(searchInput.trim()), 300);
         return () => clearTimeout(timer);
     }, [searchInput]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const statusRes = await fetch('/api/admin/status');
+                if (statusRes.ok) {
+                    const statusData = await statusRes.json();
+                    if (!cancelled) setHasAdmin(Boolean(statusData.hasAdmin));
+                }
+            } catch {
+                // keep default
+            }
+
+            if (authStatus !== 'authenticated' || !session?.user?.email) {
+                if (!cancelled) setIsAdmin(false);
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/user/settings');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!cancelled) {
+                    setIsAdmin(Boolean(data.isAdmin));
+                    if (data.isAdmin) setHasAdmin(true);
+                }
+            } catch {
+                if (!cancelled) setIsAdmin(false);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [authStatus, session?.user?.email]);
 
     const fetchLeaderboard = useCallback(async () => {
         try {
@@ -123,10 +160,20 @@ export default function RankPoliticianPage() {
         setQ('');
     };
 
-    const runAdminAction = async (action: 'seed' | 'scrape') => {
+    const runAdminAction = async (action: 'seed' | 'scrape' | 'claim') => {
         setActionLoading(action);
         setActionMessage(null);
         try {
+            if (action === 'claim') {
+                const response = await fetch('/api/admin/claim-first', { method: 'POST' });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Claim admin failed');
+                setIsAdmin(true);
+                setHasAdmin(true);
+                setActionMessage('You are now the first admin (stored on your User in MongoDB).');
+                return;
+            }
+
             const response = await fetch(
                 action === 'seed' ? '/api/rank-politician/seed' : '/api/rank-politician/scrape',
                 {
@@ -182,24 +229,35 @@ export default function RankPoliticianPage() {
                                 not a measure of governance delivery.
                             </p>
                         </div>
-                        {isAdmin && (
-                            <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2">
+                            {authStatus === 'authenticated' && !isAdmin && !hasAdmin && (
                                 <LiquidButton
                                     className="text-white"
                                     disabled={actionLoading !== null}
-                                    onClick={() => runAdminAction('seed')}
+                                    onClick={() => runAdminAction('claim')}
                                 >
-                                    {actionLoading === 'seed' ? 'Seeding…' : 'Seed list'}
+                                    {actionLoading === 'claim' ? 'Claiming…' : 'Claim first admin'}
                                 </LiquidButton>
-                                <LiquidButton
-                                    className="text-white"
-                                    disabled={actionLoading !== null}
-                                    onClick={() => runAdminAction('scrape')}
-                                >
-                                    {actionLoading === 'scrape' ? 'Scraping…' : 'Scrape batch'}
-                                </LiquidButton>
-                            </div>
-                        )}
+                            )}
+                            {isAdmin && (
+                                <>
+                                    <LiquidButton
+                                        className="text-white"
+                                        disabled={actionLoading !== null}
+                                        onClick={() => runAdminAction('seed')}
+                                    >
+                                        {actionLoading === 'seed' ? 'Seeding…' : 'Seed list'}
+                                    </LiquidButton>
+                                    <LiquidButton
+                                        className="text-white"
+                                        disabled={actionLoading !== null}
+                                        onClick={() => runAdminAction('scrape')}
+                                    >
+                                        {actionLoading === 'scrape' ? 'Scraping…' : 'Scrape batch'}
+                                    </LiquidButton>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     {actionMessage && (

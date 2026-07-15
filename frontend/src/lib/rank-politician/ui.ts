@@ -1,13 +1,3 @@
-export const RANK_POLITICIAN_ADMINS = [
-    'priyanshu85953@gmail.com',
-    'admin@infinwork.app',
-];
-
-export function isRankPoliticianAdmin(email?: string | null): boolean {
-    if (!email) return false;
-    return RANK_POLITICIAN_ADMINS.includes(email);
-}
-
 export type ScrapeStatus = 'never' | 'success' | 'error' | 'partial';
 
 export function scrapeStatusLabel(status?: string | null): string {
