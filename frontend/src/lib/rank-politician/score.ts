@@ -44,6 +44,8 @@ const RELATED_KEYWORDS = [
     'cabinet', 'ministry', 'development', 'infrastructure', 'governance', 'reform',
     'citizen', 'public service', 'implementation', 'notification', 'bill', 'act',
     'vikas', 'sarkar', 'mantralaya', 'sansad', 'karyakram',
+    'make in india', 'cabinet', 'agreement', 'msme', 'farmers', 'farmer',
+    'सरकार', 'मंजूरी', 'विकास', 'किसान', 'योजना', 'इंफ्रास्ट्रक्चर', 'कनेक्टिविटी',
 ];
 
 const ATTACK_KEYWORDS = [
@@ -67,7 +69,8 @@ const OFF_TOPIC_KEYWORDS = [
 function normalizeText(text: string): string {
     return text
         .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        // Keep letters + combining marks (needed for Hindi matras) + numbers.
+        .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
         .replace(/\s+/g, ' ')
         .trim();
 }

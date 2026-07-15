@@ -13,7 +13,7 @@ export interface FirecrawlScrapeResult {
 }
 
 const STATUS_URL_RE =
-    /https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/([A-Za-z0-9_]+)\/status\/(\d+)/gi;
+    /https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/([A-Za-z0-9_]+)\/status\/(\d+)/i;
 
 const FIRECRAWL_API_URL = 'https://api.firecrawl.dev/v2/scrape';
 const DEFAULT_TIMEOUT_MS = 45000;
@@ -22,9 +22,11 @@ function cleanPostText(text: string): string {
     return text
         .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+        .replace(/^>\s?/gm, '')
         .replace(/https?:\/\/t\.co\/\S+/gi, ' ')
         .replace(/^#{1,6}\s+/gm, '')
-        .replace(/[*_`>~]/g, ' ')
+        .replace(/\\([.\\-])/g, '$1')
+        .replace(/[*_`~]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -37,98 +39,9 @@ function isNoiseLine(line: string): boolean {
         return true;
     }
     if (/^\d+\s+(replies|reposts|likes|views|quotes)$/i.test(normalized)) return true;
+    if (/^likes:\s*\d+/i.test(normalized)) return true;
     if (/^@\w+$/.test(normalized)) return true;
     return false;
-}
-
-export function parsePostsFromFirecrawl(
-    handle: string,
-    markdown: string,
-    links: string[] = []
-): ScrapedPostCandidate[] {
-    const normalizedHandle = handle.replace(/^@/, '').toLowerCase();
-    const candidates = new Map<string, ScrapedPostCandidate>();
-
-    const allUrls = new Set<string>();
-    for (const link of links) {
-        if (link) allUrls.add(link);
-    }
-    for (const match of markdown.matchAll(STATUS_URL_RE)) {
-        allUrls.add(match[0]);
-    }
-
-    for (const url of allUrls) {
-        STATUS_URL_RE.lastIndex = 0;
-        const match = STATUS_URL_RE.exec(url);
-        if (!match) continue;
-
-        const statusHandle = match[1].toLowerCase();
-        const statusId = match[2];
-        if (statusHandle !== normalizedHandle) continue;
-
-        const externalId = `x:${normalizedHandle}:${statusId}`;
-        const postUrl = `https://x.com/${normalizedHandle}/status/${statusId}`;
-
-        // Prefer text in the paragraph immediately preceding the status URL.
-        const urlIndex = markdown.search(
-            new RegExp(`https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/${normalizedHandle}\\/status\\/${statusId}`, 'i')
-        );
-        let nearby = '';
-        if (urlIndex >= 0) {
-            const windowStart = Math.max(0, urlIndex - 500);
-            let preceding = markdown.slice(windowStart, urlIndex);
-            const priorStatusMatches = [
-                ...preceding.matchAll(
-                    /https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/[A-Za-z0-9_]+\/status\/\d+/gi
-                ),
-            ];
-            const lastPrior = priorStatusMatches[priorStatusMatches.length - 1];
-            if (lastPrior && typeof lastPrior.index === 'number') {
-                preceding = preceding.slice(lastPrior.index + lastPrior[0].length);
-            }
-            const paragraphs = preceding
-                .split(/\n{2,}/)
-                .map((part) => part.trim())
-                .filter(Boolean);
-            nearby = paragraphs[paragraphs.length - 1] || preceding;
-        } else {
-            const idIndex = markdown.indexOf(statusId);
-            if (idIndex >= 0) {
-                nearby = markdown.slice(Math.max(0, idIndex - 280), idIndex);
-            }
-        }
-
-        const text = cleanPostText(nearby.replace(STATUS_URL_RE, ' '));
-        if (!text || text.length < 16) continue;
-
-        candidates.set(externalId, {
-            externalId,
-            text,
-            postUrl,
-            rawMarkdown: nearby.slice(0, 2000),
-        });
-    }
-
-    // Fallback: split markdown into blocks when status URLs are missing/incomplete.
-    if (candidates.size === 0 && markdown.trim()) {
-        const blocks = markdown
-            .split(/\n{2,}/)
-            .map((block) => cleanPostText(block))
-            .filter((block) => block.length >= 40 && !isNoiseLine(block));
-
-        for (const text of blocks.slice(0, 20)) {
-            const externalId = `x:${normalizedHandle}:block:${hashText(text)}`;
-            if (candidates.has(externalId)) continue;
-            candidates.set(externalId, {
-                externalId,
-                text: text.slice(0, 2000),
-                postUrl: `https://x.com/${normalizedHandle}`,
-                rawMarkdown: text.slice(0, 2000),
-            });
-        }
-    }
-
-    return Array.from(candidates.values()).slice(0, 40);
 }
 
 function hashText(text: string): string {
@@ -137,6 +50,139 @@ function hashText(text: string): string {
         hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
     }
     return hash.toString(16);
+}
+
+function parsePostedAt(block: string): Date | undefined {
+    const match = block.match(/Posted:\s*([^\n]+)/i);
+    if (!match) return undefined;
+    const raw = match[1].replace(/\\/g, '').trim();
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function extractBlockquoteText(block: string): string {
+    const quoteLines = block
+        .split('\n')
+        .filter((line) => /^\s*>/.test(line))
+        .map((line) => line.replace(/^\s*>\s?/, ''));
+
+    if (quoteLines.length > 0) {
+        return cleanPostText(quoteLines.join('\n'));
+    }
+
+    // Fallback: text after URL line, before likes/retweets footer.
+    const withoutHeader = block
+        .replace(/^###\s*\d+\.\s*Post[^\n]*/i, '')
+        .replace(/Posted:[^\n]*/i, '')
+        .replace(/URL:[^\n]*/i, '')
+        .replace(/Likes:[^\n]*/i, '');
+
+    return cleanPostText(withoutHeader);
+}
+
+/**
+ * Firecrawl X profiles usually return:
+ * ### 1. Post
+ * Posted: ...
+ * URL: https://x.com/.../status/...
+ *
+ * > tweet text
+ *
+ * Likes: N | Retweets: N
+ */
+export function parsePostsFromFirecrawl(
+    handle: string,
+    markdown: string,
+    links: string[] = []
+): ScrapedPostCandidate[] {
+    const normalizedHandle = handle.replace(/^@/, '').toLowerCase();
+    const candidates = new Map<string, ScrapedPostCandidate>();
+
+    const sections = markdown.split(/(?=^###\s*\d+\.\s*Post)/im).filter(Boolean);
+
+    for (const section of sections) {
+        if (!/Post/i.test(section) || !/status\/\d+/i.test(section)) continue;
+
+        const urlMatch = section.match(STATUS_URL_RE);
+        if (!urlMatch) continue;
+
+        const statusHandle = urlMatch[1].toLowerCase();
+        const statusId = urlMatch[2];
+        if (statusHandle !== normalizedHandle) continue;
+
+        const text = extractBlockquoteText(section);
+        if (!text || text.length < 16) continue;
+        if (/^(\d+\.\s*)?post\s+posted:/i.test(text)) continue;
+
+        const externalId = `x:${normalizedHandle}:${statusId}`;
+        candidates.set(externalId, {
+            externalId,
+            text: text.slice(0, 4000),
+            postUrl: `https://x.com/${normalizedHandle}/status/${statusId}`,
+            postedAt: parsePostedAt(section),
+            rawMarkdown: section.slice(0, 2500),
+        });
+    }
+
+    // Secondary path: status URLs from links + nearby blockquotes in full markdown.
+    if (candidates.size === 0) {
+        const allUrls = new Set<string>(links.filter(Boolean));
+        for (const match of markdown.matchAll(
+            /https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/[A-Za-z0-9_]+\/status\/\d+/gi
+        )) {
+            allUrls.add(match[0]);
+        }
+
+        for (const url of allUrls) {
+            const match = url.match(STATUS_URL_RE);
+            if (!match) continue;
+            const statusHandle = match[1].toLowerCase();
+            const statusId = match[2];
+            if (statusHandle !== normalizedHandle) continue;
+
+            const urlIndex = markdown.search(
+                new RegExp(
+                    `https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/${normalizedHandle}\\/status\\/${statusId}`,
+                    'i'
+                )
+            );
+            if (urlIndex < 0) continue;
+
+            const window = markdown.slice(urlIndex, Math.min(markdown.length, urlIndex + 1200));
+            const quoteMatch = window.match(/(?:^|\n)((?:>.*(?:\n|$))+)/);
+            const text = cleanPostText(quoteMatch?.[1] || '');
+            if (!text || text.length < 16) continue;
+
+            const externalId = `x:${normalizedHandle}:${statusId}`;
+            candidates.set(externalId, {
+                externalId,
+                text: text.slice(0, 4000),
+                postUrl: `https://x.com/${normalizedHandle}/status/${statusId}`,
+                rawMarkdown: window.slice(0, 2500),
+            });
+        }
+    }
+
+    // Last resort: markdown blocks.
+    if (candidates.size === 0 && markdown.trim()) {
+        const blocks = markdown
+            .split(/\n{2,}/)
+            .map((block) => cleanPostText(block))
+            .filter((block) => block.length >= 40 && !isNoiseLine(block) && !/^latest posts$/i.test(block));
+
+        for (const text of blocks.slice(0, 20)) {
+            const externalId = `x:${normalizedHandle}:block:${hashText(text)}`;
+            if (candidates.has(externalId)) continue;
+            candidates.set(externalId, {
+                externalId,
+                text: text.slice(0, 4000),
+                postUrl: `https://x.com/${normalizedHandle}`,
+                rawMarkdown: text.slice(0, 2500),
+            });
+        }
+    }
+
+    return Array.from(candidates.values()).slice(0, 40);
 }
 
 export async function scrapeXProfileWithFirecrawl(
