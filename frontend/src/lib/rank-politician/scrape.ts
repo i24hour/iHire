@@ -69,18 +69,32 @@ export function parsePostsFromFirecrawl(
         const externalId = `x:${normalizedHandle}:${statusId}`;
         const postUrl = `https://x.com/${normalizedHandle}/status/${statusId}`;
 
-        // Prefer text in the paragraph preceding the status URL in markdown.
+        // Prefer text in the paragraph immediately preceding the status URL.
         const urlIndex = markdown.search(
             new RegExp(`https?:\\/\\/(?:www\\.)?(?:x\\.com|twitter\\.com)\\/${normalizedHandle}\\/status\\/${statusId}`, 'i')
         );
         let nearby = '';
         if (urlIndex >= 0) {
-            const start = Math.max(0, urlIndex - 500);
-            nearby = markdown.slice(start, urlIndex);
+            const windowStart = Math.max(0, urlIndex - 500);
+            let preceding = markdown.slice(windowStart, urlIndex);
+            const priorStatusMatches = [
+                ...preceding.matchAll(
+                    /https?:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/[A-Za-z0-9_]+\/status\/\d+/gi
+                ),
+            ];
+            const lastPrior = priorStatusMatches[priorStatusMatches.length - 1];
+            if (lastPrior && typeof lastPrior.index === 'number') {
+                preceding = preceding.slice(lastPrior.index + lastPrior[0].length);
+            }
+            const paragraphs = preceding
+                .split(/\n{2,}/)
+                .map((part) => part.trim())
+                .filter(Boolean);
+            nearby = paragraphs[paragraphs.length - 1] || preceding;
         } else {
             const idIndex = markdown.indexOf(statusId);
             if (idIndex >= 0) {
-                nearby = markdown.slice(Math.max(0, idIndex - 500), idIndex);
+                nearby = markdown.slice(Math.max(0, idIndex - 280), idIndex);
             }
         }
 
