@@ -34,6 +34,13 @@ Required environment variables (see your Vercel project settings):
 - `FIRECRAWL_API_KEY` (for Rank Politician X scrape)
 - `CRON_SECRET` (protects `/api/cron/rank-politician`)
 
+### Rank Politician scrape schedule
+
+- Vercel Hobby cron: once daily (backup)
+- GitHub Actions external cron: every 4 hours (see `.github/RANK_POLITICIAN_CRON.md`)
+  - Add repo secret `CRON_SECRET` (same value as Vercel)
+  - Optional secret `RANK_POLITICIAN_CRON_URL`
+
 ## Project Structure
 
 ```

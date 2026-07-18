@@ -1,0 +1,72 @@
+name: Rank Politician Cron
+
+# External cron (Option 3): runs more often than Vercel Hobby's once/day limit.
+on:
+  schedule:
+    # Every 4 hours
+    - cron: '15 */4 * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Politicians to scrape in this run'
+        required: false
+        default: '15'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger Rank Politician scrape
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          CRON_URL: ${{ secrets.RANK_POLITICIAN_CRON_URL }}
+          LIMIT: ${{ github.event.inputs.limit || '15' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "Missing GitHub secret CRON_SECRET"
+            echo "Add it in Repo Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+          URL="${CRON_URL:-https://www.infinwork.app/api/cron/rank-politician}"
+          # Append limit query
+          if [[ "$URL" == *\?* ]]; then
+            FULL_URL="${URL}&limit=${LIMIT}"
+          else
+            FULL_URL="${URL}?limit=${LIMIT}"
+          fi
+
+          echo "Calling ${FULL_URL%%\?*}?limit=${LIMIT}"
+
+          HTTP_CODE=$(curl -sS -o /tmp/cron-response.json -w "%{http_code}" \
+            --max-time 290 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            "$FULL_URL")
+
+          echo "HTTP ${HTTP_CODE}"
+          cat /tmp/cron-response.json
+          echo
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Cron request failed"
+            exit 1
+          fi
+
+          node -e '
+            const fs = require("fs");
+            const body = JSON.parse(fs.readFileSync("/tmp/cron-response.json", "utf8"));
+            if (body.status && body.status !== "ok") {
+              console.error("Cron returned non-ok status", body);
+              process.exit(1);
+            }
+            console.log(JSON.stringify({
+              processed: body.processed,
+              successCount: body.successCount,
+              errorCount: body.errorCount,
+              firecrawlConfigured: body.firecrawlConfigured,
+            }, null, 2));
+          '
