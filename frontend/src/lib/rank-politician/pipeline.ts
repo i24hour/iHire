@@ -11,7 +11,23 @@ import {
     scrapeXProfileWithFirecrawl,
 } from '@/lib/rank-politician/scrape';
 
-export const RANK_POLITICIAN_BATCH_SIZE = 10;
+// Hobby cron runs once/day — scrape enough to rotate ~38 politicians in ~2–3 days.
+export const RANK_POLITICIAN_BATCH_SIZE = 15;
+
+function scrapePriority(status?: string | null): number {
+    switch (status) {
+        case 'never':
+            return 0;
+        case 'error':
+            return 1;
+        case 'partial':
+            return 2;
+        case 'success':
+            return 3;
+        default:
+            return 0;
+    }
+}
 
 export interface PoliticianScrapeSummary {
     slug: string;
@@ -183,14 +199,26 @@ export async function runRankPoliticianScrapeBatch(
         filter.slug = { $in: options.slugs.map((s) => s.toLowerCase()) };
     }
 
-    const politicians = await Politician.find(filter)
-        .sort({ lastScrapedAt: 1, createdAt: 1 })
-        .limit(limit)
-        .lean();
+    // Prefer never/error/partial, then oldest lastScrapedAt.
+    // Fetch a wider candidate set then rank in memory (list is small).
+    const candidates = await Politician.find(filter).lean();
+    const politicians = (candidates as any[])
+        .sort((a, b) => {
+            const priorityDiff =
+                scrapePriority(a.lastScrapeStatus) - scrapePriority(b.lastScrapeStatus);
+            if (priorityDiff !== 0) return priorityDiff;
+
+            const aTime = a.lastScrapedAt ? new Date(a.lastScrapedAt).getTime() : 0;
+            const bTime = b.lastScrapedAt ? new Date(b.lastScrapedAt).getTime() : 0;
+            if (aTime !== bTime) return aTime - bTime;
+
+            return String(a.slug || '').localeCompare(String(b.slug || ''));
+        })
+        .slice(0, limit);
 
     const results: PoliticianScrapeSummary[] = [];
 
-    for (const politician of politicians as any[]) {
+    for (const politician of politicians) {
         const result = await scrapeAndScorePolitician(politician);
         results.push(result);
     }

@@ -226,7 +226,8 @@ export default function RankPoliticianPage() {
                             </h1>
                             <p className={muted}>
                                 Ranks how focused public X posts are on each politician&apos;s portfolio —
-                                not a measure of governance delivery.
+                                not a measure of governance delivery. Auto-scrape runs once daily
+                                (~03:00 UTC) in batches, so not every profile refreshes every day.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
