@@ -424,13 +424,13 @@ export default function RankPoliticianPage() {
                                                                 {scrapeStatusLabel(politician.lastScrapeStatus)}
                                                             </span>
                                                         </div>
-                                                        <p className={`text-xs truncate ${muted}`}>
+                                                        <p className={`text-sm font-medium truncate mt-0.5 ${heading}`}>
+                                                            {politician.portfolio}
+                                                        </p>
+                                                        <p className={`text-xs truncate mt-0.5 ${muted}`}>
                                                             {politician.party}
                                                             {politician.state ? ` · ${politician.state}` : ''}
                                                             {' · '}@{politician.xHandle}
-                                                        </p>
-                                                        <p className={`text-xs truncate mt-0.5 ${isLightTheme ? 'text-zinc-600' : 'text-zinc-500'}`}>
-                                                            {politician.portfolio}
                                                             {' · '}
                                                             {formatRelativeTime(politician.lastScrapedAt)}
                                                         </p>

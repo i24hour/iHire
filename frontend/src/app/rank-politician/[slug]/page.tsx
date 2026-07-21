@@ -221,11 +221,12 @@ export default function RankPoliticianDetailPage() {
                                             {scrapeStatusLabel(politician.lastScrapeStatus)}
                                         </span>
                                     </div>
+                                    <p className={`text-xl font-semibold ${heading}`}>
+                                        {politician.portfolio}
+                                    </p>
                                     <p className={muted}>
                                         {politician.party}
                                         {politician.state ? ` · ${politician.state}` : ''}
-                                        {' · '}
-                                        {politician.portfolio}
                                     </p>
                                     <div className="flex flex-wrap items-center gap-3 text-sm">
                                         <a
