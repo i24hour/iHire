@@ -73,7 +73,7 @@ export default function RankPoliticianPage() {
     const [parties, setParties] = useState<string[]>([]);
     const [party, setParty] = useState('all');
     const [scrapeStatus, setScrapeStatus] = useState<ScrapeFilter>('all');
-    const [sortBy, setSortBy] = useState<SortBy>('onPortfolioPct');
+    const [sortBy, setSortBy] = useState<SortBy>('netScore');
     const [searchInput, setSearchInput] = useState('');
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
@@ -150,7 +150,7 @@ export default function RankPoliticianPage() {
         fetchLeaderboard();
     }, [fetchLeaderboard]);
 
-    const hasActiveFilters = party !== 'all' || scrapeStatus !== 'all' || Boolean(q) || sortBy !== 'onPortfolioPct';
+    const hasActiveFilters = party !== 'all' || scrapeStatus !== 'all' || Boolean(q) || sortBy !== 'netScore';
 
     const clearFilters = () => {
         setParty('all');

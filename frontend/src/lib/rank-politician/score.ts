@@ -213,7 +213,7 @@ export function sortPoliticiansForLeaderboard<
     T extends { stats?: { onPortfolioPct?: number; netScore?: number; postCount?: number } }
 >(
     politicians: T[],
-    sortBy: 'onPortfolioPct' | 'netScore' = 'onPortfolioPct'
+    sortBy: 'onPortfolioPct' | 'netScore' = 'netScore'
 ): T[] {
     return [...politicians].sort((a, b) => {
         const aPct = a.stats?.onPortfolioPct ?? 0;
