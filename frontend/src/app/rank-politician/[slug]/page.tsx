@@ -140,7 +140,7 @@ export default function RankPoliticianDetailPage() {
         const stats = politician.stats;
         return [
             { key: 'on_portfolio', label: 'On portfolio', count: stats.onPortfolioCount || 0 },
-            { key: 'related', label: 'Related', count: stats.relatedCount || 0 },
+            { key: 'related', label: 'Not portfolio', count: stats.relatedCount || 0 },
             { key: 'off_topic', label: 'Off topic', count: stats.offTopicCount || 0 },
             { key: 'attack', label: 'Attack', count: stats.attackCount || 0 },
             { key: 'personal', label: 'Personal', count: stats.personalCount || 0 },
@@ -361,7 +361,7 @@ export default function RankPoliticianDetailPage() {
                                     >
                                         <option value="all">All categories</option>
                                         <option value="on_portfolio">On portfolio</option>
-                                        <option value="related">Related</option>
+                                        <option value="related">Not portfolio</option>
                                         <option value="off_topic">Off topic</option>
                                         <option value="attack">Attack</option>
                                         <option value="personal">Personal</option>

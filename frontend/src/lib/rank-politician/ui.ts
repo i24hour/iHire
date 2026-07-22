@@ -31,7 +31,7 @@ export function scrapeStatusClass(status?: string | null): string {
 export function categoryLabel(category: string): string {
     const labels: Record<string, string> = {
         on_portfolio: 'On portfolio',
-        related: 'Related',
+        related: 'Not portfolio',
         off_topic: 'Off topic',
         attack: 'Attack',
         personal: 'Personal',

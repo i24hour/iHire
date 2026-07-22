@@ -73,7 +73,7 @@ export default function RankPoliticianPage() {
     const [parties, setParties] = useState<string[]>([]);
     const [party, setParty] = useState('all');
     const [scrapeStatus, setScrapeStatus] = useState<ScrapeFilter>('all');
-    const [sortBy, setSortBy] = useState<SortBy>('onPortfolioPct');
+    const [sortBy, setSortBy] = useState<SortBy>('netScore');
     const [searchInput, setSearchInput] = useState('');
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
@@ -150,7 +150,7 @@ export default function RankPoliticianPage() {
         fetchLeaderboard();
     }, [fetchLeaderboard]);
 
-    const hasActiveFilters = party !== 'all' || scrapeStatus !== 'all' || Boolean(q) || sortBy !== 'onPortfolioPct';
+    const hasActiveFilters = party !== 'all' || scrapeStatus !== 'all' || Boolean(q) || sortBy !== 'netScore';
 
     const clearFilters = () => {
         setParty('all');
@@ -225,9 +225,10 @@ export default function RankPoliticianPage() {
                                 Rank Politician
                             </h1>
                             <p className={muted}>
-                                Ranks how focused public X posts are on each politician&apos;s portfolio —
-                                not a measure of governance delivery. Auto-scrape runs once daily
-                                (~03:00 UTC) in batches, so not every profile refreshes every day.
+                                Ranks how focused public X posts are on each person&apos;s assigned
+                                department portfolio only (e.g. PM counts as Personnel / Atomic / Space —
+                                not everything). Role titles do not expand the score. Not a measure of
+                                governance delivery. Auto-scrape runs once daily (~03:00 UTC) in batches.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
