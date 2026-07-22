@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         const q = searchParams.get('q')?.trim();
         const scrapeStatus = searchParams.get('scrapeStatus')?.trim()?.toLowerCase();
         const sortByParam = searchParams.get('sortBy');
-        const sortBy = sortByParam === 'netScore' ? 'netScore' : 'onPortfolioPct';
+        const sortBy = sortByParam === 'onPortfolioPct' ? 'onPortfolioPct' : 'netScore';
 
         const filter: Record<string, unknown> = { isActive: true };
         if (party && party.toLowerCase() !== 'all') {

@@ -1,17 +1,69 @@
-export type PostCategory =
-    | 'on_portfolio'
-    | 'related'
-    | 'off_topic'
-    | 'attack'
-    | 'personal'
-    | 'unknown';
-
 /**
- * Positive credit only for the politician's assigned department portfolio.
- * Role titles (PM, CM, party leader) do not expand scoring — only listed departments.
- * Generic politics/governance ("related") gets 0 points so it never boosts rank.
+ * Sync portfolio fields from seed for key ministers and rescore every politician's posts.
+ * Positive credit is only for assigned department portfolio topics.
  */
-export const CATEGORY_POINTS: Record<PostCategory, number> = {
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function loadEnv(path) {
+    try {
+        const text = readFileSync(path, 'utf8');
+        for (const line of text.split('\n')) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            const eq = trimmed.indexOf('=');
+            if (eq < 0) continue;
+            const key = trimmed.slice(0, eq).trim();
+            let value = trimmed.slice(eq + 1).trim();
+            if (
+                (value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))
+            ) {
+                value = value.slice(1, -1);
+            }
+            if (!process.env[key]) process.env[key] = value;
+        }
+    } catch {
+        // optional
+    }
+}
+
+loadEnv(resolve(__dirname, '../../.env.local'));
+loadEnv(resolve(__dirname, '../.env.local'));
+loadEnv(resolve(__dirname, '../../.vercel/.env.production.local'));
+
+const PORTFOLIO_OVERRIDES = {
+    'narendra-modi': {
+        portfolio: 'Personnel / Atomic Energy / Space',
+        portfolioTopics: [
+            'personnel', 'public grievances', 'pensions', 'administrative reforms',
+            'department of personnel', 'dopt', 'lokpal', 'cvc',
+            'atomic energy', 'nuclear energy', 'nuclear power', 'dae',
+            'space programme', 'space program', 'space mission', 'space research',
+            'indian space', 'isro', 'department of space', 'satellite launch',
+            'satellite', 'gslv', 'pslv',
+            'परमाणु', 'अंतरिक्ष', 'कार्मिक', 'पेंशन',
+        ],
+    },
+};
+
+function normalizeText(text) {
+    return String(text || '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function countKeywordHits(text, keywords) {
+    return keywords.filter((keyword) => text.includes(String(keyword).toLowerCase()));
+}
+
+const CATEGORY_POINTS = {
     on_portfolio: 2,
     related: 0,
     off_topic: -1,
@@ -19,30 +71,6 @@ export const CATEGORY_POINTS: Record<PostCategory, number> = {
     personal: -1,
     unknown: 0,
 };
-
-export interface ClassifiedPost {
-    category: PostCategory;
-    score: number;
-    scoreReason: string;
-}
-
-export interface AggregateStatsInput {
-    category: PostCategory;
-    score: number;
-}
-
-export interface PoliticianAggregateStats {
-    netScore: number;
-    onPortfolioPct: number;
-    postCount: number;
-    scoredPostCount: number;
-    onPortfolioCount: number;
-    relatedCount: number;
-    offTopicCount: number;
-    attackCount: number;
-    personalCount: number;
-    unknownCount: number;
-}
 
 const RELATED_KEYWORDS = [
     'policy', 'scheme', 'yojana', 'budget', 'parliament', 'lok sabha', 'rajya sabha',
@@ -71,21 +99,8 @@ const OFF_TOPIC_KEYWORDS = [
     'entertainment', 'song', 'trending reel', 'celebrity',
 ];
 
-function normalizeText(text: string): string {
-    return text
-        .toLowerCase()
-        // Keep letters + combining marks (needed for Hindi matras) + numbers.
-        .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-function countKeywordHits(text: string, keywords: string[]): string[] {
-    return keywords.filter((keyword) => text.includes(keyword.toLowerCase()));
-}
-
-export function classifyPost(text: string, portfolioTopics: string[] = []): ClassifiedPost {
-    const normalized = normalizeText(text || '');
+function classifyPost(text, portfolioTopics = []) {
+    const normalized = normalizeText(text);
 
     if (!normalized || normalized.length < 12) {
         return {
@@ -148,8 +163,8 @@ export function classifyPost(text: string, portfolioTopics: string[] = []): Clas
     };
 }
 
-export function aggregatePoliticianStats(posts: AggregateStatsInput[]): PoliticianAggregateStats {
-    const stats: PoliticianAggregateStats = {
+function aggregatePoliticianStats(posts) {
+    const stats = {
         netScore: 0,
         onPortfolioPct: 0,
         postCount: posts.length,
@@ -160,6 +175,7 @@ export function aggregatePoliticianStats(posts: AggregateStatsInput[]): Politici
         attackCount: 0,
         personalCount: 0,
         unknownCount: 0,
+        lastScoredAt: new Date(),
     };
 
     for (const post of posts) {
@@ -205,32 +221,72 @@ export function aggregatePoliticianStats(posts: AggregateStatsInput[]): Politici
             : 0;
 
     stats.netScore = Math.round(stats.netScore * 100) / 100;
-
     return stats;
 }
 
-export function sortPoliticiansForLeaderboard<
-    T extends { stats?: { onPortfolioPct?: number; netScore?: number; postCount?: number } }
->(
-    politicians: T[],
-    sortBy: 'onPortfolioPct' | 'netScore' = 'netScore'
-): T[] {
-    return [...politicians].sort((a, b) => {
-        const aPct = a.stats?.onPortfolioPct ?? 0;
-        const bPct = b.stats?.onPortfolioPct ?? 0;
-        const aNet = a.stats?.netScore ?? 0;
-        const bNet = b.stats?.netScore ?? 0;
-        const aPosts = a.stats?.postCount ?? 0;
-        const bPosts = b.stats?.postCount ?? 0;
+async function main() {
+    if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI missing');
 
-        if (sortBy === 'netScore') {
-            if (bNet !== aNet) return bNet - aNet;
-            if (bPct !== aPct) return bPct - aPct;
-            return bPosts - aPosts;
+    await mongoose.connect(process.env.MONGODB_URI);
+    const db = mongoose.connection.db;
+    const politicians = db.collection('politicians');
+    const posts = db.collection('politicianposts');
+
+    for (const [slug, update] of Object.entries(PORTFOLIO_OVERRIDES)) {
+        const topics = update.portfolioTopics.map((t) => t.toLowerCase());
+        await politicians.updateOne(
+            { slug },
+            {
+                $set: {
+                    portfolio: update.portfolio,
+                    portfolioTopics: topics,
+                    updatedAt: new Date(),
+                },
+            }
+        );
+        console.log(`Updated portfolio for ${slug}: ${update.portfolio}`);
+    }
+
+    const allPoliticians = await politicians.find({ isActive: { $ne: false } }).toArray();
+    console.log(`Rescoring ${allPoliticians.length} politicians...`);
+
+    for (const politician of allPoliticians) {
+        const topics = (politician.portfolioTopics || []).map((t) => String(t).toLowerCase());
+        const politicianPosts = await posts.find({ politicianId: politician._id }).toArray();
+
+        const classifiedRows = [];
+        for (const post of politicianPosts) {
+            const classified = classifyPost(post.text || '', topics);
+            await posts.updateOne(
+                { _id: post._id },
+                {
+                    $set: {
+                        category: classified.category,
+                        score: classified.score,
+                        scoreReason: classified.scoreReason,
+                        updatedAt: new Date(),
+                    },
+                }
+            );
+            classifiedRows.push(classified);
         }
 
-        if (bPct !== aPct) return bPct - aPct;
-        if (bNet !== aNet) return bNet - aNet;
-        return bPosts - aPosts;
-    });
+        const stats = aggregatePoliticianStats(classifiedRows);
+        await politicians.updateOne(
+            { _id: politician._id },
+            { $set: { stats, updatedAt: new Date() } }
+        );
+
+        console.log(
+            `${politician.slug}: posts=${stats.postCount} on=${stats.onPortfolioPct}% net=${stats.netScore}`
+        );
+    }
+
+    await mongoose.disconnect();
+    console.log('Done.');
 }
+
+main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

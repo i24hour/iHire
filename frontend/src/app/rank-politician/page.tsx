@@ -73,7 +73,7 @@ export default function RankPoliticianPage() {
     const [parties, setParties] = useState<string[]>([]);
     const [party, setParty] = useState('all');
     const [scrapeStatus, setScrapeStatus] = useState<ScrapeFilter>('all');
-    const [sortBy, setSortBy] = useState<SortBy>('onPortfolioPct');
+    const [sortBy, setSortBy] = useState<SortBy>('netScore');
     const [searchInput, setSearchInput] = useState('');
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
@@ -150,12 +150,12 @@ export default function RankPoliticianPage() {
         fetchLeaderboard();
     }, [fetchLeaderboard]);
 
-    const hasActiveFilters = party !== 'all' || scrapeStatus !== 'all' || Boolean(q) || sortBy !== 'onPortfolioPct';
+    const hasActiveFilters = party !== 'all' || scrapeStatus !== 'all' || Boolean(q) || sortBy !== 'netScore';
 
     const clearFilters = () => {
         setParty('all');
         setScrapeStatus('all');
-        setSortBy('onPortfolioPct');
+        setSortBy('netScore');
         setSearchInput('');
         setQ('');
     };
@@ -225,9 +225,11 @@ export default function RankPoliticianPage() {
                                 Rank Politician
                             </h1>
                             <p className={muted}>
-                                Ranks how focused public X posts are on each politician&apos;s portfolio —
-                                not a measure of governance delivery. Auto-scrape runs once daily
-                                (~03:00 UTC) in batches, so not every profile refreshes every day.
+                                Ranks how focused public X posts are on each person&apos;s assigned
+                                department portfolio only (e.g. PM counts as Personnel / Atomic / Space —
+                                not everything). After scrape, posts are classified with an LLM (Bedrock
+                                Kimi K2.5) so birthday wishes mentioning a state are not scored as
+                                portfolio work. Ranked by net score. Auto-scrape runs daily in batches.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -329,8 +331,8 @@ export default function RankPoliticianPage() {
                                 onChange={(e) => setSortBy(e.target.value as SortBy)}
                                 className="rounded-xl bg-black border border-white/10 px-4 py-2.5 text-sm text-white focus:outline-none focus:border-white/30"
                             >
-                                <option value="onPortfolioPct">Sort: % on-portfolio</option>
                                 <option value="netScore">Sort: net score</option>
+                                <option value="onPortfolioPct">Sort: % on-portfolio</option>
                             </select>
                         </div>
                         {hasActiveFilters && (

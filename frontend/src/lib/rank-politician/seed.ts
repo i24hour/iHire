@@ -18,11 +18,15 @@ export const POLITICIAN_SEEDS: PoliticianSeed[] = [
         slug: 'narendra-modi',
         party: 'BJP',
         state: 'India',
+        // PM role is ignored for scoring — only these allocated departments count.
         portfolio: 'Personnel / Atomic Energy / Space',
         portfolioTopics: [
             'personnel', 'public grievances', 'pensions', 'administrative reforms',
-            'atomic energy', 'nuclear', 'dae', 'space', 'isro', 'dos',
-            'satellite', 'launch', 'dopt', 'lokpal', 'cvc',
+            'department of personnel', 'dopt', 'lokpal', 'cvc',
+            'atomic energy', 'nuclear energy', 'nuclear power', 'dae',
+            'space programme', 'space program', 'space mission', 'space research',
+            'indian space', 'isro', 'department of space', 'satellite launch',
+            'satellite', 'gslv', 'pslv',
             'परमाणु', 'अंतरिक्ष', 'कार्मिक', 'पेंशन',
         ],
         xHandle: 'narendramodi',

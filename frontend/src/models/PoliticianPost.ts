@@ -19,6 +19,8 @@ export interface IPoliticianPost {
     category: PoliticianPostCategory;
     score: number;
     scoreReason?: string;
+    /** How the post was classified: llm (preferred) or keyword fallback. */
+    scoredBy?: 'llm' | 'keyword' | 'fallback';
     scoredAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -51,6 +53,11 @@ const PoliticianPostSchema = new mongoose.Schema<IPoliticianPost>(
         },
         score: { type: Number, default: 0 },
         scoreReason: { type: String },
+        scoredBy: {
+            type: String,
+            enum: ['llm', 'keyword', 'fallback'],
+            default: 'keyword',
+        },
         scoredAt: { type: Date },
     },
     { timestamps: true }
