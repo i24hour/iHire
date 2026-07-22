@@ -4,8 +4,11 @@ import PoliticianPost from '@/models/PoliticianPost';
 import {
     aggregatePoliticianStats,
     classifyPost,
+    type ClassifiedPost,
     type PostCategory,
 } from '@/lib/rank-politician/score';
+import { classifyPostWithLlm } from '@/lib/rank-politician/classify-llm';
+import { isLlmConfigured } from '@/lib/llm';
 import {
     parsePostsFromFirecrawl,
     scrapeXProfileWithFirecrawl,
@@ -35,12 +38,14 @@ export interface PoliticianScrapeSummary {
     status: 'success' | 'error' | 'skipped';
     postsFound: number;
     postsUpserted: number;
+    scoredBy?: 'llm' | 'keyword' | 'mixed';
     error?: string;
 }
 
 export interface RankPoliticianRunResult {
     ranAt: string;
     firecrawlConfigured: boolean;
+    llmConfigured: boolean;
     processed: number;
     successCount: number;
     errorCount: number;
@@ -72,15 +77,42 @@ async function recomputePoliticianStats(politicianId: string) {
     return stats;
 }
 
+async function classifyCandidate(
+    text: string,
+    politician: IPolitician & { _id: any }
+): Promise<ClassifiedPost & { scoredBy: 'llm' | 'keyword' | 'fallback' }> {
+    if (isLlmConfigured()) {
+        try {
+            return await classifyPostWithLlm(text, {
+                politicianName: politician.name,
+                portfolio: politician.portfolio || '',
+                portfolioTopics: politician.portfolioTopics || [],
+            });
+        } catch (error: any) {
+            // Prefer no false keyword boosts when LLM is the intended scorer.
+            return {
+                category: 'unknown',
+                score: 0,
+                scoreReason: `LLM failed, left unscored: ${String(error?.message || error).slice(0, 180)}`,
+                scoredBy: 'fallback',
+            };
+        }
+    }
+
+    const keyword = classifyPost(text, politician.portfolioTopics || []);
+    return { ...keyword, scoredBy: 'keyword' };
+}
+
 async function upsertScoredPosts(
     politician: IPolitician & { _id: any },
     candidates: ReturnType<typeof parsePostsFromFirecrawl>
-): Promise<number> {
+): Promise<{ upserted: number; scoredBy: 'llm' | 'keyword' | 'mixed' }> {
     let upserted = 0;
-    const topics = politician.portfolioTopics || [];
+    const methods = new Set<'llm' | 'keyword' | 'fallback'>();
 
     for (const candidate of candidates) {
-        const classification = classifyPost(candidate.text, topics);
+        const classification = await classifyCandidate(candidate.text, politician);
+        methods.add(classification.scoredBy);
 
         await PoliticianPost.findOneAndUpdate(
             { externalId: candidate.externalId },
@@ -94,6 +126,7 @@ async function upsertScoredPosts(
                     category: classification.category,
                     score: classification.score,
                     scoreReason: classification.scoreReason,
+                    scoredBy: classification.scoredBy,
                     scoredAt: new Date(),
                 },
             },
@@ -102,7 +135,14 @@ async function upsertScoredPosts(
         upserted++;
     }
 
-    return upserted;
+    const scoredBy: 'llm' | 'keyword' | 'mixed' =
+        methods.size === 1 && methods.has('llm')
+            ? 'llm'
+            : methods.size === 1 && methods.has('keyword')
+              ? 'keyword'
+              : 'mixed';
+
+    return { upserted, scoredBy };
 }
 
 export async function scrapeAndScorePolitician(
@@ -138,7 +178,9 @@ export async function scrapeAndScorePolitician(
             return summary;
         }
 
-        summary.postsUpserted = await upsertScoredPosts(politician, candidates);
+        const upsert = await upsertScoredPosts(politician, candidates);
+        summary.postsUpserted = upsert.upserted;
+        summary.scoredBy = upsert.scoredBy;
         await recomputePoliticianStats(String(politician._id));
 
         await Politician.findByIdAndUpdate(politician._id, {
@@ -171,12 +213,14 @@ export async function runRankPoliticianScrapeBatch(
     await connectDB();
 
     const firecrawlConfigured = Boolean(process.env.FIRECRAWL_API_KEY);
+    const llmConfigured = isLlmConfigured();
     const limit = Math.max(1, Math.min(options.limit || RANK_POLITICIAN_BATCH_SIZE, 25));
 
     if (!firecrawlConfigured) {
         return {
             ranAt: new Date().toISOString(),
             firecrawlConfigured: false,
+            llmConfigured,
             processed: 0,
             successCount: 0,
             errorCount: 0,
@@ -226,6 +270,7 @@ export async function runRankPoliticianScrapeBatch(
     return {
         ranAt: new Date().toISOString(),
         firecrawlConfigured: true,
+        llmConfigured,
         processed: results.length,
         successCount: results.filter((r) => r.status === 'success').length,
         errorCount: results.filter((r) => r.status === 'error').length,

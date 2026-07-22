@@ -58,6 +58,7 @@ export async function GET(
                 category: post.category,
                 score: post.score,
                 scoreReason: post.scoreReason || null,
+                scoredBy: post.scoredBy || null,
                 scoredAt: post.scoredAt || null,
             })),
         });
