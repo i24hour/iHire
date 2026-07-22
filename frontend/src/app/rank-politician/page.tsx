@@ -225,9 +225,10 @@ export default function RankPoliticianPage() {
                                 Rank Politician
                             </h1>
                             <p className={muted}>
-                                Ranks how focused public X posts are on each politician&apos;s portfolio —
-                                not a measure of governance delivery. Auto-scrape runs once daily
-                                (~03:00 UTC) in batches, so not every profile refreshes every day.
+                                Ranks how focused public X posts are on each person&apos;s assigned
+                                department portfolio only (e.g. PM counts as Personnel / Atomic / Space —
+                                not everything). Role titles do not expand the score. Not a measure of
+                                governance delivery. Auto-scrape runs once daily (~03:00 UTC) in batches.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
